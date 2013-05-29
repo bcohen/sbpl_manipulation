@@ -1,0 +1,62 @@
+planner:
+  epsilon: 100
+  verbose: false
+  use_dijkstra_heuristic: true
+  use_uniform_obstacle_cost: true
+  use_multiresolution_motion_primitives: false
+  obstacle_distance_cost_far: 2
+  obstacle_distance_cost_mid: 7
+  obstacle_distance_cost_near: 12
+  research:
+    solve_with_ik_threshold: 0.06
+    short_distance_mprims_threshold: 0.22
+  
+robot:
+  arm_name: right_arm
+  num_joints: 7
+  
+debug:
+  print_out_path: false
+  logging:
+    expands: info
+    expands2: info
+    ik: info
+    arm_model: info
+    collisions: info
+    solution: info
+
+visualizations:
+  heuristic: false
+  goal: true
+  expanded_states: true
+  trajectory: false
+  collision_model_trajectory: false
+  trajectory_throttle: 1
+
+collision_space:
+  group_name: right_arm
+  reference_frame: odom_combined
+  resolution: 0.02
+  collision_map_topic: collision_map_occ
+
+  occupancy_grid:
+    origin_x: -0.75
+    origin_y: -1.25
+    origin_z: -0.05
+    size_x: 2.0
+    size_y: 2.0
+    size_z: 2.0
+
+planning_joints:
+  r_shoulder_pan_joint
+  r_shoulder_lift_joint
+  r_upper_arm_roll_joint
+  r_elbow_flex_joint
+  r_forearm_roll_joint
+  r_wrist_flex_joint
+  r_wrist_roll_joint
+
+reference_frame: base_footprint
+fk_service_name: pr2_right_arm_kinematics/get_fk
+ik_service_name: pr2_right_arm_kinematics/get_ik
+
