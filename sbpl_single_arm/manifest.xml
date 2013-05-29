@@ -1,0 +1,43 @@
+<package>
+  <description brief="Motion Planning Research for a Robotic Manipulator">
+
+    Benjamin Cohen - University of Pennsylvania
+    Advised by:
+    Sachin Chitta - Willow Garage
+    Maxim Likhachev - Carnegie Mellon University
+
+  </description>
+  <author>Benjamin Cohen/bcohen@seas.upenn.edu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes="" />
+  <url>http://www.ros.org/wiki/sbpl_arm_planner</url>
+
+	<depend package="roscpp"/>
+  <depend package="sbpl" />
+  <depend package="sbpl_collision_checking" />
+	<depend package="angles" />
+	<depend package="distance_field" />
+
+  <!-- sbpl_arm_model -->
+  <depend package="kdl" />
+  <depend package="kdl_parser" />
+  <depend package="urdf" />
+  <depend package="pr2_arm_kinematics"/>
+	<depend package="tf" />
+  <!--  <depend package="planning_scene" /> -->
+  <depend package="bfs3d" />
+
+  <depend package="sbpl_geometry_utils" />
+  <depend package="planning_models" /> 
+  <!-- <depend package="planning_models_loader" /> -->
+  <!-- <depend package="collision_distance_field" /> -->
+  <depend package="geometric_shapes" />
+  <!-- <depend package="collision_distance_field_ros"/> -->
+
+  <rosdep name="eigen" />
+
+  <export>
+      <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_arm_planner"/>
+  </export>
+
+</package>

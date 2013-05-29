@@ -1,0 +1,66 @@
+planner:
+  epsilon: 100
+  verbose: false
+  search_mode: false
+  allocated_time: 15
+  object_radius: 0.10
+  use_dijkstra_heuristic: true
+  use_research_heuristic: false
+  use_research_grid: true
+  use_inner_circle_of_object: false
+  use_uniform_obstacle_cost: true
+  use_shortened_path: false
+  use_multiresolution_motion_primitives: false
+  obstacle_distance_cost_far: 1
+  obstacle_distance_cost_mid: 1
+  obstacle_distance_cost_near: 15
+  research:
+    solve_with_ik_threshold: 0.06
+    sum_heuristics: false
+    short_distance_mprims_threshold: 0.1
+  
+robot:
+  arm_name: right_arm
+  num_joints: 7
+  waypoint_time: 0.5
+  
+debug:
+  print_out_path: false
+  
+  logging:
+    expands: info
+    expands2: info
+    ik: info
+    arm_model: info
+    collisions: info
+    solution: info
+
+visualizations:
+  heuristic: false
+  goal: false
+  expanded_states: false
+  trajectory: false
+  end_effector_path: false
+  collision_model_trajectory: false
+  trajectory_throttle: 5
+
+collision_space:
+  reference_frame: base_footprint
+  resolution: 0.02
+  collision_map_topic: collision_map_occ    #ignored
+
+  occupancy_grid:
+    origin_x: -0.0   #-0.6
+    origin_y: -0.8   # 1.25 - changed to see if there is a bug in the distance_field class
+    origin_z: -0.05   # -0.05 - ditto
+    size_x: 2.2
+    size_y: 1.5
+    size_z: 2.0
+
+reference_frame: base_footprint
+use_collision_map_from_sensors: false
+left_fk_service_name: pr2_left_arm_kinematics/get_fk
+left_ik_service_name: pr2_left_arm_kinematics/get_ik
+right_fk_service_name: pr2_right_arm_kinematics/get_fk
+right_ik_service_name: pr2_right_arm_kinematics/get_ik
+
