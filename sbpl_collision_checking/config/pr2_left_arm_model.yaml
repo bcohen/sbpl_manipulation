@@ -1,0 +1,69 @@
+groups:
+
+  - name: left_arm
+    joints:
+      l_shoulder_pan_joint
+      l_shoulder_lift_joint
+      l_upper_arm_roll_joint
+      l_elbow_flex_joint
+      l_forearm_roll_joint
+      l_wrist_flex_joint
+      l_wrist_roll_joint
+    collision_links:
+    - name: shoulder
+      root: l_shoulder_pan_link
+      spheres: sh0
+    - name: upper_arm
+      root: l_upper_arm_roll_link
+      spheres: ua0 ua1 ua2 ua3
+    - name: forearm
+      root: l_forearm_roll_link
+      spheres: fa0 fa1 fa2 fa3 fa4 fa5 fa6
+    - name: gripper
+      root: l_wrist_roll_link
+      spheres: gr0 gr1 gr2
+    - name: left_finger
+      root: l_gripper_l_finger_link
+      spheres: lf0 lf1
+    - name: right_finger
+      root: l_gripper_r_finger_link
+      spheres: rf0 rf1
+    - name: right_finger_tip
+      root: l_gripper_r_finger_tip_link
+      spheres: rft0 rft1
+    - name: left_finger_tip
+      root: l_gripper_l_finger_tip_link
+      spheres: lft0 lft1
+
+
+sh0: {x: 0.09, y: 0.0, z: 0.00, radius: 0.16, priority: 5}
+
+ua0: {x: 0.18, y: 0.0, z: 0.00, radius: 0.09, priority: 4}
+ua1: {x: 0.26, y: 0.00, z: -0.035, radius: 0.07, priority: 4}
+ua2: {x: 0.32, y: 0.00, z: -0.035, radius: 0.07, priority: 4}
+ua3: {x: 0.40, y: 0.0, z: 0.01, radius: 0.10, priority: 1}
+
+fa0: {x: 0.13, y: 0.0, z: 0.01, radius: 0.07, priority: 2}
+fa1: {x: 0.19, y: 0.03, z: -0.01, radius: 0.05, priority: 3}
+fa2: {x: 0.19, y: -0.03, z: -0.01, radius: 0.05, priority: 3}
+fa3: {x: 0.25, y: 0.03, z: -0.01, radius: 0.05, priority: 3}
+fa4: {x: 0.25, y: -0.03, z: -0.01, radius: 0.05, priority: 3}
+fa5: {x: 0.32, y: 0.03, z: 0.0, radius: 0.05, priority: 3}
+fa6: {x: 0.32, y: -0.03, z: 0.0, radius: 0.05, priority: 3}
+
+gr0: {x: 0.08, y: -0.02, z: 0.00, radius: 0.04, priority: 2}
+gr1: {x: 0.08, y: 0.02, z: 0.00, radius: 0.04, priority: 2}
+gr2: {x: 0.09, y: 0.0, z: 0.00, radius: 0.04, priority: 2}
+
+lf0: {x: 0.04, y: 0.03, z: 0.00, radius: 0.04, priority: 1}
+lf1: {x: 0.08, y: 0.0175, z: 0.00, radius: 0.035, priority: 1}
+
+rf0: {x: 0.04, y: -0.03, z: 0.00, radius: 0.04, priority: 1}
+rf1: {x: 0.08, y: -0.0175, z: 0.00, radius: 0.035, priority: 1}
+
+rft0: {x: 0.015, y: 0.005, z: 0.00, radius: 0.03, priority: 1}
+rft1: {x: 0.035, y: 0.005, z: 0.00, radius: 0.02, priority: 1}
+
+lft0: {x: 0.015, y: -0.005, z: 0.00, radius: 0.03, priority: 1}
+lft1: {x: 0.035, y: -0.005, z: 0.00, radius: 0.02, priority: 1}
+

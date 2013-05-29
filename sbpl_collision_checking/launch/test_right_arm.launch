@@ -1,0 +1,18 @@
+<launch>
+
+  <node pkg="topic_tools" type="throttle" name="throttle_joint_states" args="messages joint_states 20.0" />
+
+  <node pkg="sbpl_collision_checking" type="testCollisionSpace" name="right_arm_collision_space" output="screen" respawn="false" >
+
+    <param name="arm_name" value="right_arm" />
+
+    <rosparam command="load" file="$(find sbpl_collision_checking)/config/pr2_right_arm_model.yaml" />
+
+    <rosparam command="load" file="$(find sbpl_arm_planner)/config/pr2_right_arm.yaml" />
+
+    <remap from="joint_states" to="joint_states_throttle" />
+
+  </node>
+
+</launch>
+

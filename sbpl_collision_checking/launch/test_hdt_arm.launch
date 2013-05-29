@@ -1,0 +1,10 @@
+<launch>
+
+  <node pkg="sbpl_collision_checking" type="test_space" name="test_collision_model" output="screen" respawn="false" >
+
+    <param name="arm_name" value="hdt_arm" />
+    <rosparam command="load" file="$(find sbpl_collision_checking)/config/hdt_arm.yaml" />
+  </node>
+
+</launch>
+
