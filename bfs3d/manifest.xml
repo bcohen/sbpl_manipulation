@@ -1,0 +1,18 @@
+<package>
+  <description brief="Motion Planning Research for a Robotic Manipulator">
+
+		Written by Harsh Pandey
+		
+  </description>
+  <author>Benjamin Cohen/bcohen@seas.upenn.edu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes="" />
+  <url>http://www.ros.org/wiki/BFS3D</url>
+
+	<depend package="roscpp"/>
+
+  <export>
+      <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lbfs3d"/>
+  </export>
+
+</package>
