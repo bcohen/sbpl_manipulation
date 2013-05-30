@@ -40,8 +40,9 @@ SBPLKinematicModel::SBPLKinematicModel()
   initialized_ = false;
 }
 
-bool SBPLKinematicModel::init(std::string robot_description)
+bool SBPLKinematicModel::init(std::string robot_description, std::vector<std::string> planning_joints)
 {
+  planning_joints_ = planning_joints;
   initialized_ = true;
   return true;
 }
@@ -100,7 +101,7 @@ void SBPLKinematicModel::printKinematicModelInformation(std::string stream)
   ROS_ERROR("Function not filled in.");  
 }
 
-bool SBPLKinematicModel::checkJointLimits(const std::vector<double> &angles, bool verbose)
+bool SBPLKinematicModel::checkJointLimits(const std::vector<double> &angles)
 {
   ROS_ERROR("Function not filled in.");  
   return false;

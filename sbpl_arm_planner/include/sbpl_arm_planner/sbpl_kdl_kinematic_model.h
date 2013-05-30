@@ -44,6 +44,7 @@
 #include <kdl/chain.hpp>
 #include <kdl/chainiksolverpos_nr.hpp>
 #include <kdl/chainiksolvervel_pinv.hpp>
+#include <sbpl_geometry_utils/interpolation.h>
 
 //#include <Eigen/Core>
 
@@ -60,10 +61,12 @@ class SBPLKDLKinematicModel : public SBPLKinematicModel {
     ~SBPLKDLKinematicModel();
    
     /* Initialization */
-    virtual bool init(std::string robot_description);
+    virtual bool init(std::string robot_description, std::vector<std::string> planning_joints);
+
+    bool getJointLimits();
 
     /* Joint Limits */
-    virtual bool checkJointLimits(const std::vector<double> &angles, bool verbose);
+    virtual bool checkJointLimits(const std::vector<double> &angles);
    
     /* Forward Kinematics */
     virtual bool computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f);
@@ -82,7 +85,7 @@ class SBPLKDLKinematicModel : public SBPLKinematicModel {
 
   private:
 
-    urdf::Model robot_model_;
+    boost::shared_ptr<urdf::Model> urdf_;
 
     std::string chain_root_name_;
     std::string chain_tip_name_;
@@ -94,7 +97,14 @@ class SBPLKDLKinematicModel : public SBPLKinematicModel {
     KDL::Frame p_out_;
     KDL::ChainFkSolverPos_recursive *fk_solver_;
     KDL::ChainIkSolverVel_pinv *ik_vel_solver_;
-    KDL::ChainIkSolverVel_NR *ik_solver_;
+    KDL::ChainIkSolverPos_NR *ik_solver_;
+
+    std::vector<bool> continuous_;
+    std::vector<double> min_limits_;
+    std::vector<double> max_limits_;
+    std::map<std::string, int> joint_map_;
+    bool getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous);
+    bool getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous);
 
 };
 

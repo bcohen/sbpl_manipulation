@@ -34,13 +34,19 @@ using namespace std;
 
 namespace sbpl_arm_planner {
 
-SBPLKinematicModel::SBPLKinematicModel()
+SBPLKDLKinematicModel::SBPLKDLKinematicModel()
 {
-  logger_ = "kinematic_model";
-  initialized_ = false;
+  // get ros params for chain_root, chain_tip
 }
 
-bool SBPLKinematicModel::init(std::string robot_description)
+SBPLKDLKinematicModel::~SBPLKDLKinematicModel()
+{
+  delete ik_solver_;
+  delete ik_vel_solver_;
+  delete fk_solver_;
+}
+
+bool SBPLKDLKinematicModel::init(std::string robot_description, std::vector<std::string> planning_joints)
 {
   urdf_ = boost::shared_ptr<urdf::Model>(new urdf::Model());
   if (!urdf_->initString(robot_description))
@@ -55,92 +61,176 @@ bool SBPLKinematicModel::init(std::string robot_description)
     return false;
   }
 
-  if(!kdl_tree_.getChain(chain_root_name_, chain_tip_name_, kchain_))
+  if(!ktree_.getChain(chain_root_name_, chain_tip_name_, kchain_))
   {
-    ROS_ERROR("Failed to fetch the KDL chain for the robot. (root: %s, tip: %s)", chain_root_name.c_str(), chain_tip_name_.c_str());
+    ROS_ERROR("Failed to fetch the KDL chain for the robot. (root: %s, tip: %s)", chain_root_name_.c_str(), chain_tip_name_.c_str());
     return false;
   }
 
   // FK solver
   fk_solver_ = new KDL::ChainFkSolverPos_recursive(kchain_);
-  jnt_pos_in_.resize(chain_.getNrOfJoints());
-  jnt_pos_out_.resize(chain_.getNrOfJoints());
+  jnt_pos_in_.resize(kchain_.getNrOfJoints());
+  jnt_pos_out_.resize(kchain_.getNrOfJoints());
 
   // IK solver
   ik_vel_solver_ = new KDL::ChainIkSolverVel_pinv(kchain_);
-  ik_solver_ = new KDL::ChainIkSolverPos_NR(kchain_, fk_solver_, ik_vel_solver_, 1000, 100);
+  ik_solver_ = new KDL::ChainIkSolverPos_NR(kchain_, *fk_solver_, *ik_vel_solver_, 200);
   
-    
+  planning_joints_ = planning_joints;
+  if(!getJointLimits(planning_joints_, min_limits_, max_limits_, continuous_))
+  {
+    ROS_ERROR("Failed to get the joint limits.");
+    return false;
+  }
+
+  // joint name -> index mapping
+  for(size_t i = 0; i < planning_joints_.size(); ++i)
+    joint_map_[planning_joints_[i]] = i;
+
   initialized_ = true;
   return true;
 }
 
-void SBPLKinematicModel::setLoggerName(std::string name)
+bool SBPLKDLKinematicModel::getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous)
 {
-  logger_ = name;
+  for(size_t i = 0; i < joint_names.size(); ++i)
+  {
+    bool c;
+    if(!getJointLimits(joint_names[i], min_limits[i], max_limits[i], c))
+    {
+      ROS_ERROR("Joint limits were not found for %s.", joint_names[i].c_str());
+      return false;
+    }
+    continuous[i] = c;
+  }
+  return true;
 }
 
-void SBPLKinematicModel::setPlanningJoints(const std::vector<std::string> &joints)
+bool SBPLKDLKinematicModel::getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous)
 {
-  planning_joints_ = joints;
+  bool found_joint = false;
+  boost::shared_ptr<const urdf::Link> link = urdf_->getLink(chain_tip_name_);
+  while(link && (link->name != chain_root_name_) && !found_joint)
+  {
+    boost::shared_ptr<const urdf::Joint> joint = urdf_->getJoint(link->parent_joint->name);
+    if(joint->name.compare(joint_name) == 0)
+    {
+      if(joint->type != urdf::Joint::UNKNOWN && joint->type != urdf::Joint::FIXED)
+      {
+        if(joint->type != urdf::Joint::CONTINUOUS)
+        {
+          continuous = false;
+
+          if(joint->safety == NULL)
+          {
+            min_limit = joint->limits->lower;
+            max_limit = joint->limits->upper;
+          }
+          else
+          {
+            min_limit = joint->safety->soft_lower_limit;
+            max_limit = joint->safety->soft_upper_limit;
+          }
+        }
+        else
+        {
+          min_limit = -M_PI;
+          max_limit = M_PI;
+          continuous = true;
+        }
+      }
+      found_joint = true;
+    }
+    link = urdf_->getLink(link->getParent()->name);
+  }
+  return found_joint;
 }
 
-void SBPLKinematicModel::setPlanningLink(std::string name)
+bool SBPLKDLKinematicModel::checkJointLimits(const std::vector<double> &angles)
 {
-  planning_link_ = name;
+  std::vector<double> a = angles;
+  if(!sbpl::interp::NormalizeAnglesIntoRange(a, min_limits_, max_limits_))
+  {
+    ROS_ERROR("Joint angles are out of bounds.");  
+    return false;
+  }
+
+  return true;
 }
 
-void SBPLKinematicModel::setPlanningFrame(std::string name)
+bool SBPLKDLKinematicModel::computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f)
 {
-  planning_frame_ = name;
+  for(size_t i = 0; i < angles.size(); ++i)
+    jnt_pos_in_(i) = angles::normalize_angle(angles[i]);
+
+  KDL::Frame f1;
+  if(fk_solver_->JntToCart(jnt_pos_in_, f1, joint_map_[name]) < 0)
+  {
+    ROS_ERROR("JntToCart returned < 0.");
+    return false;
+  }
+
+  f = f1;
+  f.p = T_kinematics_to_planning_ * f1.p;
+  return true;
 }
 
-void SBPLKinematicModel::getKinematicsFrame(std::string &name)
+bool SBPLKDLKinematicModel::computeFK(const std::vector<double> &angles, std::string name, std::vector<double> &pose)
 {
-  name = kinematics_frame_;
-}
-
-bool SBPLKinematicModel::computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f)
-{
-  ROS_ERROR("Function not filled in.");  
+  KDL::Frame f;
+  pose.resize(6);
+  if(computeFK(angles, name, f))
+  {
+    pose[0] = f.p[0];
+    pose[1] = f.p[1];
+    pose[2] = f.p[2];
+    f.M.GetRPY(pose[3], pose[4], pose[5]);
+    return true;
+  }
   return false;
 }
 
-bool SBPLKinematicModel::computeFK(const std::vector<double> &angles, std::string name, std::vector<double> &pose)
+bool SBPLKDLKinematicModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
+{
+  return computeFastIK(pose, start, solution);
+}
+
+bool SBPLKDLKinematicModel::computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
+{
+  //pose: {x,y,z,r,p,y} or {x,y,z,qx,qy,qz,qw}
+
+  KDL::Frame frame_des;
+  frame_des.p.x(pose[0]);
+  frame_des.p.y(pose[1]);
+  frame_des.p.z(pose[2]);
+
+  // RPY
+  if(pose.size() == 6)
+    frame_des.M = KDL::Rotation::RPY(pose[3],pose[4],pose[5]);
+  // quaternion
+  else
+    frame_des.M = KDL::Rotation::Quaternion(pose[3],pose[4],pose[5],pose[6]);
+
+  // transform into kinematics frame
+  frame_des.p = T_planning_to_kinematics_ * frame_des.p;
+
+  // seed configuration
+  for(size_t i = 0; i < start.size(); i++)
+    jnt_pos_in_(i) = angles::normalize_angle(start[i]); // must be normalized for CartToJntSearch
+
+  if(ik_solver_->CartToJnt(jnt_pos_in_, frame_des, jnt_pos_out_, 0.3) < 0)
+    return false;
+
+  solution.resize(start.size());
+  for(size_t i = 0; i < solution.size(); ++i)
+    solution[i] = jnt_pos_out_(i);
+
+  return true;
+}
+
+void SBPLKDLKinematicModel::printKinematicModelInformation(std::string stream)
 {
   ROS_ERROR("Function not filled in.");  
-  return false;
 }
-
-bool SBPLKinematicModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
-{
-  ROS_ERROR("Function not filled in."); 
-  return false;
-}
-
-bool SBPLKinematicModel::computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
-{
-  ROS_ERROR("Function not filled in.");  
-  return false;
-}
-
-void SBPLKinematicModel::printKinematicModelInformation(std::string stream)
-{
-  ROS_ERROR("Function not filled in.");  
-}
-
-bool SBPLKinematicModel::checkJointLimits(const std::vector<double> &angles, bool verbose)
-{
-  ROS_ERROR("Function not filled in.");  
-  return false;
-}
-
-void SBPLKinematicModel::setKinematicsToPlanningTransform(const KDL::Frame &f, std::string name)
-{
-  T_kinematics_to_planning_ = f;
-  T_planning_to_kinematics_ = f.Inverse();
-  planning_frame_ = name;
-}
-
 
 }

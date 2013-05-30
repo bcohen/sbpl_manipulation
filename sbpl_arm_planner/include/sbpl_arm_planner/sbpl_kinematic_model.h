@@ -35,8 +35,6 @@
 #include <ros/console.h>
 #include <angles/angles.h>
 #include <kdl/frames.hpp>
-#include <urdf/model.h>
-//#include <Eigen/Core>
 
 using namespace std;
 
@@ -51,7 +49,7 @@ class SBPLKinematicModel {
     ~SBPLKinematicModel();
    
     /* Initialization */
-    virtual bool init(std::string robot_description);
+    virtual bool init(std::string robot_description, std::vector<std::string> planning_joints);
 
     void setPlanningJoints(const std::vector<std::string> &joints);
 
@@ -62,7 +60,7 @@ class SBPLKinematicModel {
     void getKinematicsFrame(std::string &name);
 
     /* Joint Limits */
-    virtual bool checkJointLimits(const std::vector<double> &angles, bool verbose);
+    virtual bool checkJointLimits(const std::vector<double> &angles);
    
     double getMaxJointLimit(std::string name);
 
@@ -89,7 +87,7 @@ class SBPLKinematicModel {
     void setKinematicsToPlanningTransform(const KDL::Frame &f, std::string name);
 
 
-  private:
+  protected:
 
     bool initialized_;
 
@@ -101,9 +99,6 @@ class SBPLKinematicModel {
 
     /** \brief frame that the kinematics is computed in (i.e. robot base) */
     std::string kinematics_frame_;
-
-    /** \brief the robot model */
-    urdf::Model robot_model_;
 
     /** \brief the link that is being planned for (i.e. wrist) */
     std::string planning_link_;
