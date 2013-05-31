@@ -28,7 +28,7 @@
  */
  /** \author Benjamin Cohen */
 
-#include <sbpl_arm_planner/sbpl_kinematic_model.h>
+#include <sbpl_manipulation_components/sbpl_kinematic_model.h>
 
 using namespace std;
 

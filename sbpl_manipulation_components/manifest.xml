@@ -1,14 +1,26 @@
 <package>
-  <description brief="sbpl_manipulation_components">
+  <description brief="Motion Planning Research for a Robotic Manipulator">
 
-     sbpl_manipulation_components
+    Benjamin Cohen - University of Pennsylvania
+    Advised by:
+    Sachin Chitta - Willow Garage
+    Maxim Likhachev - Carnegie Mellon University
 
   </description>
-  <author>Ben Cohen</author>
+  <author>Benjamin Cohen/bcohen@seas.upenn.edu</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/sbpl_manipulation_components</url>
+  <review status="unreviewed" notes="" />
+  <url>http://www.ros.org/wiki/sbpl_arm_planner</url>
+
+	<depend package="roscpp"/>
+  <depend package="sbpl" />
+	<depend package="angles" />
+	<depend package="distance_field" />
+  <depend package="kdl" />
+  <depend package="sbpl_geometry_utils" />
+
+  <export>
+      <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_manipulation_components"/>
+  </export>
 
 </package>
-
-

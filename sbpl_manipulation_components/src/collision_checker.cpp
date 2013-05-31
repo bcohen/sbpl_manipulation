@@ -1,4 +1,4 @@
-#include <sbpl_arm_planner/collision_checker.h>
+#include <sbpl_manipulation_components/collision_checker.h>
 
 CollisionChecker::CollisionChecker()
 {
