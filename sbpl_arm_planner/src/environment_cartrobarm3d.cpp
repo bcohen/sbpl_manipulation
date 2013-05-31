@@ -28,13 +28,7 @@
  */
 /** \author Benjamin Cohen bcohen@seas.upenn.edu */
 
-#include <sbpl_cartesian_arm_planner/environment_cartrobarm3d.h>
-
-
-// for statistics
-bool near_goal = false;
-clock_t starttime;
-double time_to_goal_region;
+#include <sbpl_arm_planner/environment_cartrobarm3d.h>
 
 using namespace std;
 
@@ -148,7 +142,7 @@ void EnvironmentCARTROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, 
   for(size_t p = 0; p < parent->angles.size(); ++p)
     parent_angles[p] = parent->angles[p];
 
-  int xyz_heur = getBFSCostToGoal(parent->coord[0], parent->coord[1], parent->coord[2]);
+  //int xyz_heur = getBFSCostToGoal(parent->coord[0], parent->coord[1], parent->coord[2]);
   stateIDToWorldPose(SourceStateID, xyz_source, rpy_source, &fa_source);
   ROS_DEBUG_NAMED(prms_.expands_log_, "[Source: %d] xyz: %.3f %.3f %.3f  rpy: % 2.3f % 2.3f % 2.3f  fa: % 2.3f  heur: %3d   {[dist to goal] xyz: %2d %2d %2d}",SourceStateID,xyz_source[0],xyz_source[1],xyz_source[2],rpy_source[0],rpy_source[1],rpy_source[2],fa_source, parent->heur, EnvROBARM.goalHashEntry->xyz[0] - parent->coord[0], EnvROBARM.goalHashEntry->xyz[1] - parent->coord[1], EnvROBARM.goalHashEntry->xyz[2] - parent->coord[2]);
 
@@ -505,14 +499,14 @@ bool EnvironmentCARTROBARM3D::setStartConfiguration(std::vector<double> angles)
 {
   //getHeuristic_ = &sbpl_arm_planner::EnvironmentROBARM3D::getXYZRPYHeuristic;
 
-  if(int(angles.size()) < arm_->num_joints_)
+  if(int(angles.size()) < num_joints_)
   {
-    ROS_WARN("[env] Failed to set start configuration. Not enough joint positions. (expected %d, received %d)", arm_->num_joints_, int(angles.size()));
+    ROS_WARN("[env] Failed to set start configuration. Not enough joint positions. (expected %d, received %d)", num_joints_, int(angles.size()));
     return false;
   }
 
   //check joint limits of starting configuration but plan anyway
-  if(!arm_->checkJointLimits(angles, true))
+  if(!arm_->checkJointLimits(angles))
     ROS_WARN("[env] Starting configuration violates the joint limits. Attempting to plan anyway.");
 
   unsigned char dist = 100;
@@ -608,7 +602,7 @@ bool EnvironmentCARTROBARM3D::setGoalPosition(const std::vector<std::vector<doub
   for (int z = 0; z < dimZ - 2; z++)
     for (int y = 0; y < dimY - 2; y++)
       for (int x = 0; x < dimX - 2; x++)
-        if (df->getDistanceFromCell(x,y,z) <= arm_->getLinkRadius(2))
+        if (df->getDistanceFromCell(x,y,z) <= heuristic_sphere_)
         {
           bfs_->setWall(x + 1, y + 1, z + 1);
           walls++;
@@ -698,7 +692,7 @@ void EnvironmentCARTROBARM3D::anglesToCoord(const std::vector<double> &angles, s
 {
   std::vector<double> pose(6,0);
   
-  arm_->getPlanningJointPose(angles, pose);
+  arm_->computePlanningLinkFK(angles, pose);
   
   double fangle=angles[free_angle_index_];
   double wxyz[3] = {pose[0], pose[1], pose[2]};
@@ -1398,7 +1392,7 @@ int EnvironmentCARTROBARM3D::getJointAnglesForMotionPrimWaypoint(const std::vect
 int EnvironmentCARTROBARM3D::isMotionValid(const std::vector<double> &start, const std::vector<double> &end, int &motion_length, int &nchecks, unsigned char &dist)
 {
   //check joint limits of end configuration (assume start is valid)
-  if(!arm_->checkJointLimits(end, prms_.verbose_))
+  if(!arm_->checkJointLimits(end))
     return -1;
 
   //check for collisions

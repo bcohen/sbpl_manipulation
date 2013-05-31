@@ -31,9 +31,12 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_library(sbpl_arm_planner 
 			src/environment_statistics.cpp
 			src/environment_robarm3d.cpp
+			src/environment_cartrobarm3d.cpp
 #			src/utils.cpp
-			src/sbpl_geometry_utils.cpp
-			src/sbpl_arm_model.cpp
+#			src/sbpl_geometry_utils.cpp
+#			src/sbpl_arm_model.cpp
+      src/sbpl_kinematic_model.cpp
+      src/sbpl_kdl_kinematic_model.cpp
 			src/sbpl_arm_planner_params.cpp
 			src/pr2/sbpl_math.cpp
 			src/pr2/orientation_solver.cpp)

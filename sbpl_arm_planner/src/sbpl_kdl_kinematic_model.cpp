@@ -190,6 +190,29 @@ bool SBPLKDLKinematicModel::computeFK(const std::vector<double> &angles, std::st
   return false;
 }
 
+bool SBPLKDLKinematicModel::computePlanningLinkFK(const std::vector<double> &angles, std::vector<double> &pose)
+{
+  KDL::Frame f, f1;
+  pose.resize(6);
+  for(size_t i = 0; i < angles.size(); ++i)
+    jnt_pos_in_(i) = angles::normalize_angle(angles[i]);
+
+  if(fk_solver_->JntToCart(jnt_pos_in_, f1, joint_map_[planning_link_]) < 0)
+  {
+    ROS_ERROR("JntToCart returned < 0.");
+    return false;
+  }
+
+  f = f1;
+  f.p = T_kinematics_to_planning_ * f1.p;
+
+  pose[0] = f.p[0];
+  pose[1] = f.p[1];
+  pose[2] = f.p[2];
+  f.M.GetRPY(pose[3], pose[4], pose[5]);
+  return true;
+}
+
 bool SBPLKDLKinematicModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
 {
   return computeFastIK(pose, start, solution);
@@ -218,7 +241,7 @@ bool SBPLKDLKinematicModel::computeFastIK(const std::vector<double> &pose, const
   for(size_t i = 0; i < start.size(); i++)
     jnt_pos_in_(i) = angles::normalize_angle(start[i]); // must be normalized for CartToJntSearch
 
-  if(ik_solver_->CartToJnt(jnt_pos_in_, frame_des, jnt_pos_out_, 0.3) < 0)
+  if(ik_solver_->CartToJnt(jnt_pos_in_, frame_des, jnt_pos_out_) < 0)
     return false;
 
   solution.resize(start.size());

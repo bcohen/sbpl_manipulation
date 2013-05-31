@@ -103,9 +103,9 @@ class SBPLKDLKinematicModel : public SBPLKinematicModel {
     std::vector<double> min_limits_;
     std::vector<double> max_limits_;
     std::map<std::string, int> joint_map_;
+
     bool getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous);
     bool getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous);
-
 };
 
 }

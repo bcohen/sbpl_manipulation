@@ -33,11 +33,6 @@
 #define DEG2RAD(d) ((d)*(M_PI/180.0))
 #define RAD2DEG(r) ((r)*(180.0/M_PI))
 
-//Statistics
-bool near_goal = false;
-clock_t starttime;
-double time_to_goal_region;
-
 using namespace std;
 
 namespace sbpl_arm_planner
@@ -57,6 +52,7 @@ EnvironmentROBARM3D::EnvironmentROBARM3D() : grid_(NULL),arm_(NULL),rpysolver_(N
   EnvROBARMCfg.ik_solution.resize(7,0);
   save_expanded_states = true;
   using_short_mprims_ = false;
+  near_goal = false;
 
   prms_.environment_type_ = "jointspace";
 
@@ -184,8 +180,8 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
   unsigned char dist=0;
   int endeff[3]={0};
   int path_length=0, nchecks=0;
-  std::vector<int> succcoord(arm_->num_joints_,0);
-  std::vector<double> pose(6,0), angles(arm_->num_joints_,0), source_angles(arm_->num_joints_,0);
+  std::vector<int> succcoord(num_joints_,0);
+  std::vector<double> pose(6,0), angles(num_joints_,0), source_angles(num_joints_,0);
 
   //to support two sets of succesor actions
   int actions_i_min = 0, actions_i_max = prms_.num_long_dist_mprims_;
@@ -202,7 +198,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
   EnvROBARM3DHashEntry_t* HashEntry = EnvROBARM.StateID2CoordTable[SourceStateID];
 
   //default coords of successor
-  for(i = 0; i < arm_->num_joints_; i++)
+  for(i = 0; i < num_joints_; i++)
     succcoord[i] = HashEntry->coord[i];
 
   //used for interpolated collision check
@@ -235,7 +231,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     stats_.total_num_solver_used_[solver_types::NONE]++;
 
     //add the motion primitive to the current joint configuration
-    for(a = 0; a < arm_->num_joints_; ++a)
+    for(a = 0; a < num_joints_; ++a)
     {
       if((HashEntry->coord[a] + int(prms_.mprims_[i][a])) < 0)
         succcoord[a] = ((EnvROBARMCfg.coord_vals[a] + HashEntry->coord[a] + int(prms_.mprims_[i][a])) % EnvROBARMCfg.coord_vals[a]);
@@ -252,7 +248,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     coordToAngles(succcoord, angles);
 
     //check joint limits
-    if(!arm_->checkJointLimits(angles, prms_.verbose_))
+    if(!arm_->checkJointLimits(angles))
       continue;
 
     //check for collisions
@@ -274,7 +270,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     stats_.nchecks_per_solver_per_succ_[solver_types::NONE] += nchecks;
 
     //get end effector position 
-    if(!arm_->getPlanningJointPose(angles, pose))
+    if(!arm_->computePlanningLinkFK(angles, pose))
       continue;
 
     //get grid coordinates of endeff
@@ -285,7 +281,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     {
       bSuccisGoal = true;
 
-      for (int j = 0; j < arm_->num_joints_; j++)
+      for (int j = 0; j < num_joints_; j++)
         EnvROBARM.goalHashEntry->coord[j] = succcoord[j];
 
       EnvROBARM.goalHashEntry->xyz[0] = endeff[0];
@@ -461,7 +457,7 @@ void EnvironmentROBARM3D::initHeuristics()
 
 void EnvironmentROBARM3D::discretizeAngles()
 {
-  for(int i = 0; i < arm_->num_joints_; i++)
+  for(int i = 0; i < num_joints_; i++)
   {
     EnvROBARMCfg.coord_delta[i] = (2.0*M_PI) / prms_.angle_delta_;
     EnvROBARMCfg.coord_vals[i] = prms_.angle_delta_;
@@ -490,13 +486,13 @@ int EnvironmentROBARM3D::cost(EnvROBARM3DHashEntry_t* HashEntry1, EnvROBARM3DHas
 bool EnvironmentROBARM3D::initEnvConfig()
 {
   int endeff[3] = {0};
-  std::vector<int> coord(arm_->num_joints_,0);
+  std::vector<int> coord(num_joints_,0);
 
   //these probably don't have to be done
-  EnvROBARMCfg.ik_solution.resize(arm_->num_joints_,0);
+  EnvROBARMCfg.ik_solution.resize(num_joints_,0);
 
-  EnvROBARMCfg.coord_delta.resize(arm_->num_joints_);
-  EnvROBARMCfg.coord_vals.resize(arm_->num_joints_);
+  EnvROBARMCfg.coord_delta.resize(num_joints_);
+  EnvROBARMCfg.coord_vals.resize(num_joints_);
 
   discretizeAngles();
 
@@ -518,14 +514,8 @@ bool EnvironmentROBARM3D::initEnvConfig()
 
 bool EnvironmentROBARM3D::initArmModel(FILE* aCfg, const std::string robot_description)
 {
-  arm_ = new SBPLArmModel(aCfg);
-
-  arm_->setResolution(prms_.resolution_);
-  
-  if(arm_->initKDLChain(robot_description))
-    return true;
-  else
-    return false; 
+  arm_ = new SBPLKDLKinematicModel();
+  return arm_->init(robot_description, planning_joints_);
 }
 
 bool EnvironmentROBARM3D::initEnvironment(std::string arm_description_filename, std::string mprims_filename, std::string urdf, std::string srdf)
@@ -613,7 +603,7 @@ bool EnvironmentROBARM3D::initGeneral()
   
   if(prms_.verbose_)
   {
-    arm_->printArmDescription(std::string("sbpl_arm"));
+    //arm_->printArmDescription(std::string("sbpl_arm"));
     prms_.printParams(std::string("sbpl_arm"));
     prms_.printMotionPrims(std::string("sbpl_arm"));
   }
@@ -726,7 +716,7 @@ bool EnvironmentROBARM3D::isGoalStateWithIK(const std::vector<double> &pose, con
   stats_.total_num_solver_used_[solver_types::IK_SEARCH]++;
 
   //check joint limits
-  if(!arm_->checkJointLimits(EnvROBARMCfg.ik_solution, false))
+  if(!arm_->checkJointLimits(EnvROBARMCfg.ik_solution))
   {
     EnvROBARMCfg.num_ik_invalid_joint_limits++;
     return false;
@@ -740,7 +730,7 @@ bool EnvironmentROBARM3D::isGoalStateWithIK(const std::vector<double> &pose, con
     return false;
   }
 
-  std::vector<std::vector<double> > path(2, std::vector<double>(arm_->num_joints_,0));
+  std::vector<std::vector<double> > path(2, std::vector<double>(num_joints_,0));
   for(unsigned int i = 0; i < path[0].size(); ++i)
   {
     path[0][i] = jnt_angles[i];
@@ -841,15 +831,15 @@ bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles
   int x,y,z;
   std::vector<double> pose(6,0);
 
-  if(int(angles.size()) < arm_->num_joints_)
+  if(int(angles.size()) < num_joints_)
     return false;
 
   //get joint positions of starting configuration
-  if(!arm_->getPlanningJointPose(angles, pose))
+  if(!arm_->computePlanningLinkFK(angles, pose))
     ROS_WARN("Unable to compute forward kinematics for initial robot state. Attempting to plan anyway.");
 
   //check joint limits of starting configuration but plan anyway
-  if(!arm_->checkJointLimits(angles, true))
+  if(!arm_->checkJointLimits(angles))
     ROS_WARN("Starting configuration violates the joint limits. Attempting to plan anyway.");
 
   //check if the start configuration is in collision but plan anyway
@@ -927,7 +917,7 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
   EnvROBARM.goalHashEntry->xyz[2] = EnvROBARMCfg.goal.xyz_disc[2]; 
   EnvROBARM.goalHashEntry->action = 0;
 
-  for(int i = 0; i < arm_->num_joints_; i++)
+  for(int i = 0; i < num_joints_; i++)
     EnvROBARM.goalHashEntry->coord[i] = 0;
 
   ROS_DEBUG_NAMED("search", "\n-----------------------------------------------------------------------------------");
@@ -950,7 +940,7 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
   for (int z = 0; z < dimZ - 2; z++)
     for (int y = 0; y < dimY - 2; y++)
       for (int x = 0; x < dimX - 2; x++)
-        if (df->getDistanceFromCell(x,y,z) <= arm_->getLinkRadius(2))
+        if (df->getDistanceFromCell(x,y,z) <= heuristic_sphere_)
         {
           bfs_->setWall(x + 1, y + 1, z + 1);
           walls++;
@@ -1010,7 +1000,7 @@ void EnvironmentROBARM3D::StateID2Angles(int stateID, std::vector<double> &angle
 void EnvironmentROBARM3D::printJointArray(FILE* fOut, EnvROBARM3DHashEntry_t* HashEntry, bool bGoal, bool bVerbose)
 {
   int i;
-  std::vector<double> angles(arm_->num_joints_,0);
+  std::vector<double> angles(num_joints_,0);
 
   if(bGoal)
     coordToAngles(EnvROBARM.goalHashEntry->coord, angles);
@@ -1043,13 +1033,13 @@ std::vector<int> EnvironmentROBARM3D::debugExpandedStates()
 
 void EnvironmentROBARM3D::getExpandedStates(std::vector<std::vector<double> >* ara_states)
 {
-  std::vector<double> angles(arm_->num_joints_,0);
+  std::vector<double> angles(num_joints_,0);
   std::vector<double>state(7,0);
 
   for(unsigned int i = 0; i < expanded_states.size(); ++i)
   {
     StateID2Angles(expanded_states[i],angles);
-    arm_->getPlanningJointPose(angles,state);
+    arm_->computePlanningLinkFK(angles,state);
     state[6] = EnvROBARM.StateID2CoordTable[expanded_states[i]]->heur;
     ara_states->push_back(state);
   }
@@ -1059,21 +1049,21 @@ void EnvironmentROBARM3D::computeCostPerCell()
 {
   int largest_action=0;
   double gridcell_size, eucl_dist, max_dist = 0;
-  std::vector<double> pose(6,0), start_pose(6,0), angles(arm_->num_joints_,0), start_angles(arm_->num_joints_,0);
+  std::vector<double> pose(6,0), start_pose(6,0), angles(num_joints_,0), start_angles(num_joints_,0);
 
   gridcell_size = grid_->getResolution();
 
   //starting at zeroed angles, find end effector position after each action
-  arm_->getPlanningJointPose(start_angles, start_pose);
+  arm_->computePlanningLinkFK(start_angles, start_pose);
 
   //iterate through all possible actions and find the one with the minimum cost per cell
   for (int i = 0; i < prms_.num_mprims_; i++)
   {
-    for(int j = 0; j < arm_->num_joints_; j++)
+    for(int j = 0; j < num_joints_; j++)
       angles[j] = DEG2RAD(prms_.mprims_[i][j]);
 
     //starting at zeroed angles, find end effector position after each action
-    if(!arm_->getPlanningJointPose(angles, pose))
+    if(!arm_->computePlanningLinkFK(angles, pose))
     {
       ROS_WARN("[env] Failed to compute cost per cell because forward kinematics is returning an error.");
       return;
@@ -1161,13 +1151,13 @@ void EnvironmentROBARM3D::getBresenhamPath(const int a[],const int b[], std::vec
 
 void EnvironmentROBARM3D::setKinematicsToPlanningTransform(KDL::Frame f, std::string &name)
 {
-  arm_->setRefFrameTransform(f, name);
+  arm_->setKinematicsToPlanningTransform(f, name);
 }
 
 std::string EnvironmentROBARM3D::getKinematicsRootFrameName()
 {
   std::string name;
-  arm_->getArmChainRootLinkName(name);
+  arm_->getKinematicsFrame(name);
   return name;
 }
 
@@ -1193,7 +1183,8 @@ int EnvironmentROBARM3D::getEndEffectorHeuristic(int FromStateID, int ToStateID)
 
 void EnvironmentROBARM3D::getCollisionCuboids(std::vector<std::string> &cube_frames, std::vector<std::vector<double> > &cubes)
 {
-  arm_->getCollisionCuboids(cube_frames, cubes);
+  ROS_ERROR("GetCollisionCuboids needs to be moved to Collision Checker!");
+  //arm_->getCollisionCuboids(cube_frames, cubes);
 }
 
 void EnvironmentROBARM3D::printEnvironmentStats()

@@ -90,7 +90,7 @@ class SBPLArmPlannerParams
     void initFromParamServer();
 
     /** \brief grab parameters from a text file */
-    bool initFromParamFile(std::string param_file);
+//    bool initFromParamFile(std::string param_file);
     
     /** \brief grab motion primitives from a text file */
     bool initMotionPrimsFromFile(FILE* fCfg);
@@ -99,7 +99,7 @@ class SBPLArmPlannerParams
     bool initLongMotionPrimsFromFile(FILE* fCfg);
 
     /** \brief grab parameters from a text file */
-    bool initFromParamFile(FILE* fCfg);
+//    bool initFromParamFile(FILE* fCfg);
 
     /** \brief print out the parameters */
     void printParams(std::string stream);
@@ -113,7 +113,7 @@ class SBPLArmPlannerParams
     /** \brief print the motion primitives */
     void printMotionPrims(std::string stream);
 
-    double getSmallestShoulderPanMotion();
+//    double getSmallestShoulderPanMotion();
 
     /** \brief NOTE: For computing cost for IK and OS solutions */
     double getLargestMotionPrimOffset();
@@ -207,7 +207,7 @@ class SBPLArmPlannerParams
     int is_goal_function_;
 
     /** \brief call the orientation solver twice (try rotating the wrist clockwise and then counter-clockwise) */
-    bool two_calls_to_op_;
+//    bool two_calls_to_op_;
 
     /** \brief use the elbow heuristic */
     bool use_research_heuristic_;

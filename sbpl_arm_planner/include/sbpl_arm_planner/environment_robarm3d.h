@@ -45,13 +45,14 @@
 #include <angles/angles.h>
 #include <bfs3d/BFS_3D.h>
 #include <sbpl/headers.h>
+#include <sbpl_arm_planner/sbpl_kdl_kinematic_model.h>
 #include <sbpl_arm_planner/sbpl_arm_planner_params.h>
 #include <sbpl_arm_planner/pr2/sbpl_math.h>
 #include <sbpl_arm_planner/pr2/orientation_solver.h>
 #include <sbpl_arm_planner/environment_statistics.h>
 #include <sbpl_collision_checking/sbpl_collision_space.h>
-// #include <planning_scene/planning_scene.h>
 
+// #include <planning_scene/planning_scene.h>
 //#include <sbpl_arm_planner/collision_checker.h>
 
 namespace sbpl_arm_planner {
@@ -329,7 +330,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     bool using_short_mprims_;
 
     OccupancyGrid *grid_;
-    SBPLArmModel *arm_;
+    SBPLKinematicModel *arm_;
     RPYSolver *rpysolver_;
     SBPLCollisionSpace *cspace_;
     SBPLArmPlannerParams prms_;
@@ -337,6 +338,17 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     EnvironmentStatistics stats_;
     BFS_3D *bfs_;
     //CollisionChecker* cc_;
+
+    //USED TO BE STATIC VARS
+    bool near_goal;
+    clock_t starttime;
+    double time_to_goal_region;
+
+    // NEW THINGS WE ARE ADDING
+    int num_joints_;
+    int heuristic_sphere_;
+    std::vector<std::string> planning_joints_;
+
 
     // function pointers for heuristic function
     int (EnvironmentROBARM3D::*getHeuristic_) (int FromStateID, int ToStateID);

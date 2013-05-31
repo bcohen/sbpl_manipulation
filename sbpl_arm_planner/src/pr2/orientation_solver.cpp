@@ -10,8 +10,10 @@
 #define PI 3.14159
 
 #define DEBUG 0
-#define END_EFF 9
-#define FOREARM_ROLL 6
+#define END_EFF "endeffector" //9
+#define FOREARM_ROLL "forearm" //6
+
+#define NUM_JOINTS 7
 
 namespace sbpl_arm_planner
 {
@@ -20,7 +22,7 @@ namespace sbpl_arm_planner
 #define WRIST_PITCH_LIMIT_MAX   114   //These values are in degrees (for ease of understanding).
 #define WRIST_PITCH_LIMIT_MIN   0     //The corresponding radian values are approximately 2 and 0.1.
 
-RPYSolver::RPYSolver(SBPLArmModel* arm, SBPLCollisionSpace* cspace)
+RPYSolver::RPYSolver(SBPLKinematicModel* arm, SBPLCollisionSpace* cspace)
 {
   arm_ = arm;
   cspace_ = cspace;
@@ -441,7 +443,7 @@ SET_ANGLES_AGAIN: //GoTO label, temporary, do not continue use of this
       num_invalid_solution_++;
       return false;
     }
-    std::vector<std::vector<double> > path(2, std::vector<double>(arm_->num_joints_,0));
+    std::vector<std::vector<double> > path(2, std::vector<double>(NUM_JOINTS,0));
 
     for(i = 0; i < path[0].size(); i++)
     {
