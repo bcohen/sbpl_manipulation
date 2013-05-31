@@ -1,0 +1,14 @@
+<package>
+  <description brief="sbpl_manipulation_components">
+
+     sbpl_manipulation_components
+
+  </description>
+  <author>Ben Cohen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sbpl_manipulation_components</url>
+
+</package>
+
+
