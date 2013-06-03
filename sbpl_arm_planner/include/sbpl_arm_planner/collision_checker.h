@@ -18,12 +18,16 @@ class CollisionChecker
     /* Initialization */
     virtual bool init(std::string group_name);
 
-    void setPlanningJoints(const std::vector<std::string> &planning_joints);
+    virtual void setPlanningJoints(const std::vector<std::string> &planning_joints);
 
     /* Collision Checking */
-    virtual bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
+    virtual bool isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
+   
+    virtual bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, double &dist);
 
-    virtual bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist);
+    //virtual bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
+
+    //virtual bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist);
 
     /* Utils */
     virtual bool interpolatePath(const std::vector<double> &start, const std::vector<double> &end, const std::vector<double> &inc, std::vector<std::vector<double> >& path);
@@ -31,7 +35,7 @@ class CollisionChecker
   protected:
 
     std::string group_name_;
-    std::vector<std::string> planning_joints;
+    std::vector<std::string> planning_joints_;
 };
 
 #endif

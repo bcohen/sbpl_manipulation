@@ -41,7 +41,7 @@ class EnvironmentCARTROBARM3D: public EnvironmentROBARM3D
 {
   public:
 
-    EnvironmentCARTROBARM3D();
+    EnvironmentCARTROBARM3D(OccupancyGrid *grid, SBPLKinematicModel *kmodel, CollisionChecker *cc);
 
     ~EnvironmentCARTROBARM3D();
     

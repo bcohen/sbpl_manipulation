@@ -22,7 +22,7 @@ namespace sbpl_arm_planner
 #define WRIST_PITCH_LIMIT_MAX   114   //These values are in degrees (for ease of understanding).
 #define WRIST_PITCH_LIMIT_MIN   0     //The corresponding radian values are approximately 2 and 0.1.
 
-RPYSolver::RPYSolver(SBPLKinematicModel* arm, SBPLCollisionSpace* cspace)
+RPYSolver::RPYSolver(SBPLKinematicModel* arm, CollisionChecker* cspace)
 {
   arm_ = arm;
   cspace_ = cspace;
@@ -369,7 +369,7 @@ void RPYSolver::orientationSolver(double* output, double phi, double theta, doub
 bool RPYSolver::isOrientationFeasible(const double* rpy, std::vector<double> &start, std::vector<double> &prefinal, std::vector<double> &final, int &num_checks)
 {
   bool try_both_rotations = try_both_directions_;
-  unsigned char dist=0;
+  double dist=0;
   unsigned int i=0;
   unsigned int my_count=0;
   double hand_rotations[4];
@@ -437,7 +437,7 @@ SET_ANGLES_AGAIN: //GoTO label, temporary, do not continue use of this
 
     //check for collisions
     num_checks++;
-    if(!cspace_->checkCollision(goal_joint_config, verbose_, false, dist))
+    if(!cspace_->isStateValid(goal_joint_config, verbose_, false, dist))
     //if(!cspace_->checkLinkForCollision(goal_joint_config, link_num, verbose_, dist))
     {
       num_invalid_solution_++;
@@ -454,7 +454,7 @@ SET_ANGLES_AGAIN: //GoTO label, temporary, do not continue use of this
     //check for collisions along the path
     num_path_checks = 0;
     int path_length;
-    if(!cspace_->checkPathForCollision(start, goal_joint_config, verbose_, path_length, num_path_checks, dist))
+    if(!cspace_->isStateToStateValid(start, goal_joint_config, path_length, num_path_checks, dist))
     {
       num_checks += num_path_checks;
       //try rotating in the opposite direction

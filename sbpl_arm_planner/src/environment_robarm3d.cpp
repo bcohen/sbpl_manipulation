@@ -38,8 +38,12 @@ using namespace std;
 namespace sbpl_arm_planner
 {
 
-EnvironmentROBARM3D::EnvironmentROBARM3D() : grid_(NULL),arm_(NULL),rpysolver_(NULL),cspace_(NULL),bfs_(NULL)
+EnvironmentROBARM3D::EnvironmentROBARM3D(OccupancyGrid *grid, SBPLKinematicModel *kmodel, CollisionChecker *cc) : rpysolver_(NULL), bfs_(NULL)
 {
+  grid_ = grid;
+  kmodel_ = kmodel;
+  cc_ = cc;
+
   EnvROBARM.Coord2StateIDHashTable = NULL;
   EnvROBARMCfg.bInitialized = false;
   EnvROBARMCfg.solved_by_ik = 0;
@@ -63,12 +67,6 @@ EnvironmentROBARM3D::~EnvironmentROBARM3D()
 {
   if(rpysolver_ != NULL)
     delete rpysolver_;
-  if(cspace_ != NULL)
-    delete cspace_;
-  if(arm_ != NULL)
-    delete arm_;
-  if(grid_ != NULL)
-    delete grid_;
   if(bfs_ != NULL)
     delete bfs_;
 
@@ -177,7 +175,7 @@ void EnvironmentROBARM3D::PrintEnv_Config(FILE* fOut)
 void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
 {
   int i, a, final_mp_cost = 0;
-  unsigned char dist=0;
+  double dist=0;
   int endeff[3]={0};
   int path_length=0, nchecks=0;
   std::vector<int> succcoord(num_joints_,0);
@@ -248,29 +246,29 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     coordToAngles(succcoord, angles);
 
     //check joint limits
-    if(!arm_->checkJointLimits(angles))
+    if(!kmodel_->checkJointLimits(angles))
       continue;
 
     //check for collisions
     stats_.nchecks_per_solver_per_succ_[solver_types::NONE]++;
-    if(!isStateValid(angles, dist))
+    if(!cc_->isStateValid(angles, prms_.verbose_, false, dist))
     {
-      ROS_DEBUG_NAMED(prms_.expands_log_, " succ: %2d  dist: %2d is in collision.", i, int(dist));
+      ROS_DEBUG_NAMED(prms_.expands_log_, " succ: %2d  dist: %0.3f is in collision.", i, dist);
       continue;
     }
 
     // check for collision along interpolated path between sourcestate and succ
     nchecks = 0;
-    if(!isStateToStateValid(source_angles, angles, path_length, nchecks, dist))
+    if(!cc_->isStateToStateValid(source_angles, angles, path_length, nchecks, dist))
     {
-      ROS_DEBUG_NAMED(prms_.expands_log_, " succ: %2d  dist: %2d is in collision along interpolated path. (path_length: %d)", i, int(dist), path_length);
+      ROS_DEBUG_NAMED(prms_.expands_log_, " succ: %2d  dist: %0.3f is in collision along interpolated path. (path_length: %d)", i, dist, path_length);
       stats_.nchecks_per_solver_per_succ_[solver_types::NONE] += nchecks;
       continue;
     }
     stats_.nchecks_per_solver_per_succ_[solver_types::NONE] += nchecks;
 
     //get end effector position 
-    if(!arm_->computePlanningLinkFK(angles, pose))
+    if(!kmodel_->computePlanningLinkFK(angles, pose))
       continue;
 
     //get grid coordinates of endeff
@@ -512,16 +510,9 @@ bool EnvironmentROBARM3D::initEnvConfig()
   return true;
 }
 
-bool EnvironmentROBARM3D::initArmModel(FILE* aCfg, const std::string robot_description)
-{
-  arm_ = new SBPLKDLKinematicModel();
-  return arm_->init(robot_description, planning_joints_);
-}
-
-bool EnvironmentROBARM3D::initEnvironment(std::string arm_description_filename, std::string mprims_filename, std::string urdf, std::string srdf)
+bool EnvironmentROBARM3D::initEnvironment(std::string mprims_filename, std::string urdf, std::string srdf)
 {
   FILE* mprims_fp=NULL;
-  FILE* arm_fp=NULL;
 
   //initialize the arm planner parameters
   prms_.initFromParamServer();
@@ -539,20 +530,6 @@ bool EnvironmentROBARM3D::initEnvironment(std::string arm_description_filename, 
     return false;
   }
   fclose(mprims_fp);
-
-  //initialize the arm model
-  if((arm_fp=fopen(arm_description_filename.c_str(),"r")) == NULL)
-  {
-    SBPL_ERROR("Failed to open arm description file.");
-    return false;
-  }
-  if(!initArmModel(arm_fp,urdf))
-  {
-    SBPL_ERROR("Failed to initialize arm model.");
-    fclose(arm_fp);
-    return false;
-  }
-  fclose(arm_fp);
 
   //initialize the environment & planning variables  
   if(!initGeneral())
@@ -573,6 +550,7 @@ bool EnvironmentROBARM3D::initEnvironment(std::string arm_description_filename, 
 
 bool EnvironmentROBARM3D::initGeneral()
 {
+/*
   //create the occupancy grid
   grid_ = new OccupancyGrid(prms_.sizeX_,prms_.sizeY_,prms_.sizeZ_, prms_.resolution_,prms_.originX_,prms_.originY_,prms_.originZ_);
 
@@ -585,11 +563,10 @@ bool EnvironmentROBARM3D::initGeneral()
 
   if(!cspace_->init(prms_.group_name_))
     return false;
+*/
 
   //create the rpysolver
-  rpysolver_ = new RPYSolver(arm_, cspace_);
-
-  //cc_ = new CollisionChecker(prms_.group_name_);
+  rpysolver_ = new RPYSolver(kmodel_, cc_);
 
   //initialize Environment
   if(!initEnvConfig())
@@ -600,13 +577,14 @@ bool EnvironmentROBARM3D::initGeneral()
 
   //initialize BFS
   initHeuristics();
-  
+ 
+/* 
   if(prms_.verbose_)
   {
-    //arm_->printArmDescription(std::string("sbpl_arm"));
     prms_.printParams(std::string("sbpl_arm"));
     prms_.printMotionPrims(std::string("sbpl_arm"));
   }
+*/
 
   //set heuristic function pointer
   getHeuristic_ = &sbpl_arm_planner::EnvironmentROBARM3D::getEndEffectorHeuristic;
@@ -695,7 +673,7 @@ bool EnvironmentROBARM3D::isGoalStateWithIK(const std::vector<double> &pose, con
   EnvROBARMCfg.ik_solution=jnt_angles;
 
   std::vector<double> goal_pose(7,0);  //changed from 6
-  unsigned char dist = 0;
+  double dist = 0;
 
   goal_pose[0] = goal.xyz[0];
   goal_pose[1] = goal.xyz[1];
@@ -708,7 +686,7 @@ bool EnvironmentROBARM3D::isGoalStateWithIK(const std::vector<double> &pose, con
   EnvROBARMCfg.num_calls_to_ik++;
 
   //generate an IK solution
-  if(!arm_->computeIK(goal_pose, jnt_angles, EnvROBARMCfg.ik_solution))
+  if(!kmodel_->computeIK(goal_pose, jnt_angles, EnvROBARMCfg.ik_solution))
   {
     EnvROBARMCfg.num_no_ik_solutions++;
     return false;
@@ -716,7 +694,7 @@ bool EnvironmentROBARM3D::isGoalStateWithIK(const std::vector<double> &pose, con
   stats_.total_num_solver_used_[solver_types::IK_SEARCH]++;
 
   //check joint limits
-  if(!arm_->checkJointLimits(EnvROBARMCfg.ik_solution))
+  if(!kmodel_->checkJointLimits(EnvROBARMCfg.ik_solution))
   {
     EnvROBARMCfg.num_ik_invalid_joint_limits++;
     return false;
@@ -724,7 +702,7 @@ bool EnvironmentROBARM3D::isGoalStateWithIK(const std::vector<double> &pose, con
 
   //check for collisions
   stats_.nchecks_per_solver_per_succ_[solver_types::IK_SEARCH]++;
-  if(!isStateValid(EnvROBARMCfg.ik_solution, dist))
+  if(!cc_->isStateValid(EnvROBARMCfg.ik_solution, prms_.verbose_, false, dist))
   {
     EnvROBARMCfg.num_invalid_ik_solutions++;
     return false;
@@ -739,7 +717,7 @@ bool EnvironmentROBARM3D::isGoalStateWithIK(const std::vector<double> &pose, con
 
   //check for collisions along the path
   int path_length=0, nchecks=0;
-  if(!isStateToStateValid(jnt_angles, EnvROBARMCfg.ik_solution, path_length, nchecks, dist))
+  if(!cc_->isStateToStateValid(jnt_angles, EnvROBARMCfg.ik_solution, path_length, nchecks, dist))
   {
     stats_.nchecks_per_solver_per_succ_[solver_types::IK_SEARCH] += nchecks;
     EnvROBARMCfg.num_ik_invalid_path++;
@@ -781,6 +759,7 @@ int EnvironmentROBARM3D::getActionCost(const std::vector<double> &from_config, c
 
   ROS_DEBUG_NAMED("search", "from: %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f", angles::normalize_angle(from_config[0]),angles::normalize_angle(from_config[1]),angles::normalize_angle(from_config[2]),angles::normalize_angle(from_config[3]),angles::normalize_angle(from_config[4]),angles::normalize_angle(from_config[5]),angles::normalize_angle(from_config[6]));
   ROS_DEBUG_NAMED("search", "  to: %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f diff: %0.2f num_prims: %d cost: %d (mprim_size: %0.3f)", to_config[0],to_config[1],to_config[2],to_config[3],to_config[4],to_config[5],to_config[6], max_diff, num_prims, cost, prms_.max_mprim_offset_);
+  
   return cost;
 }
 
@@ -804,7 +783,7 @@ int EnvironmentROBARM3D::getEdgeCost(int FromStateID, int ToStateID)
 
 bool EnvironmentROBARM3D::isGoalStateWithOrientationSolver(const GoalPos &goal, std::vector<double> jnt_angles)
 {
-  unsigned char dist=100;
+  double dist=100;
   int path_length=0, nchecks=0;
   std::vector<std::vector<double> > path; 
   
@@ -813,7 +792,7 @@ bool EnvironmentROBARM3D::isGoalStateWithOrientationSolver(const GoalPos &goal, 
   stats_.total_num_solver_used_[solver_types::ORIENTATION_SOLVER]++;
  
   // check motion for collisions 
-  if(!isStateToStateValid(jnt_angles, path[0], path_length, nchecks, dist))
+  if(!cc_->isStateToStateValid(jnt_angles, path[0], path_length, nchecks, dist))
   {
     stats_.nchecks_per_solver_per_succ_[solver_types::ORIENTATION_SOLVER] += nchecks;
     return false;
@@ -827,7 +806,7 @@ bool EnvironmentROBARM3D::isGoalStateWithOrientationSolver(const GoalPos &goal, 
 
 bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles)
 {
-  unsigned char dist = 255;
+  double dist=100;
   int x,y,z;
   std::vector<double> pose(6,0);
 
@@ -835,15 +814,15 @@ bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles
     return false;
 
   //get joint positions of starting configuration
-  if(!arm_->computePlanningLinkFK(angles, pose))
+  if(!kmodel_->computePlanningLinkFK(angles, pose))
     ROS_WARN("Unable to compute forward kinematics for initial robot state. Attempting to plan anyway.");
 
   //check joint limits of starting configuration but plan anyway
-  if(!arm_->checkJointLimits(angles))
+  if(!kmodel_->checkJointLimits(angles))
     ROS_WARN("Starting configuration violates the joint limits. Attempting to plan anyway.");
 
   //check if the start configuration is in collision but plan anyway
-  if(!isStateValid(angles,dist))
+  if(!cc_->isStateValid(angles, prms_.verbose_, false, dist))
   {
     ROS_WARN("[env] The starting configuration is in collision. Attempting to plan anyway. (distance to nearest obstacle %0.2fm)", double(dist)*grid_->getResolution());
   }
@@ -1039,7 +1018,7 @@ void EnvironmentROBARM3D::getExpandedStates(std::vector<std::vector<double> >* a
   for(unsigned int i = 0; i < expanded_states.size(); ++i)
   {
     StateID2Angles(expanded_states[i],angles);
-    arm_->computePlanningLinkFK(angles,state);
+    kmodel_->computePlanningLinkFK(angles,state);
     state[6] = EnvROBARM.StateID2CoordTable[expanded_states[i]]->heur;
     ara_states->push_back(state);
   }
@@ -1054,7 +1033,7 @@ void EnvironmentROBARM3D::computeCostPerCell()
   gridcell_size = grid_->getResolution();
 
   //starting at zeroed angles, find end effector position after each action
-  arm_->computePlanningLinkFK(start_angles, start_pose);
+  kmodel_->computePlanningLinkFK(start_angles, start_pose);
 
   //iterate through all possible actions and find the one with the minimum cost per cell
   for (int i = 0; i < prms_.num_mprims_; i++)
@@ -1063,7 +1042,7 @@ void EnvironmentROBARM3D::computeCostPerCell()
       angles[j] = DEG2RAD(prms_.mprims_[i][j]);
 
     //starting at zeroed angles, find end effector position after each action
-    if(!arm_->computePlanningLinkFK(angles, pose))
+    if(!kmodel_->computePlanningLinkFK(angles, pose))
     {
       ROS_WARN("[env] Failed to compute cost per cell because forward kinematics is returning an error.");
       return;
@@ -1149,17 +1128,19 @@ void EnvironmentROBARM3D::getBresenhamPath(const int a[],const int b[], std::vec
   ROS_DEBUG("[env] Path has %d waypoints.",int(path->size()));
 }
 
+/*
 void EnvironmentROBARM3D::setKinematicsToPlanningTransform(KDL::Frame f, std::string &name)
 {
-  arm_->setKinematicsToPlanningTransform(f, name);
+  kmodel_->setKinematicsToPlanningTransform(f, name);
 }
 
 std::string EnvironmentROBARM3D::getKinematicsRootFrameName()
 {
   std::string name;
-  arm_->getKinematicsFrame(name);
+  kmodel_->getKinematicsFrame(name);
   return name;
 }
+*/
 
 int EnvironmentROBARM3D::getEndEffectorHeuristic(int FromStateID, int ToStateID)
 {
@@ -1181,11 +1162,13 @@ int EnvironmentROBARM3D::getEndEffectorHeuristic(int FromStateID, int ToStateID)
   return heur;
 }
 
+/*
 void EnvironmentROBARM3D::getCollisionCuboids(std::vector<std::string> &cube_frames, std::vector<std::vector<double> > &cubes)
 {
   ROS_ERROR("GetCollisionCuboids needs to be moved to Collision Checker!");
-  //arm_->getCollisionCuboids(cube_frames, cubes);
+  //kmodel_->getCollisionCuboids(cube_frames, cubes);
 }
+*/
 
 void EnvironmentROBARM3D::printEnvironmentStats()
 {
@@ -1198,11 +1181,14 @@ void EnvironmentROBARM3D::printEnvironmentStats()
   stats_.printStatsToFile(prms_.environment_type_);
 } 
 
+/*
 void EnvironmentROBARM3D::setStat(std::string field, double value)
 {
   stats_.setStat(field, value);
 }
+*/
 
+/*
 bool EnvironmentROBARM3D::isStateValid(const std::vector<double> &angles, unsigned char &dist)
 {
   //return cc_->checkCollision(angles, prms_.verbose_, false, dist);
@@ -1214,8 +1200,7 @@ bool EnvironmentROBARM3D::isStateToStateValid(const std::vector<double> &angles0
   //return cc_->checkPathForCollision(angles0, angles1, prms_.verbose_, path_length, num_checks, dist);
   return cspace_->checkPathForCollision(angles0, angles1, prms_.verbose_, path_length, num_checks, dist);
 }
-
-
+*/
 
 }
 

@@ -13,8 +13,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <sbpl_arm_planner/sbpl_kinematic_model.h>
-#include <sbpl_collision_checking/sbpl_collision_space.h>
+#include <sbpl_manipulation_components/sbpl_kinematic_model.h>
+#include <sbpl_manipulation_components/collision_checker.h>
 
 using namespace std;
 
@@ -26,7 +26,7 @@ class RPYSolver
 {
   public:
 
-    RPYSolver(SBPLKinematicModel *arm, SBPLCollisionSpace *cspace);
+    RPYSolver(SBPLKinematicModel *arm, CollisionChecker *cspace);
     
     ~RPYSolver(){};
 
@@ -54,7 +54,7 @@ class RPYSolver
 
     SBPLKinematicModel *arm_;
 
-    SBPLCollisionSpace *cspace_;
+    CollisionChecker *cspace_;
 
     bool verbose_;
 

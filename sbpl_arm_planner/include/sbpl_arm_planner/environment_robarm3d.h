@@ -45,13 +45,16 @@
 #include <angles/angles.h>
 #include <bfs3d/BFS_3D.h>
 #include <sbpl/headers.h>
-#include <sbpl_arm_planner/sbpl_kdl_kinematic_model.h>
+//#include <sbpl_manipulation_components/sbpl_kdl_kinematic_model.h>
+#include <sbpl_manipulation_components/occupancy_grid.h>
+#include <sbpl_manipulation_components/sbpl_kinematic_model.h>
+#include <sbpl_manipulation_components/collision_checker.h>
 #include <sbpl_arm_planner/sbpl_arm_planner_params.h>
 #include <sbpl_arm_planner/pr2/sbpl_math.h>
 #include <sbpl_arm_planner/pr2/orientation_solver.h>
 #include <sbpl_arm_planner/environment_statistics.h>
-#include <sbpl_collision_checking/sbpl_collision_space.h>
-
+#include <sbpl_collision_checking/bresenham.h>
+//#include <sbpl_collision_checking/sbpl_collision_space.h>
 // #include <planning_scene/planning_scene.h>
 //#include <sbpl_arm_planner/collision_checker.h>
 
@@ -135,7 +138,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     /**
      * @brief Default constructor
     */
-    EnvironmentROBARM3D();
+    EnvironmentROBARM3D(OccupancyGrid *grid, SBPLKinematicModel *kmodel, CollisionChecker *cc);
 
     /**
      * @brief Destructor
@@ -166,7 +169,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
      * @param is a URDF describing the manipulator
      * @return true if successful, false otherwise
     */
-    bool initEnvironment(std::string arm_description_filename, std::string mprims_filename, std::string urdf, std::string srdf);
+    bool initEnvironment(std::string mprims_filename, std::string urdf, std::string srdf);
 
     /**
      * @brief Initialize the start and goal states of the MDP
@@ -294,21 +297,21 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     */
     virtual void getExpandedStates(std::vector<std::vector<double> >* ara_states);
 
-    void setKinematicsToPlanningTransform(KDL::Frame f, std::string &name);
+    //void setKinematicsToPlanningTransform(KDL::Frame f, std::string &name);
 
-    SBPLCollisionSpace* getCollisionSpace() const;
+    //SBPLCollisionSpace* getCollisionSpace() const;
     
-    OccupancyGrid* getOccupancyGrid() const;
+    //OccupancyGrid* getOccupancyGrid() const;
    
-    bool initArmModel(FILE* aCfg, const std::string robot_description);
+    //bool initArmModel(FILE* aCfg, const std::string robot_description);
 
-    std::string getKinematicsRootFrameName();
+    //std::string getKinematicsRootFrameName();
 
-    void getCollisionCuboids(std::vector<std::string> &cube_frames, std::vector<std::vector<double> > &cubes);
+    //void getCollisionCuboids(std::vector<std::string> &cube_frames, std::vector<std::vector<double> > &cubes);
     
     virtual void printEnvironmentStats();
 
-    void setStat(std::string field, double value);
+    //void setStat(std::string field, double value);
     
     /* Cartesian Arm Planner only */
     virtual void convertStateIDPathToJointAnglesPath(const std::vector<int> &idpath, std::vector<std::vector<double> > &path){};
@@ -317,9 +320,9 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     
     virtual int getXYZRPYHeuristic(int FromStateID, int ToStateID){return 0;};
 
-    bool isStateValid(const std::vector<double> &angles, unsigned char &dist);
+    //bool isStateValid(const std::vector<double> &angles, unsigned char &dist);
   
-    bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, unsigned char &dist);
+    //bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, unsigned char &dist);
 
 
   protected:
@@ -330,14 +333,14 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     bool using_short_mprims_;
 
     OccupancyGrid *grid_;
-    SBPLKinematicModel *arm_;
+    SBPLKinematicModel *kmodel_;
     RPYSolver *rpysolver_;
-    SBPLCollisionSpace *cspace_;
+    //SBPLCollisionSpace *cspace_;
+    CollisionChecker *cc_;
     SBPLArmPlannerParams prms_;
-//    planning_scene::PlanningSceneConstPtr pscene_;
+    //planning_scene::PlanningSceneConstPtr pscene_;
     EnvironmentStatistics stats_;
     BFS_3D *bfs_;
-    //CollisionChecker* cc_;
 
     //USED TO BE STATIC VARS
     bool near_goal;
@@ -451,6 +454,7 @@ inline double EnvironmentROBARM3D::getEuclideanDistance(double x1, double y1, do
     return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
 }
 
+/*
 inline SBPLCollisionSpace* EnvironmentROBARM3D::getCollisionSpace() const
 {
   return cspace_;
@@ -460,7 +464,7 @@ inline OccupancyGrid* EnvironmentROBARM3D::getOccupancyGrid() const
 {
   return grid_;
 }
-
+*/
 
 } //namespace
 

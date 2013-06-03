@@ -29,6 +29,7 @@
  /** \author Benjamin Cohen */
 
 #include <sbpl_arm_planner/sbpl_kdl_kinematic_model.h>
+#include <ros/ros.h>
 
 using namespace std;
 
@@ -36,7 +37,9 @@ namespace sbpl_arm_planner {
 
 SBPLKDLKinematicModel::SBPLKDLKinematicModel()
 {
-  // get ros params for chain_root, chain_tip
+  ros::NodeHandle ph("~");
+  ph.param<std::string>("kdl_kinematics/chain_root_link", chain_root_name_, " ");
+  ph.param<std::string>("kdl_kinematics/chain_tip_link", chain_tip_name_, " ");
 }
 
 SBPLKDLKinematicModel::~SBPLKDLKinematicModel()

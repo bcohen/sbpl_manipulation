@@ -32,6 +32,7 @@
   <!-- <depend package="planning_models_loader" /> -->
   <!-- <depend package="collision_distance_field" /> -->
   <depend package="geometric_shapes" />
+  <depend package="sbpl_manipulation_components" />
   <!-- <depend package="collision_distance_field_ros"/> -->
 
   <rosdep name="eigen" />

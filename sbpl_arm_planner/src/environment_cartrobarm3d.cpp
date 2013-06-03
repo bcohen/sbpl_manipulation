@@ -58,8 +58,12 @@ bool isEqualDouble(const std::vector<double> &v1, const std::vector<double> &v2)
   return true;
 }
 
-EnvironmentCARTROBARM3D::EnvironmentCARTROBARM3D()
+EnvironmentCARTROBARM3D::EnvironmentCARTROBARM3D(OccupancyGrid *grid, SBPLKinematicModel *kmodel, CollisionChecker *cc)
 {
+  grid_ = grid;
+  kmodel_ = kmodel;
+  cc_ = cc;
+
   EnvROBARMCfg.bInitialized = false;
   save_expanded_states = true;
   using_short_mprims_ = false;
@@ -72,16 +76,11 @@ EnvironmentCARTROBARM3D::EnvironmentCARTROBARM3D()
   prms_.environment_type_ = "cartesian";
 }
 
+/*
 EnvironmentCARTROBARM3D::~EnvironmentCARTROBARM3D()
 {
   if(rpysolver_ != NULL)
     delete rpysolver_;
-  if(cspace_ != NULL)
-    delete cspace_;
-  if(arm_ != NULL)
-    delete arm_;
-  if(grid_ != NULL)
-    delete grid_;
 
   for(size_t i = 0; i < EnvROBARM.StateID2CoordTable.size(); i++)
   {
@@ -96,6 +95,7 @@ EnvironmentCARTROBARM3D::~EnvironmentCARTROBARM3D()
     EnvROBARM.Coord2StateIDHashTable = NULL;
   }
 }
+*/
 
 void EnvironmentCARTROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
 {
@@ -105,7 +105,7 @@ void EnvironmentCARTROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, 
 void EnvironmentCARTROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<int>* ActionV)
 {
   bool invalid_prim = false;
-  unsigned char dist=0, dist_temp=0;
+  double dist=0, dist_temp=0;
   size_t i=0, a=0, j=0, q=0;
   int motion_cost=0, motion_code=0, convert_code=0, nchecks=0, path_length=0, wp_length=0;
   std::vector<int> succcoord(ndof_,0);
@@ -209,11 +209,14 @@ void EnvironmentCARTROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, 
         
           //ROS_DEBUG_NAMED(prms_.expands_log_, "    [%d] -> [%d-%d-%d] sub-waypoint: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f ", SourceStateID, int(i), int(j), int(q), wptraj[q][0],wptraj[q][1],wptraj[q][2],wptraj[q][3],wptraj[q][4],wptraj[q][5],wptraj[q][6]);
 
+          ROS_ERROR("Not getting clearance anymore...");
+          /*
           if(!cspace_->getClearance(wptraj[q], 8, avgd, mind))
             ROS_ERROR("Failed at getClearance");
+          */
 
           // check motion for collisions
-          if((motion_code = isMotionValid(iangles, wptraj[q], path_length, nchecks, dist_temp)) < 0)
+          if((motion_code = cc_->isStateToStateValid(iangles, wptraj[q], path_length, nchecks, dist_temp)) < 0)
           {
             stats_.nchecks_per_solver_per_succ_[convert_code] += nchecks;
             ROS_DEBUG_NAMED(prms_.expands_log_, "  succ: %2d-%1d-%1d(%1d)  mp_type: %10s  convert_code: %2d  valid_code: %2d  dist: %3d  # checks: %2d(%2d)    Invalid.", int(i), int(j), int(q), int(wptraj.size()), prms_.motion_primitive_type_names_[prms_.mp_[i].type].c_str(),  convert_code, motion_code, int(dist_temp), stats_.nchecks_per_solver_per_succ_[convert_code], path_length);
@@ -506,11 +509,11 @@ bool EnvironmentCARTROBARM3D::setStartConfiguration(std::vector<double> angles)
   }
 
   //check joint limits of starting configuration but plan anyway
-  if(!arm_->checkJointLimits(angles))
+  if(!kmodel_->checkJointLimits(angles))
     ROS_WARN("[env] Starting configuration violates the joint limits. Attempting to plan anyway.");
 
-  unsigned char dist = 100;
-  if(!cspace_->checkCollision(angles, true, false, dist))
+  double dist = 100;
+  if(!cc_->isStateValid(angles, true, false, dist))
     ROS_WARN("[env] Starting configuration is in collision. (dist: %d)", int(dist));
   else
     ROS_INFO("[env] Starting configuration is valid. (dist: %d)", int(dist));
@@ -546,7 +549,7 @@ bool EnvironmentCARTROBARM3D::setGoalPosition(const std::vector<std::vector<doub
   // we plan even if there is no solution
   std::vector<double> pose(7,0), jnt_angles(7,0), ik_solution(7,0);
   pose = goals[0];
-  if(!arm_->computeIK(pose, jnt_angles, ik_solution))
+  if(!kmodel_->computeIK(pose, jnt_angles, ik_solution))
     ROS_WARN("[setGoalPosition] No valid IK solution for the goal pose.");
 
   // only supports a single goal
@@ -692,7 +695,7 @@ void EnvironmentCARTROBARM3D::anglesToCoord(const std::vector<double> &angles, s
 {
   std::vector<double> pose(6,0);
   
-  arm_->computePlanningLinkFK(angles, pose);
+  kmodel_->computePlanningLinkFK(angles, pose);
   
   double fangle=angles[free_angle_index_];
   double wxyz[3] = {pose[0], pose[1], pose[2]};
@@ -744,7 +747,7 @@ bool EnvironmentCARTROBARM3D::convertCoordToAngles(const std::vector<int> *coord
   pose[5] = wrpy[2];
   seed[free_angle_index_] = wfangle;
 
-  if(!arm_->computeFastIK(pose,seed,*angles))
+  if(!kmodel_->computeFastIK(pose,seed,*angles))
   {
     ROS_DEBUG("computeFastIK failed to return a solution");
 
@@ -769,11 +772,11 @@ bool EnvironmentCARTROBARM3D::convertWorldPoseToAngles(const std::vector<double>
 
   seed[free_angle_index_] = wpose[6];
 
-  if(!arm_->computeFastIK(pose,seed,angles))
+  if(!kmodel_->computeFastIK(pose,seed,angles))
   {
     ROS_DEBUG("computeFastIK failed to return a solution");
 
-    if(!arm_->computeIK(pose,seed,angles))
+    if(!kmodel_->computeIK(pose,seed,angles))
     {
       ROS_DEBUG("IK Search found solution");
       return false;
@@ -792,7 +795,7 @@ bool EnvironmentCARTROBARM3D::convertWorldPoseToAngles(const std::vector<double>
 
   seed[free_angle_index_] = wpose[6];
 
-  if(!arm_->computeFastIK(pose,seed,angles))
+  if(!kmodel_->computeFastIK(pose,seed,angles))
   {
     ROS_DEBUG("computeFastIK failed to return a solution");
     return false;
@@ -1370,12 +1373,12 @@ int EnvironmentCARTROBARM3D::getJointAnglesForMotionPrimWaypoint(const std::vect
 
   // analytical IK
   angles.resize(1, std::vector<double> (ndof_,0));
-  if(!arm_->computeFastIK(pose,seed,angles[0]))
+  if(!kmodel_->computeFastIK(pose,seed,angles[0]))
   {
     status = -solver_types::IK;
     
     // IK search
-    if(!arm_->computeIK(pose, seed, angles[0]))
+    if(!kmodel_->computeIK(pose, seed, angles[0]))
       status = -solver_types::IK_SEARCH;
     else
     {
@@ -1389,6 +1392,7 @@ int EnvironmentCARTROBARM3D::getJointAnglesForMotionPrimWaypoint(const std::vect
   return status;
 }
 
+/*
 int EnvironmentCARTROBARM3D::isMotionValid(const std::vector<double> &start, const std::vector<double> &end, int &motion_length, int &nchecks, unsigned char &dist)
 {
   //check joint limits of end configuration (assume start is valid)
@@ -1397,7 +1401,7 @@ int EnvironmentCARTROBARM3D::isMotionValid(const std::vector<double> &start, con
 
   //check for collisions
   nchecks = 1;
-  if(!cspace_->checkCollision(end, prms_.verbose_, false, dist))
+  if(!cc_->checkCollision(end, prms_.verbose_, false, dist))
     return -2;
 
   // check for collision along interpolated path
@@ -1408,6 +1412,7 @@ int EnvironmentCARTROBARM3D::isMotionValid(const std::vector<double> &start, con
   }
   return 1;
 }
+*/
 
 bool EnvironmentCARTROBARM3D::getMotionPrimitive(EnvROBARM3DHashEntry_t* parent, MotionPrimitive &mp)
 {
@@ -1645,30 +1650,6 @@ int EnvironmentCARTROBARM3D::getXYZRPYHeuristic(int FromStateID, int ToStateID)
   state->heur = xyz_heur + rpy_heur;
   return xyz_heur + rpy_heur;
 }
-
-          /*
-          //now try letting IK ignore the RPY
-          if(!arm_->computeTranslationalIK(dpose, succ_wcoord[6], sangles))
-          {
-            ROS_INFO("  [%d-%d] Failed translational IK.", int(i), int(j));
-            invalid_prim = true;
-            break;
-          }
-          else
-          {
-            ROS_INFO("  [%d-%d] Succeeded translational IK.", int(i), int(j));
-            std::vector<double> tpose(6,0);
-            if(!arm_->getPlanningJointPose(sangles, tpose))
-              ROS_WARN("  Failed to compute FK on the solution from translational IK");
-            
-            ROS_INFO("  [%d-%d]     xyz_desired: %1.3f %1.3f %1.3f   xyz_received: %1.3f %1.3f %1.3f   (diff: %1.3f %1.3f %1.3f)", int(i), int(j), dpose[0], dpose[1], dpose[2], tpose[0], tpose[1], tpose[2], dpose[0]-tpose[0], dpose[1]-tpose[1], dpose[2]-tpose[2]);
-            ROS_INFO("  [%d-%d]     rpy_desired: %1.3f %1.3f %1.3f   rpy_received: %1.3f %1.3f %1.3f   (diff: %1.3f %1.3f %1.3f)", int(i), int(j), dpose[3], dpose[4], dpose[5], tpose[3], tpose[4], tpose[5], dpose[3]-tpose[3], dpose[4]-tpose[4], dpose[5]-tpose[5]);
-            ROS_INFO("  [%d-%d]     fa_desired: %1.3f  fa_received: %1.3f   (diff: %1.3f)", int(i), int(j), succ_wcoord[6], sangles[2], succ_wcoord[6]-sangles[2]);
-          
-            invalid_prim = true;
-            break; 
-          }
-          */
 
 }
 
