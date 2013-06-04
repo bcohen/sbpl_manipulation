@@ -566,7 +566,7 @@ bool EnvironmentROBARM3D::initGeneral()
 */
 
   //create the rpysolver
-  rpysolver_ = new RPYSolver(kmodel_, cc_);
+  //rpysolver_ = new RPYSolver(kmodel_, cc_);
 
   //initialize Environment
   if(!initEnvConfig())
@@ -1128,20 +1128,6 @@ void EnvironmentROBARM3D::getBresenhamPath(const int a[],const int b[], std::vec
   ROS_DEBUG("[env] Path has %d waypoints.",int(path->size()));
 }
 
-/*
-void EnvironmentROBARM3D::setKinematicsToPlanningTransform(KDL::Frame f, std::string &name)
-{
-  kmodel_->setKinematicsToPlanningTransform(f, name);
-}
-
-std::string EnvironmentROBARM3D::getKinematicsRootFrameName()
-{
-  std::string name;
-  kmodel_->getKinematicsFrame(name);
-  return name;
-}
-*/
-
 int EnvironmentROBARM3D::getEndEffectorHeuristic(int FromStateID, int ToStateID)
 {
   int heur = 0;
@@ -1162,14 +1148,6 @@ int EnvironmentROBARM3D::getEndEffectorHeuristic(int FromStateID, int ToStateID)
   return heur;
 }
 
-/*
-void EnvironmentROBARM3D::getCollisionCuboids(std::vector<std::string> &cube_frames, std::vector<std::vector<double> > &cubes)
-{
-  ROS_ERROR("GetCollisionCuboids needs to be moved to Collision Checker!");
-  //kmodel_->getCollisionCuboids(cube_frames, cubes);
-}
-*/
-
 void EnvironmentROBARM3D::printEnvironmentStats()
 {
   rpysolver_->printStats();
@@ -1180,27 +1158,6 @@ void EnvironmentROBARM3D::printEnvironmentStats()
   stats_.printTotalSolverUsedSummary();
   stats_.printStatsToFile(prms_.environment_type_);
 } 
-
-/*
-void EnvironmentROBARM3D::setStat(std::string field, double value)
-{
-  stats_.setStat(field, value);
-}
-*/
-
-/*
-bool EnvironmentROBARM3D::isStateValid(const std::vector<double> &angles, unsigned char &dist)
-{
-  //return cc_->checkCollision(angles, prms_.verbose_, false, dist);
-  return cspace_->checkCollision(angles, prms_.verbose_, false, dist);
-}
-
-bool EnvironmentROBARM3D::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, unsigned char &dist)
-{
-  //return cc_->checkPathForCollision(angles0, angles1, prms_.verbose_, path_length, num_checks, dist);
-  return cspace_->checkPathForCollision(angles0, angles1, prms_.verbose_, path_length, num_checks, dist);
-}
-*/
 
 }
 
