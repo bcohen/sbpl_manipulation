@@ -46,7 +46,7 @@ class SBPLKinematicModel {
 
     SBPLKinematicModel();
     
-    ~SBPLKinematicModel();
+    ~SBPLKinematicModel(){};
    
     /* Initialization */
     virtual bool init(std::string robot_description, std::vector<std::string> planning_joints);

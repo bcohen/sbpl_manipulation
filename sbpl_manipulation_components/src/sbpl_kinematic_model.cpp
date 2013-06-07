@@ -84,6 +84,12 @@ bool SBPLKinematicModel::computeFK(const std::vector<double> &angles, std::strin
   return false;
 }
 
+bool SBPLKinematicModel::computePlanningLinkFK(const std::vector<double> &angles, std::vector<double> &pose)
+{
+  ROS_ERROR("Function not filled in.");  
+  return false;
+}
+
 bool SBPLKinematicModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
 {
   ROS_ERROR("Function not filled in."); 

@@ -30,6 +30,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(sbpl_manipulation_components 
         src/sbpl_kinematic_model.cpp
+        src/sbpl_kdl_kinematic_model.cpp
         src/occupancy_grid.cpp
         src/collision_checker.cpp)
+
+target_link_libraries(sbpl_manipulation_components sbpl_geometry_utils)
 

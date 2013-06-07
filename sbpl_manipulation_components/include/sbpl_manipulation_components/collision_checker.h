@@ -6,6 +6,8 @@
 #include <string>
 #include <sbpl_geometry_utils/Interpolator.h>
 
+namespace sbpl_arm_planner {
+
 class CollisionChecker
 {
   public:
@@ -32,6 +34,8 @@ class CollisionChecker
     std::string group_name_;
     std::vector<std::string> planning_joints_;
 };
+
+}
 
 #endif
 

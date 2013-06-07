@@ -17,7 +17,9 @@
 	<depend package="angles" />
 	<depend package="distance_field" />
   <depend package="kdl" />
+  <depend package="urdf" />
   <depend package="sbpl_geometry_utils" />
+  <depend package="kdl_parser" />
 
   <export>
       <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_manipulation_components"/>

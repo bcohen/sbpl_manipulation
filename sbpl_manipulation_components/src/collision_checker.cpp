@@ -1,5 +1,7 @@
 #include <sbpl_manipulation_components/collision_checker.h>
 
+namespace sbpl_arm_planner {
+
 CollisionChecker::CollisionChecker()
 {
 }
@@ -33,4 +35,4 @@ bool CollisionChecker::interpolatePath(const std::vector<double> &start, const s
   return false;
 }
 
-
+}
