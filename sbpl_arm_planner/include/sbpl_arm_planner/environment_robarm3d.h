@@ -45,22 +45,31 @@
 #include <angles/angles.h>
 #include <bfs3d/BFS_3D.h>
 #include <sbpl/headers.h>
-//#include <sbpl_manipulation_components/sbpl_kdl_kinematic_model.h>
 #include <sbpl_manipulation_components/occupancy_grid.h>
-#include <sbpl_manipulation_components/sbpl_kinematic_model.h>
+#include <sbpl_manipulation_components/robot_model.h>
 #include <sbpl_manipulation_components/collision_checker.h>
+#include <sbpl_arm_planner/action_set.h>
 #include <sbpl_arm_planner/sbpl_arm_planner_params.h>
-#include <sbpl_arm_planner/pr2/sbpl_math.h>
-#include <sbpl_arm_planner/pr2/orientation_solver.h>
-#include <sbpl_arm_planner/environment_statistics.h>
-#include <sbpl_collision_checking/bresenham.h>
-//#include <sbpl_collision_checking/sbpl_collision_space.h>
-// #include <planning_scene/planning_scene.h>
-//#include <sbpl_arm_planner/collision_checker.h>
 
 namespace sbpl_arm_planner {
 
+enum GoalType
+{
+  XYZ_GOAL,
+  XYZ_RPY_GOAL,
+  NUMBER_OF_GOAL_TYPES
+};
+
+typedef struct
+{
+  int type;
+  std::vector<double> pose;
+  double xyz_tolerance[3];
+  double rpy_tolerance[3];
+} GoalState;
+
 /** @brief struct that describes a basic pose constraint */
+/*
 typedef struct
 {
   bool is_6dof_goal;
@@ -76,37 +85,23 @@ typedef struct
   double xyz_tolerance[3];
   double rpy_tolerance[3];
 } GoalPos;
+*/
 
 typedef struct
 {
-  unsigned char dist;			 // distance to closest obstacle
   int stateID;             // hash entry ID number
   int heur;
-  int action;
-  int xyz[3];              // end eff pos (xyz)
+  int xyz[3];              // planning link pos (xyz)
+  double dist;
   std::vector<int> coord;
-  std::vector<double> angles;
+  RobotState state;
 } EnvROBARM3DHashEntry_t;
 
 /* @brief an outdated struct that is gradually being torn apart */
 typedef struct
 {
   bool bInitialized;
-
-  /* JointSpace Environment */
-  bool solved_by_ik;
-  bool solved_by_os; 
-  bool ik_solution_is_valid;
-  int num_no_ik_solutions;
-  int num_ik_invalid_joint_limits;
-  int num_calls_to_ik;
-  int num_ik_invalid_path;
-  int num_invalid_ik_solutions;
-  int num_expands_to_position_constraint;
-  double goal_to_obstacle_distance;
-  std::vector<double> ik_solution;
-
-  GoalPos goal;
+  //GoalPos goal;
   std::vector<double> coord_delta;
   std::vector<int> coord_vals;
 } EnvROBARM3DConfig_t;
@@ -138,7 +133,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     /**
      * @brief Default constructor
     */
-    EnvironmentROBARM3D(OccupancyGrid *grid, SBPLKinematicModel *kmodel, CollisionChecker *cc);
+    EnvironmentROBARM3D(OccupancyGrid *grid, RobotModel *rmodel, CollisionChecker *cc, ActionSet* as);
 
     /**
      * @brief Destructor
@@ -265,30 +260,6 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     virtual bool setGoalPosition(const std::vector <std::vector<double> > &goals, const std::vector<std::vector<double> > &tolerances);
 
     /**
-     * @brief This function returns a vector of all of the stateIDs of the
-     * states that were expanded during the search. (To be updated soon to
-     * return the coordinates of each state
-     * @return a vector of state IDs
-    */ 
-    std::vector<int> debugExpandedStates();
-
-    /**
-     * @brief Get the epsilon value used by the planner. Epsilon is a bounds
-     * on the suboptimality allowed by the planner.
-     * @return epsilon
-    */
-    double getEpsilon();
-
-    /**
-     * @brief This function returns the shortest path to the goal from the
-     * starting state. If the dijkstra heuristic is enabled, then it returns
-     * the shortest path solved for by dijkstra's algorithm. If it is
-     * disabled then it returns the straight line path to the goal.
-     * @return a 2D vector of waypoints {{x1,y1,z1},{x2,y2,z2},...}
-    */ 
-    std::vector<std::vector<double> > getShortestPath();
-
-    /**
      * @brief This function is for debugging purposes. It returns the
      * pose of the states that were expanded. The planner node has
      * a function to display these as visualizations in rviz.
@@ -297,22 +268,6 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     */
     virtual void getExpandedStates(std::vector<std::vector<double> >* ara_states);
 
-    //void setKinematicsToPlanningTransform(KDL::Frame f, std::string &name);
-
-    //SBPLCollisionSpace* getCollisionSpace() const;
-    
-    //OccupancyGrid* getOccupancyGrid() const;
-   
-    //bool initArmModel(FILE* aCfg, const std::string robot_description);
-
-    //std::string getKinematicsRootFrameName();
-
-    //void getCollisionCuboids(std::vector<std::string> &cube_frames, std::vector<std::vector<double> > &cubes);
-    
-    virtual void printEnvironmentStats();
-
-    //void setStat(std::string field, double value);
-    
     /* Cartesian Arm Planner only */
     virtual void convertStateIDPathToJointAnglesPath(const std::vector<int> &idpath, std::vector<std::vector<double> > &path){};
 
@@ -320,27 +275,23 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     
     virtual int getXYZRPYHeuristic(int FromStateID, int ToStateID){return 0;};
 
-    //bool isStateValid(const std::vector<double> &angles, unsigned char &dist);
-  
-    //bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, unsigned char &dist);
+    RobotModel* getRobotModel(){return rmodel_;};
+    
+    std::vector<double> getGoal();
 
+    double getDistanceToGoal(double x, double y, double z);
 
   protected:
 
     EnvROBARM3DConfig_t EnvROBARMCfg;
     EnvironmentROBARM3D_t EnvROBARM;
 
-    bool using_short_mprims_;
-
     OccupancyGrid *grid_;
-    SBPLKinematicModel *kmodel_;
-    RPYSolver *rpysolver_;
-    //SBPLCollisionSpace *cspace_;
+    RobotModel *rmodel_;
     CollisionChecker *cc_;
     SBPLArmPlannerParams prms_;
-    //planning_scene::PlanningSceneConstPtr pscene_;
-    EnvironmentStatistics stats_;
     BFS_3D *bfs_;
+    ActionSet *as_;
 
     //USED TO BE STATIC VARS
     bool near_goal;
@@ -352,23 +303,19 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     int heuristic_sphere_;
     std::vector<std::string> planning_joints_;
 
+    GoalState goal_;
 
     // function pointers for heuristic function
     int (EnvironmentROBARM3D::*getHeuristic_) (int FromStateID, int ToStateID);
-
-    std::vector<double> final_joint_config;
-    /*Configuration at start of orientation planning*/
-    std::vector<double> prefinal_joint_config;
 
     /** hash table */
     unsigned int intHash(unsigned int key);
     unsigned int getHashBin(const std::vector<int> &coord);
     virtual EnvROBARM3DHashEntry_t* getHashEntry(const std::vector<int> &coord, int action, bool bIsGoal);
-    virtual EnvROBARM3DHashEntry_t* createHashEntry(const std::vector<int> &coord, int endeff[3], int action);
+    virtual EnvROBARM3DHashEntry_t* createHashEntry(const std::vector<int> &coord, int endeff[3]);
 
     /** initialization */
     virtual bool initEnvConfig();
-    bool initGeneral();
     void initHeuristics();
 
     /** coordinate frame/angle functions */
@@ -377,9 +324,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     virtual void anglesToCoord(const std::vector<double> &angle, std::vector<int> &coord);
 
     /** planning */
-    virtual bool isGoalPosition(const std::vector<double> &pose, const GoalPos &goal, std::vector<double> jnt_angles, int &cost);
-    bool isGoalStateWithIK(const std::vector<double> &pose, const GoalPos &goal, std::vector<double> jnt_angles);
-    bool isGoalStateWithOrientationSolver(const GoalPos &goal, std::vector<double> jnt_angles);
+    virtual bool isGoalState(const std::vector<double> &pose, GoalState &goal);
 
     /** costs */
     int cost(EnvROBARM3DHashEntry_t* HashEntry1, EnvROBARM3DHashEntry_t* HashEntry2, bool bState2IsGoal);
@@ -394,10 +339,8 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 
     /** distance */
     int getBFSCostToGoal(int x, int y, int z) const;
-    virtual int getEndEffectorHeuristic(int FromStateID, int ToStateID);
+    virtual int getXYZHeuristic(int FromStateID, int ToStateID);
     double getEuclideanDistance(double x1, double y1, double z1, double x2, double y2, double z2) const;
-    void getBresenhamPath(const int a[],const int b[], std::vector<std::vector<int> > *path);
-    void clearStats();
 };
 
 
@@ -437,7 +380,6 @@ inline void EnvironmentROBARM3D::anglesToCoord(const std::vector<double> &angle,
 
   for(int i = 0; i < int(angle.size()); i++)
   {
-    //NOTE: Added 3/1/09
     pos_angle = angle[i];
     if(pos_angle < 0.0)
       pos_angle += 2*M_PI;
@@ -451,20 +393,8 @@ inline void EnvironmentROBARM3D::anglesToCoord(const std::vector<double> &angle,
 
 inline double EnvironmentROBARM3D::getEuclideanDistance(double x1, double y1, double z1, double x2, double y2, double z2) const
 {
-    return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
+  return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
 }
-
-/*
-inline SBPLCollisionSpace* EnvironmentROBARM3D::getCollisionSpace() const
-{
-  return cspace_;
-}
-
-inline OccupancyGrid* EnvironmentROBARM3D::getOccupancyGrid() const
-{
-  return grid_;
-}
-*/
 
 } //namespace
 

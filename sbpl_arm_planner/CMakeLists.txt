@@ -7,7 +7,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-set(ROS_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE Debug)
 
 # Add a ROS C++ macro to tell SBPL to use ROS print statements
 add_definitions(-DROS)
@@ -29,17 +29,8 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(sbpl_arm_planner 
-			src/environment_statistics.cpp
-			src/environment_robarm3d.cpp
-#			src/environment_cartrobarm3d.cpp
-#			src/utils.cpp
-#			src/sbpl_geometry_utils.cpp
-#			src/sbpl_arm_model.cpp
-#      src/sbpl_kinematic_model.cpp
-#      src/sbpl_kdl_kinematic_model.cpp
-			src/sbpl_arm_planner_params.cpp
-			src/pr2/sbpl_math.cpp
-			src/pr2/orientation_solver.cpp
-      src/collision_checker.cpp)
+                        src/environment_robarm3d.cpp
+                        src/action_set.cpp
+                        src/sbpl_arm_planner_params.cpp)
 
-target_link_libraries(sbpl_arm_planner sbpl_collision_checking bfs3d)
+target_link_libraries(sbpl_arm_planner sbpl_manipulation_components bfs3d)

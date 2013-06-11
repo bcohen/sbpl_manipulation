@@ -46,35 +46,6 @@ using namespace std;
 
 namespace sbpl_arm_planner {
 
-enum MotionPrimitiveType {
-  LONG_DISTANCE,
-  SHORT_DISTANCE,
-  ADAPTIVE,
-  SNAP_TO_RPY,
-  SNAP_TO_XYZRPY,
-  SNAP_TO_RPY_THEN_TO_XYZ,
-  SNAP_TO_XYZ_THEN_TO_RPY,
-  SNAP_TO_RPY_AT_START,
-  RETRACT_THEN_SNAP_TO_RPY_THEN_TO_XYZ,
-  RETRACT_THEN_TOWARDS_RPY_THEN_TOWARDS_XYZ,
-  NUMBER_OF_MPRIM_TYPES
-};
-
-//static const char* MotionPrimitiveTypeNames[] = {"long_distance","short_distance", "adaptive", "snap_to_rpy", "snap_to_xyzrpy",
-//                                                            "snap_to_rpy_then_to_xyz", "snap_to_xyz_then_to_rpy"};
-
-typedef std::vector<std::vector<double> > MPrim;
-typedef std::vector<int> Coords;
-
-typedef struct
-{
-  char type;
-  int nsteps;
-  int id;
-  int group;
-  MPrim m;
-  Coords coord;
-} MotionPrimitive;
 
 class SBPLArmPlannerParams
 {
@@ -93,10 +64,10 @@ class SBPLArmPlannerParams
 //    bool initFromParamFile(std::string param_file);
     
     /** \brief grab motion primitives from a text file */
-    bool initMotionPrimsFromFile(FILE* fCfg);
+//    bool initMotionPrimsFromFile(FILE* fCfg);
 
     /** \brief grab long primitives from a text file  (cartesian arm planner)*/
-    bool initLongMotionPrimsFromFile(FILE* fCfg);
+//    bool initLongMotionPrimsFromFile(FILE* fCfg);
 
     /** \brief grab parameters from a text file */
 //    bool initFromParamFile(FILE* fCfg);
@@ -105,25 +76,25 @@ class SBPLArmPlannerParams
     void printParams(std::string stream);
 
     /** \brief add a motion primitive vector to the list */
-    void addMotionPrim(std::vector<double> mprim, bool add_converse, bool short_dist_mprim);
+//    void addMotionPrim(std::vector<double> mprim, bool add_converse, bool short_dist_mprim);
 
     /** \brief set the cost per cell */
     void setCellCost(int cost_per_cell);
 
     /** \brief print the motion primitives */
-    void printMotionPrims(std::string stream);
+//    void printMotionPrims(std::string stream);
 
 //    double getSmallestShoulderPanMotion();
 
     /** \brief NOTE: For computing cost for IK and OS solutions */
-    double getLargestMotionPrimOffset();
+//    double getLargestMotionPrimOffset();
 
     /** \brief Output the long motion prims to the terminal */
-    void printLongMotionPrims(std::string stream);
+//    void printLongMotionPrims(std::string stream);
 
-    bool initMotionPrims(FILE* fCfg);
+//    bool initMotionPrims(FILE* fCfg);
 
-    void printMotionPrim(MotionPrimitive mp, std::string text);
+//    void printMotionPrim(MotionPrimitive mp, std::string text);
 
     void changeLoggerLevel(std::string name, std::string level);
 
@@ -132,7 +103,7 @@ class SBPLArmPlannerParams
     double epsilon_;
 
     /** \brief enable multi-resolution motion primitives */
-    bool use_multires_mprims_;
+//    bool use_multires_mprims_;
 
     /** \brief use a 3D dijkstra search as the heuristic */
     bool use_bfs_heuristic_;
@@ -166,24 +137,24 @@ class SBPLArmPlannerParams
     int angle_delta_;
 
     /** \brief the 2D array of motion primitives */
-    std::vector<std::vector<double> > mprims_;
+//    std::vector<std::vector<double> > mprims_;
 
     /** \brief total number of motion primitives */
-    int num_mprims_;
+//    int num_mprims_;
 
     /** \brief number of long distance motion primitives */
-    int num_long_dist_mprims_;
+//    int num_long_dist_mprims_;
 
     /** \brief number of short distance motion primitives */
-    int num_short_dist_mprims_;
+//   int num_short_dist_mprims_;
 
     /** \brief distance from goal pose in cells to switch to using short distance
      * motion primitives + long distance motion primitives */
-    int short_dist_mprims_thresh_c_;
+//    int short_dist_mprims_thresh_c_;
 
     /** \brief distance from goal pose in meters to switch to using short distance
      * motion primitives + long distance motion primitives */
-    double short_dist_mprims_thresh_m_;
+//    double short_dist_mprims_thresh_m_;
 
     std::string planner_name_;
 
@@ -210,22 +181,22 @@ class SBPLArmPlannerParams
 //    bool two_calls_to_op_;
 
     /** \brief use the elbow heuristic */
-    bool use_research_heuristic_;
+//    bool use_research_heuristic_;
     
     double max_mprim_offset_;
-
+ 
     /** \brief size of collision space */
-    double sizeX_;
-    double sizeY_;
-    double sizeZ_;
+    //double sizeX_;
+    //double sizeY_;
+    //double sizeZ_;
 
     /** \brief resolution of collision space */
-    double resolution_;
+    //double resolution_;
 
     /** \brief origin of collision space */
-    double originX_;
-    double originY_;
-    double originZ_;
+    //double originX_;
+    //double originY_;
+    //double originZ_;
 
     int solve_for_ik_thresh_;
     double solve_for_ik_thresh_m_;
@@ -233,7 +204,7 @@ class SBPLArmPlannerParams
     std::string reference_frame_;
 
     /* For Cartesian Arm Planner */
-    std::vector<MotionPrimitive> mp_;
+//    std::vector<MotionPrimitive> mp_;
     double xyz_resolution_;
     double rpy_resolution_;
     double fa_resolution_;
@@ -259,7 +230,10 @@ class SBPLArmPlannerParams
     std::string cspace_log_level_;
     std::string solution_log_level_;
 
-    std::vector<std::string> motion_primitive_type_names_;
+    //std::vector<std::string> motion_primitive_type_names_;
+    
+    std::vector<double> coord_delta;
+    std::vector<int> coord_vals;
 };
 
 }
