@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SBPL_KDL_KINEMATIC_MODEL_
-#define _SBPL_KDL_KINEMATIC_MODEL_
+#ifndef _KDL_ROBOT_MODEL_
+#define _KDL_ROBOT_MODEL_
 
 #include <string>
 #include <vector>
@@ -43,21 +43,20 @@
 #include <kdl/chainiksolverpos_nr.hpp>
 #include <kdl/chainiksolvervel_pinv.hpp>
 #include <sbpl_geometry_utils/interpolation.h>
-#include <sbpl_manipulation_components/sbpl_kinematic_model.h>
+#include <sbpl_manipulation_components/robot_model.h>
 
-//#include <Eigen/Core>
 
 using namespace std;
 
 namespace sbpl_arm_planner {
 
-class SBPLKDLKinematicModel : public SBPLKinematicModel {
+class KDLRobotModel : public RobotModel {
 
   public:
 
-    SBPLKDLKinematicModel();
+    KDLRobotModel();
     
-    ~SBPLKDLKinematicModel();
+    ~KDLRobotModel();
    
     /* Initialization */
     virtual bool init(std::string robot_description, std::vector<std::string> planning_joints);

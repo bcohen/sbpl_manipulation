@@ -28,28 +28,28 @@
  */
  /** \author Benjamin Cohen */
 
-#include <sbpl_manipulation_components/sbpl_kdl_kinematic_model.h>
+#include <sbpl_manipulation_components/kdl_robot_model.h>
 #include <ros/ros.h>
 
 using namespace std;
 
 namespace sbpl_arm_planner {
 
-SBPLKDLKinematicModel::SBPLKDLKinematicModel()
+KDLRobotModel::KDLRobotModel()
 {
   ros::NodeHandle ph("~");
   ph.param<std::string>("kdl_kinematics/chain_root_link", chain_root_name_, " ");
   ph.param<std::string>("kdl_kinematics/chain_tip_link", chain_tip_name_, " ");
 }
 
-SBPLKDLKinematicModel::~SBPLKDLKinematicModel()
+KDLRobotModel::~KDLRobotModel()
 {
   delete ik_solver_;
   delete ik_vel_solver_;
   delete fk_solver_;
 }
 
-bool SBPLKDLKinematicModel::init(std::string robot_description, std::vector<std::string> planning_joints)
+bool KDLRobotModel::init(std::string robot_description, std::vector<std::string> planning_joints)
 {
   urdf_ = boost::shared_ptr<urdf::Model>(new urdf::Model());
   if (!urdf_->initString(robot_description))
@@ -94,7 +94,7 @@ bool SBPLKDLKinematicModel::init(std::string robot_description, std::vector<std:
   return true;
 }
 
-bool SBPLKDLKinematicModel::getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous)
+bool KDLRobotModel::getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous)
 {
   for(size_t i = 0; i < joint_names.size(); ++i)
   {
@@ -109,7 +109,7 @@ bool SBPLKDLKinematicModel::getJointLimits(std::vector<std::string> &joint_names
   return true;
 }
 
-bool SBPLKDLKinematicModel::getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous)
+bool KDLRobotModel::getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous)
 {
   bool found_joint = false;
   boost::shared_ptr<const urdf::Link> link = urdf_->getLink(chain_tip_name_);
@@ -149,7 +149,7 @@ bool SBPLKDLKinematicModel::getJointLimits(std::string joint_name, double &min_l
   return found_joint;
 }
 
-bool SBPLKDLKinematicModel::checkJointLimits(const std::vector<double> &angles)
+bool KDLRobotModel::checkJointLimits(const std::vector<double> &angles)
 {
   std::vector<double> a = angles;
   if(!sbpl::interp::NormalizeAnglesIntoRange(a, min_limits_, max_limits_))
@@ -161,7 +161,7 @@ bool SBPLKDLKinematicModel::checkJointLimits(const std::vector<double> &angles)
   return true;
 }
 
-bool SBPLKDLKinematicModel::computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f)
+bool KDLRobotModel::computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f)
 {
   for(size_t i = 0; i < angles.size(); ++i)
     jnt_pos_in_(i) = angles::normalize_angle(angles[i]);
@@ -178,7 +178,7 @@ bool SBPLKDLKinematicModel::computeFK(const std::vector<double> &angles, std::st
   return true;
 }
 
-bool SBPLKDLKinematicModel::computeFK(const std::vector<double> &angles, std::string name, std::vector<double> &pose)
+bool KDLRobotModel::computeFK(const std::vector<double> &angles, std::string name, std::vector<double> &pose)
 {
   KDL::Frame f;
   pose.resize(6);
@@ -193,7 +193,7 @@ bool SBPLKDLKinematicModel::computeFK(const std::vector<double> &angles, std::st
   return false;
 }
 
-bool SBPLKDLKinematicModel::computePlanningLinkFK(const std::vector<double> &angles, std::vector<double> &pose)
+bool KDLRobotModel::computePlanningLinkFK(const std::vector<double> &angles, std::vector<double> &pose)
 {
   KDL::Frame f, f1;
   pose.resize(6);
@@ -216,12 +216,12 @@ bool SBPLKDLKinematicModel::computePlanningLinkFK(const std::vector<double> &ang
   return true;
 }
 
-bool SBPLKDLKinematicModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
+bool KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
 {
   return computeFastIK(pose, start, solution);
 }
 
-bool SBPLKDLKinematicModel::computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
+bool KDLRobotModel::computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
 {
   //pose: {x,y,z,r,p,y} or {x,y,z,qx,qy,qz,qw}
 
@@ -254,7 +254,7 @@ bool SBPLKDLKinematicModel::computeFastIK(const std::vector<double> &pose, const
   return true;
 }
 
-void SBPLKDLKinematicModel::printKinematicModelInformation(std::string stream)
+void KDLRobotModel::printKinematicModelInformation(std::string stream)
 {
   ROS_ERROR("Function not filled in.");  
 }

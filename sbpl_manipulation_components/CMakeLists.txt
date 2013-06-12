@@ -29,10 +29,11 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(sbpl_manipulation_components 
-        src/sbpl_kinematic_model.cpp
-        src/sbpl_kdl_kinematic_model.cpp
+        src/robot_model.cpp
+        src/kdl_robot_model.cpp
         src/occupancy_grid.cpp
-        src/collision_checker.cpp)
+        src/collision_checker.cpp
+        src/post_processing.cpp)
 
 target_link_libraries(sbpl_manipulation_components sbpl_geometry_utils)
 

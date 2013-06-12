@@ -28,92 +28,92 @@
  */
  /** \author Benjamin Cohen */
 
-#include <sbpl_manipulation_components/sbpl_kinematic_model.h>
+#include <sbpl_manipulation_components/robot_model.h>
 
 using namespace std;
 
 namespace sbpl_arm_planner {
 
-SBPLKinematicModel::SBPLKinematicModel()
+RobotModel::RobotModel()
 {
   logger_ = "kinematic_model";
   initialized_ = false;
 }
 
-bool SBPLKinematicModel::init(std::string robot_description, std::vector<std::string> planning_joints)
+bool RobotModel::init(std::string robot_description, std::vector<std::string> planning_joints)
 {
   planning_joints_ = planning_joints;
   initialized_ = true;
   return true;
 }
 
-void SBPLKinematicModel::setLoggerName(std::string name)
+void RobotModel::setLoggerName(std::string name)
 {
   logger_ = name;
 }
 
-void SBPLKinematicModel::setPlanningJoints(const std::vector<std::string> &joints)
+void RobotModel::setPlanningJoints(const std::vector<std::string> &joints)
 {
   planning_joints_ = joints;
 }
 
-void SBPLKinematicModel::setPlanningLink(std::string name)
+void RobotModel::setPlanningLink(std::string name)
 {
   planning_link_ = name;
 }
 
-void SBPLKinematicModel::setPlanningFrame(std::string name)
+void RobotModel::setPlanningFrame(std::string name)
 {
   planning_frame_ = name;
 }
 
-void SBPLKinematicModel::getKinematicsFrame(std::string &name)
+void RobotModel::getKinematicsFrame(std::string &name)
 {
   name = kinematics_frame_;
 }
 
-bool SBPLKinematicModel::computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f)
+bool RobotModel::computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f)
 {
   ROS_ERROR("Function not filled in.");  
   return false;
 }
 
-bool SBPLKinematicModel::computeFK(const std::vector<double> &angles, std::string name, std::vector<double> &pose)
+bool RobotModel::computeFK(const std::vector<double> &angles, std::string name, std::vector<double> &pose)
 {
   ROS_ERROR("Function not filled in.");  
   return false;
 }
 
-bool SBPLKinematicModel::computePlanningLinkFK(const std::vector<double> &angles, std::vector<double> &pose)
+bool RobotModel::computePlanningLinkFK(const std::vector<double> &angles, std::vector<double> &pose)
 {
   ROS_ERROR("Function not filled in.");  
   return false;
 }
 
-bool SBPLKinematicModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
+bool RobotModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
 {
   ROS_ERROR("Function not filled in."); 
   return false;
 }
 
-bool SBPLKinematicModel::computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
+bool RobotModel::computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
 {
   ROS_ERROR("Function not filled in.");  
   return false;
 }
 
-void SBPLKinematicModel::printKinematicModelInformation(std::string stream)
+void RobotModel::printKinematicModelInformation(std::string stream)
 {
   ROS_ERROR("Function not filled in.");  
 }
 
-bool SBPLKinematicModel::checkJointLimits(const std::vector<double> &angles)
+bool RobotModel::checkJointLimits(const std::vector<double> &angles)
 {
   ROS_ERROR("Function not filled in.");  
   return false;
 }
 
-void SBPLKinematicModel::setKinematicsToPlanningTransform(const KDL::Frame &f, std::string name)
+void RobotModel::setKinematicsToPlanningTransform(const KDL::Frame &f, std::string name)
 {
   T_kinematics_to_planning_ = f;
   T_planning_to_kinematics_ = f.Inverse();

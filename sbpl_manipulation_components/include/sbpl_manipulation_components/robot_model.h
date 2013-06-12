@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SBPL_KINEMATIC_MODEL_
-#define _SBPL_KINEMATIC_MODEL_
+#ifndef _ROBOT_MODEL_
+#define _ROBOT_MODEL_
 
 #include <string>
 #include <vector>
@@ -40,13 +40,13 @@ using namespace std;
 
 namespace sbpl_arm_planner {
 
-class SBPLKinematicModel {
+class RobotModel {
 
   public:
 
-    SBPLKinematicModel();
+    RobotModel();
     
-    ~SBPLKinematicModel(){};
+    ~RobotModel(){};
    
     /* Initialization */
     virtual bool init(std::string robot_description, std::vector<std::string> planning_joints);

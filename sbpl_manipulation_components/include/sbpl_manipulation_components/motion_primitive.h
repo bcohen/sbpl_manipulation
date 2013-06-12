@@ -19,10 +19,10 @@ typedef struct
 
   void print()
   { 
-    ROS_INFO("type: %20s  id: %d  nsteps: %d  group: %d", motion_primitive_type_names_[int(mp.type)].c_str(), mp.id, mp.action.size(), mp.group);
-    for(std::size_t j = 0; j < mp.action.size(); ++j)
+    ROS_INFO("type: %20s  id: %d  nsteps: %d  group: %d", "NOT FILLED IN" /*motion_primitive_type_names_[int(type)].c_str()*/, id, int(action.size()), group);
+    for(std::size_t j = 0; j < action.size(); ++j)
     {
-      ROS_INFO("[step: %d] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", j, mp.action[j][0],mp.action[j][1],mp.action[j][2],mp.action[j][3],mp.action[j][4],mp.action[j][5],mp.action[j][6]);
+      ROS_INFO("[step: %d] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", int(j), action[j][0],action[j][1],action[j][2],action[j][3],action[j][4],action[j][5],action[j][6]);
     }
   }
 
