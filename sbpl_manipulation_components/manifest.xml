@@ -20,6 +20,8 @@
   <depend package="urdf" />
   <depend package="sbpl_geometry_utils" />
   <depend package="kdl_parser" />
+  <depend package="arm_navigation_msgs" />
+  <depend package="visualization_msgs" />
 
   <export>
       <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_manipulation_components"/>
