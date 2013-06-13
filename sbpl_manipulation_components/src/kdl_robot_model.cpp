@@ -212,8 +212,7 @@ bool KDLRobotModel::computeFK(const std::vector<double> &angles, std::string nam
     return false;
   }
 
-  f = f1;
-  f.p = T_kinematics_to_planning_ * f1.p;
+  f = T_kinematics_to_planning_ * f1;
   return true;
 }
 
@@ -245,8 +244,7 @@ bool KDLRobotModel::computePlanningLinkFK(const std::vector<double> &angles, std
     return false;
   }
 
-  f = f1;
-  f.p = T_kinematics_to_planning_ * f1.p;
+  f = T_kinematics_to_planning_ * f1;
 
   pose[0] = f.p[0];
   pose[1] = f.p[1];
@@ -277,7 +275,7 @@ bool KDLRobotModel::computeFastIK(const std::vector<double> &pose, const std::ve
     frame_des.M = KDL::Rotation::Quaternion(pose[3],pose[4],pose[5],pose[6]);
 
   // transform into kinematics frame
-  frame_des.p = T_planning_to_kinematics_ * frame_des.p;
+  frame_des = T_planning_to_kinematics_ * frame_des;
 
   // seed configuration
   for(size_t i = 0; i < start.size(); i++)
