@@ -30,6 +30,8 @@
 
 #include <sbpl_manipulation_components/kdl_robot_model.h>
 #include <ros/ros.h>
+#include <leatherman/print.h>
+#include <leatherman/utils.h>
 
 using namespace std;
 
@@ -38,8 +40,14 @@ namespace sbpl_arm_planner {
 KDLRobotModel::KDLRobotModel()
 {
   ros::NodeHandle ph("~");
-  ph.param<std::string>("kdl_kinematics/chain_root_link", chain_root_name_, " ");
-  ph.param<std::string>("kdl_kinematics/chain_tip_link", chain_tip_name_, " ");
+  ph.param<std::string>("robot_model/chain_root_link", chain_root_name_, " ");
+  ph.param<std::string>("robot_model/chain_tip_link", chain_tip_name_, " ");
+}
+
+KDLRobotModel::KDLRobotModel(std::string chain_root_link, std::string chain_tip_link)
+{
+  chain_root_name_ = chain_root_link;
+  chain_tip_name_ = chain_tip_link;
 }
 
 KDLRobotModel::~KDLRobotModel()
@@ -49,7 +57,7 @@ KDLRobotModel::~KDLRobotModel()
   delete fk_solver_;
 }
 
-bool KDLRobotModel::init(std::string robot_description, std::vector<std::string> planning_joints)
+bool KDLRobotModel::init(std::string robot_description, std::vector<std::string> &planning_joints)
 {
   urdf_ = boost::shared_ptr<urdf::Model>(new urdf::Model());
   if (!urdf_->initString(robot_description))
@@ -78,7 +86,24 @@ bool KDLRobotModel::init(std::string robot_description, std::vector<std::string>
   // IK solver
   ik_vel_solver_ = new KDL::ChainIkSolverVel_pinv(kchain_);
   ik_solver_ = new KDL::ChainIkSolverPos_NR(kchain_, *fk_solver_, *ik_vel_solver_, 200);
-  
+
+  // check if our chain includes all planning joints
+  for(size_t i = 0; i < planning_joints.size(); ++i)
+  {
+    if(planning_joints[i].empty())
+    {
+      ROS_ERROR("Planning joint name is empty (index: %d).", int(i));
+      return false;
+    }
+    int index;
+    if(!leatherman::getJointIndex(kchain_, planning_joints[i], index))
+    {
+      ROS_ERROR("Failed to find '%s' in the kinematic chain. Maybe your chain root or tip joints are wrong?", planning_joints[i].c_str());
+      return false;
+    }
+  }
+
+  // joint limits
   planning_joints_ = planning_joints;
   if(!getJointLimits(planning_joints_, min_limits_, max_limits_, continuous_))
   {
@@ -90,14 +115,26 @@ bool KDLRobotModel::init(std::string robot_description, std::vector<std::string>
   for(size_t i = 0; i < planning_joints_.size(); ++i)
     joint_map_[planning_joints_[i]] = i;
 
+  // link name -> kdl index mapping
+  for(size_t i = 0; i < kchain_.getNrOfSegments(); ++i)
+    link_map_[kchain_.getSegment(i).getName()] = i;
+
   initialized_ = true;
   return true;
 }
 
 bool KDLRobotModel::getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous)
 {
+  min_limits.resize(joint_names.size());
+  max_limits.resize(joint_names.size());
+  continuous.resize(joint_names.size());
   for(size_t i = 0; i < joint_names.size(); ++i)
   {
+    if(joint_names[i].empty())
+    {
+      ROS_ERROR("Empty joint name found.");
+      return false;
+    }
     bool c;
     if(!getJointLimits(joint_names[i], min_limits[i], max_limits[i], c))
     {
@@ -151,13 +188,15 @@ bool KDLRobotModel::getJointLimits(std::string joint_name, double &min_limit, do
 
 bool KDLRobotModel::checkJointLimits(const std::vector<double> &angles)
 {
+  ROS_ERROR("Not filled in yet...");
+  /*
   std::vector<double> a = angles;
   if(!sbpl::interp::NormalizeAnglesIntoRange(a, min_limits_, max_limits_))
   {
     ROS_ERROR("Joint angles are out of bounds.");  
     return false;
   }
-
+  */
   return true;
 }
 
@@ -167,7 +206,7 @@ bool KDLRobotModel::computeFK(const std::vector<double> &angles, std::string nam
     jnt_pos_in_(i) = angles::normalize_angle(angles[i]);
 
   KDL::Frame f1;
-  if(fk_solver_->JntToCart(jnt_pos_in_, f1, joint_map_[name]) < 0)
+  if(fk_solver_->JntToCart(jnt_pos_in_, f1, link_map_[name]) < 0)
   {
     ROS_ERROR("JntToCart returned < 0.");
     return false;
@@ -200,7 +239,7 @@ bool KDLRobotModel::computePlanningLinkFK(const std::vector<double> &angles, std
   for(size_t i = 0; i < angles.size(); ++i)
     jnt_pos_in_(i) = angles::normalize_angle(angles[i]);
 
-  if(fk_solver_->JntToCart(jnt_pos_in_, f1, joint_map_[planning_link_]) < 0)
+  if(fk_solver_->JntToCart(jnt_pos_in_, f1, link_map_[planning_link_]) < 0)
   {
     ROS_ERROR("JntToCart returned < 0.");
     return false;
@@ -254,9 +293,17 @@ bool KDLRobotModel::computeFastIK(const std::vector<double> &pose, const std::ve
   return true;
 }
 
-void KDLRobotModel::printKinematicModelInformation(std::string stream)
+void KDLRobotModel::printRobotModelInformation()
 {
-  ROS_ERROR("Function not filled in.");  
+  leatherman::printKDLChain(kchain_, "robot_model");
+
+  ROS_INFO("Joint<->Index Map:");
+  for(std::map<std::string, int>::const_iterator iter = joint_map_.begin(); iter != joint_map_.end(); ++iter)
+     ROS_INFO("%22s: %d", iter->first.c_str(), iter->second);
+
+  ROS_INFO("Link<->KDL_Index Map:");
+  for(std::map<std::string, int>::const_iterator iter = link_map_.begin(); iter != link_map_.end(); ++iter)
+     ROS_INFO("%22s: %d", iter->first.c_str(), iter->second);
 }
 
 }

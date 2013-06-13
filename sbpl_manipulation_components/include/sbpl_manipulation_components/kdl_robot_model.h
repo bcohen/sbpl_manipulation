@@ -55,11 +55,11 @@ class KDLRobotModel : public RobotModel {
   public:
 
     KDLRobotModel();
-    
+    KDLRobotModel(std::string chain_root_link, std::string chain_tip_link);
     ~KDLRobotModel();
    
     /* Initialization */
-    virtual bool init(std::string robot_description, std::vector<std::string> planning_joints);
+    virtual bool init(std::string robot_description, std::vector<std::string> &planning_joints);
 
     bool getJointLimits();
 
@@ -79,7 +79,7 @@ class KDLRobotModel : public RobotModel {
     virtual bool computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution);
 
     /* Debug Output */
-    virtual void printKinematicModelInformation(std::string stream);
+    virtual void printRobotModelInformation();
 
   private:
 
@@ -101,6 +101,7 @@ class KDLRobotModel : public RobotModel {
     std::vector<double> min_limits_;
     std::vector<double> max_limits_;
     std::map<std::string, int> joint_map_;
+    std::map<std::string, int> link_map_;
 
     bool getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous);
     bool getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous);

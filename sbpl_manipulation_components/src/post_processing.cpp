@@ -1,7 +1,8 @@
 #include <ros/console.h>
+#include <sbpl_geometry_utils/interpolation.h>
 #include <sbpl_manipulation_components/post_processing.h>
 
-void shortcutPath(sbpl_arm_planner::CollisionChecker *cc, std::vector<std::vector<double> > &pin, std::vector<std::vector<double> > &pout)
+void sbpl_arm_planner::shortcutPath(sbpl_arm_planner::CollisionChecker *cc, std::vector<std::vector<double> > &pin, std::vector<std::vector<double> > &pout)
 {
   int i = 0;
   int num_checks=0, path_length=0;
@@ -44,7 +45,7 @@ void shortcutPath(sbpl_arm_planner::CollisionChecker *cc, std::vector<std::vecto
   ROS_INFO("Original path length: %d   Shortcutted path length: %d", int(pin.size()), int(pout.size()));
 }
 
-void shortcutTrajectory(sbpl_arm_planner::CollisionChecker *cc, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj_in, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj_out)
+void sbpl_arm_planner::shortcutTrajectory(sbpl_arm_planner::CollisionChecker *cc, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj_in, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj_out)
 {
   std::vector<std::vector<double> > pin(traj_in.size()), pout;
 
@@ -71,7 +72,7 @@ void shortcutTrajectory(sbpl_arm_planner::CollisionChecker *cc, std::vector<traj
   }
 }
 
-bool interpolateTrajectory(sbpl_arm_planner::CollisionChecker *cc, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj_out)
+bool sbpl_arm_planner::interpolateTrajectory(sbpl_arm_planner::CollisionChecker *cc, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj_out)
 {
   if(traj.empty())
     return false;

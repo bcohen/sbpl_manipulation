@@ -49,7 +49,7 @@ class RobotModel {
     ~RobotModel(){};
    
     /* Initialization */
-    virtual bool init(std::string robot_description, std::vector<std::string> planning_joints);
+    virtual bool init(std::string robot_description, std::vector<std::string> &planning_joints);
 
     void setPlanningJoints(const std::vector<std::string> &joints);
 
@@ -79,7 +79,7 @@ class RobotModel {
     virtual bool computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution);
 
     /* Debug Output */
-    virtual void printKinematicModelInformation(std::string stream);
+    virtual void printRobotModelInformation();
     
     void setLoggerName(std::string name);
 

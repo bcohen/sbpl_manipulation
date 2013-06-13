@@ -40,7 +40,7 @@ RobotModel::RobotModel()
   initialized_ = false;
 }
 
-bool RobotModel::init(std::string robot_description, std::vector<std::string> planning_joints)
+bool RobotModel::init(std::string robot_description, std::vector<std::string> &planning_joints)
 {
   planning_joints_ = planning_joints;
   initialized_ = true;
@@ -102,7 +102,7 @@ bool RobotModel::computeFastIK(const std::vector<double> &pose, const std::vecto
   return false;
 }
 
-void RobotModel::printKinematicModelInformation(std::string stream)
+void RobotModel::printRobotModelInformation()
 {
   ROS_ERROR("Function not filled in.");  
 }

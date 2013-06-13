@@ -37,3 +37,5 @@ rosbuild_add_library(sbpl_manipulation_components
 
 target_link_libraries(sbpl_manipulation_components sbpl_geometry_utils)
 
+rosbuild_add_executable(test_kdl src/test_kdl_robot_model.cpp)
+target_link_libraries(test_kdl sbpl_manipulation_components)
