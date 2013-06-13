@@ -29,6 +29,7 @@ int main(int argc, char **argv)
     return 0;
   }
   rm.setPlanningLink("r_wrist_roll_link");
+  ROS_WARN("Robot Model Information");
   rm.printRobotModelInformation();
 
   std::vector<double> zeros(7,0), fka(7,0), ika(7,0), pose(6,0);
