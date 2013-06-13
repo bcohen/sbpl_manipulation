@@ -37,26 +37,21 @@ SBPLArmPlannerParams::SBPLArmPlannerParams()
 {
   epsilon_ = 10;
   use_bfs_heuristic_ = true;
-  use_6d_pose_goal_ = true;
-  sum_heuristics_ = false;
-  use_uniform_cost_ = true;
-  
+  ready_to_plan_ = false;
+
   verbose_ = false;
   verbose_heuristics_ = false;
   verbose_collisions_ = false;
   
   cost_multiplier_ = 1000;
-  cost_per_cell_ = 0;
+  cost_per_cell_ = 1;
   cost_per_meter_ = 0;
   cost_per_second_ = cost_multiplier_;
   time_per_cell_ = 0.05;
 
-  solve_for_ik_thresh_ = 1000;
-  solve_for_ik_thresh_m_= 0.20;
-
   expands_log_ = "expands";
   expands2_log_ = "expands2";
-  arm_log_ = "arm";
+  rmodel_log_ = "arm";
   ik_log_ = "ik";
   cspace_log_ = "cspace";
   solution_log_ = "solution";
@@ -64,48 +59,41 @@ SBPLArmPlannerParams::SBPLArmPlannerParams()
   expands_log_level_ = "info";
   expands2_log_level_ = "info";
   ik_log_level_ = "info";
-  arm_log_level_ = "info";
+  rmodel_log_level_ = "info";
   cspace_log_level_ = "info";
   solution_log_level_ = "info";
-
-  /* cartesian planner */
-  xyz_resolution_ = 0.02;
-  rpy_resolution_ = 0.034906585; // 2 deg
-  fa_resolution_ = 0.0523598776; // 3 deg
 }
 
-void SBPLArmPlannerParams::initFromParamServer()
+bool SBPLArmPlannerParams::init()
 {
   ros::NodeHandle nh("~");
 
-  /* planner */
-  nh.param("planner/epsilon",epsilon_, 10.0);
-  nh.param("planner/use_bfs_heuristic",use_bfs_heuristic_,true);
-  nh.param("planner/use_uniform_obstacle_cost", use_uniform_cost_,false);
-  nh.param("planner/verbose",verbose_,false);
-  nh.param("planner/obstacle_distance_cost_far",range3_cost_,12);
-  nh.param("planner/obstacle_distance_cost_mid",range2_cost_,7);
-  nh.param("planner/obstacle_distance_cost_near",range1_cost_,2);
-
-  /* occupancy grid */
-  nh.param<std::string>("planning/reference_frame",reference_frame_,"base_link");
+  /* planning */
+  nh.param("planning/epsilon",epsilon_, 10.0);
+  nh.param("planning/use_bfs_heuristic",use_bfs_heuristic_,true);
+  nh.param("planning/verbose",verbose_,false);
+  nh.param<std::string>("planning/reference_frame",reference_frame_,"");
   nh.param<std::string>("planning/group_name",group_name_,"");
 
   /* logging */
   nh.param<std::string>("debug/logging/expands", expands_log_level_, "info");
   nh.param<std::string>("debug/logging/expands2", expands2_log_level_, "info");
   nh.param<std::string>("debug/logging/ik", ik_log_level_, "info");
-  nh.param<std::string>("debug/logging/arm_model", arm_log_level_, "info");
+  nh.param<std::string>("debug/logging/robot_model", rmodel_log_level_, "info");
   nh.param<std::string>("debug/logging/collisions", cspace_log_level_, "info");
   nh.param<std::string>("debug/logging/solution", solution_log_level_, "info");
 
-  XmlRpc::XmlRpcValue joints_param;
-  nh.getParam("planning_joints", joints_param);
+  XmlRpc::XmlRpcValue xlist;
+  nh.getParam("planning/planning_joints", xlist);
 
-  if(joints_param.getType() != XmlRpc::XmlRpcValue::TypeArray)
-    ROS_DEBUG("Planning joints list is not an array.");
+  if(xlist.getType() != XmlRpc::XmlRpcValue::TypeArray)
+  {
+    ROS_ERROR("Planning joints list is not an array. Expecting a list with more than one joint.");
+    return false;
+  }
 
-  std::string joint_list = std::string(joints_param);
+  // planning joints
+  std::string joint_list = std::string(xlist);
   std::stringstream joint_name_stream(joint_list);
   while(joint_name_stream.good() && !joint_name_stream.eof())
   {
@@ -115,12 +103,35 @@ void SBPLArmPlannerParams::initFromParamServer()
       continue;
     planning_joints_.push_back(jname);
   }
+  num_joints_ = planning_joints_.size();
+
+  // discretization
+  std::string p;
+  if(nh.hasParam("planning/discretization"))
+  {
+    nh.getParam("planning/discretization", xlist);
+    std::stringstream ss(xlist);
+    while(ss >> p)
+      coord_vals_.push_back(atof(p.c_str()));
+
+    coord_delta_.resize(coord_vals_.size(),0);
+    for(int i = 0; i < num_joints_; ++i)
+      coord_delta_[i] = (2.0*M_PI) / coord_vals_[i];
+  }
+  else
+  {
+    ROS_ERROR("Discretization of statespace has not been defined.");
+    return false;
+  }
+
   changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + expands_log_, expands_log_level_);
   changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + expands2_log_, expands2_log_level_);
   changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + solution_log_, solution_log_level_);
   changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + ik_log_, ik_log_level_);
-  changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + arm_log_, arm_log_level_);
+  changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + rmodel_log_, rmodel_log_level_);
   changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + cspace_log_, cspace_log_level_);
+
+  return true;
 }
 
 void SBPLArmPlannerParams::setCellCost(int cost_per_cell)
@@ -130,13 +141,14 @@ void SBPLArmPlannerParams::setCellCost(int cost_per_cell)
 
 void SBPLArmPlannerParams::printParams(std::string stream)
 {
-  ROS_DEBUG_NAMED(stream,"Arm Planner Parameters:");
+  ROS_DEBUG_NAMED(stream,"Manipulation Environment Parameters:");
   ROS_DEBUG_NAMED(stream,"%40s: %.2f", "epsilon",epsilon_);
   ROS_DEBUG_NAMED(stream,"%40s: %s", "use dijkstra heuristic", use_bfs_heuristic_ ? "yes" : "no");
-  ROS_DEBUG_NAMED(stream,"%40s: %s", "use a uniform cost",use_uniform_cost_ ? "yes" : "no");
   ROS_DEBUG_NAMED(stream,"%40s: %d", "cost per cell", cost_per_cell_);
-  ROS_DEBUG_NAMED(stream,"%40s: %.5f", "distance from goal to start using IK:",solve_for_ik_thresh_m_);
-  ROS_DEBUG_NAMED(stream,"%40s: %d", "cost from goal to start using IK:",solve_for_ik_thresh_);
+  ROS_DEBUG_NAMED(stream,"planning joints: ");
+  for(size_t i = 0; i < planning_joints_.size(); ++i)
+    ROS_DEBUG_NAMED(stream,"   [%d] %30s", int(i), planning_joints_[i].c_str());
+  ROS_DEBUG_NAMED(stream,"discretization: ");
   ROS_DEBUG_NAMED(stream," ");
 }
 

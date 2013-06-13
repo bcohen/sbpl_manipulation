@@ -1,27 +1,26 @@
-planner:
+planning:
   epsilon: 100
   verbose: false
-  use_dijkstra_heuristic: true
-  use_uniform_obstacle_cost: true
-  use_multiresolution_motion_primitives: false
-  obstacle_distance_cost_far: 2
-  obstacle_distance_cost_mid: 7
-  obstacle_distance_cost_near: 12
-  research:
-    solve_with_ik_threshold: 0.06
-    short_distance_mprims_threshold: 0.22
-  
-robot:
-  arm_name: right_arm
-  num_joints: 7
-  
+  use_bfs_heuristic: true
+  group_name: right_arm
+  reference_frame: base_footprint 
+  planning_joints:
+    r_shoulder_pan_joint
+    r_shoulder_lift_joint
+    r_upper_arm_roll_joint
+    r_elbow_flex_joint
+    r_forearm_roll_joint
+    r_wrist_flex_joint
+    r_wrist_roll_joint
+  discretization: 1 1 1 1 1 1 1
+
 debug:
   print_out_path: false
   logging:
     expands: info
     expands2: info
     ik: info
-    arm_model: info
+    robot_model: info
     collisions: info
     solution: info
 
@@ -47,16 +46,7 @@ collision_space:
     size_y: 2.0
     size_z: 2.0
 
-planning_joints:
-  r_shoulder_pan_joint
-  r_shoulder_lift_joint
-  r_upper_arm_roll_joint
-  r_elbow_flex_joint
-  r_forearm_roll_joint
-  r_wrist_flex_joint
-  r_wrist_roll_joint
 
-reference_frame: base_footprint
 fk_service_name: pr2_right_arm_kinematics/get_fk
 ik_service_name: pr2_right_arm_kinematics/get_ik
 
