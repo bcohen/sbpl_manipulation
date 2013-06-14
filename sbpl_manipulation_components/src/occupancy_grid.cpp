@@ -47,7 +47,8 @@ OccupancyGrid::OccupancyGrid(double dim_x, double dim_y, double dim_z, double re
 
 OccupancyGrid::~OccupancyGrid()
 {
-  delete grid_;
+  if(grid_)
+    delete grid_;
 }
 
 void OccupancyGrid::getGridSize(int &dim_x, int &dim_y, int &dim_z)

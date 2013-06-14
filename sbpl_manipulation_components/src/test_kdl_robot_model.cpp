@@ -9,23 +9,23 @@ int main(int argc, char **argv)
   sleep(1);
   ros::spinOnce();
 
-  sbpl_arm_planner::KDLRobotModel rm("torso_lift_link", "r_wrist_roll_link");
+  sbpl_arm_planner::KDLRobotModel rm("torso_lift_link");
 
   std::string urdf;
   nh.param<std::string>("robot_description", urdf, " ");
 
   std::vector<std::string> pj;
   pj.push_back("r_shoulder_pan_joint");
-  pj.push_back("r_shoulder_lift_joint");
-  pj.push_back("r_upper_arm_roll_joint");
   pj.push_back("r_elbow_flex_joint");
-  pj.push_back("r_forearm_roll_joint");
+  pj.push_back("r_shoulder_lift_joint");
   pj.push_back("r_wrist_flex_joint");
+  pj.push_back("r_upper_arm_roll_joint");
+  pj.push_back("r_forearm_roll_joint");
   pj.push_back("r_wrist_roll_joint");
 
   if(!rm.init(urdf,pj))
   {
-    ROS_ERROR("WTF");
+    ROS_ERROR("Failed to initialize the robot model. Exiting.");
     return 0;
   }
   rm.setPlanningLink("r_wrist_roll_link");

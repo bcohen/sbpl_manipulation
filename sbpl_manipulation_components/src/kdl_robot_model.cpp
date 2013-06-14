@@ -32,29 +32,31 @@
 #include <ros/ros.h>
 #include <leatherman/print.h>
 #include <leatherman/utils.h>
+#include <kdl/tree.hpp>
 
 using namespace std;
 
 namespace sbpl_arm_planner {
 
-KDLRobotModel::KDLRobotModel()
+KDLRobotModel::KDLRobotModel() : ik_solver_(NULL), ik_vel_solver_(NULL), fk_solver_(NULL)
 {
   ros::NodeHandle ph("~");
   ph.param<std::string>("robot_model/chain_root_link", chain_root_name_, " ");
-  ph.param<std::string>("robot_model/chain_tip_link", chain_tip_name_, " ");
 }
 
-KDLRobotModel::KDLRobotModel(std::string chain_root_link, std::string chain_tip_link)
+KDLRobotModel::KDLRobotModel(std::string chain_root_link) : ik_solver_(NULL), ik_vel_solver_(NULL), fk_solver_(NULL)
 {
   chain_root_name_ = chain_root_link;
-  chain_tip_name_ = chain_tip_link;
 }
 
 KDLRobotModel::~KDLRobotModel()
 {
-  delete ik_solver_;
-  delete ik_vel_solver_;
-  delete fk_solver_;
+  if(ik_solver_)
+    delete ik_solver_;
+  if(ik_vel_solver_)
+    delete ik_vel_solver_;
+  if(fk_solver_)
+    delete fk_solver_;
 }
 
 bool KDLRobotModel::init(std::string robot_description, std::vector<std::string> &planning_joints)
@@ -69,6 +71,22 @@ bool KDLRobotModel::init(std::string robot_description, std::vector<std::string>
   if (!kdl_parser::treeFromUrdfModel(*urdf_, ktree_))
   {
     ROS_ERROR("Failed to parse the kdl tree from robot description.");
+    return false;
+  }
+
+  std::vector<std::string> segments(planning_joints.size());
+  for(size_t j = 0; j < planning_joints.size(); ++j)
+  {
+    if(!leatherman::getSegmentOfJoint(ktree_, planning_joints[j], segments[j]))
+    {
+      ROS_ERROR("Failed to find kdl segment for '%s'.", planning_joints_[j].c_str());
+      return false;
+    }
+  }
+
+  if(!leatherman::getChainTip(ktree_, segments, chain_root_name_, chain_tip_name_))
+  {
+    ROS_ERROR("Failed to find a valid chain tip link.");
     return false;
   }
 

@@ -17,6 +17,16 @@ void CollisionChecker::setPlanningJoints(const std::vector<std::string> &plannin
   planning_joints_ = planning_joints;
 }
 
+void CollisionChecker::setRobotState(const arm_navigation_msgs::RobotState &state)
+{
+  robot_state_ = state;
+}
+
+void CollisionChecker::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)
+{
+  planning_scene_  = scene;
+}
+
 bool CollisionChecker::isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist)
 {
   ROS_ERROR("Function is not filled in.");
@@ -33,6 +43,18 @@ bool CollisionChecker::interpolatePath(const std::vector<double> &start, const s
 {
   ROS_ERROR("Function is not filled in.");
   return false;
+}
+
+visualization_msgs::MarkerArray CollisionChecker::getCollisionModelVisualization(const std::vector<double> &angles)
+{
+  ROS_ERROR("Function is not filled in.");
+  return visualization_msgs::MarkerArray();
+}
+
+visualization_msgs::MarkerArray CollisionChecker::getVisualization(std::string type)
+{
+  ROS_ERROR("Function is not filled in.");
+  return visualization_msgs::MarkerArray();
 }
 
 }
