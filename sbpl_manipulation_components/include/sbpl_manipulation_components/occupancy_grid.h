@@ -65,6 +65,8 @@ class OccupancyGrid
     */
     OccupancyGrid(double dim_x, double dim_y, double dim_z, double resolution, double origin_x, double origin_y, double origin_z);
 
+    OccupancyGrid(distance_field::PropagationDistanceField* df);
+
     /** @brief destructor */
     ~OccupancyGrid();
 
@@ -133,7 +135,6 @@ class OccupancyGrid
   private:
 
     double grid_resolution_;
-    double prop_distance_;
 
     std::string reference_frame_;
     distance_field::PropagationDistanceField* grid_;

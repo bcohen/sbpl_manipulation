@@ -206,15 +206,15 @@ bool KDLRobotModel::getJointLimits(std::string joint_name, double &min_limit, do
 
 bool KDLRobotModel::checkJointLimits(const std::vector<double> &angles)
 {
-  ROS_ERROR("Not filled in yet...");
-  /*
+  ROS_DEBUG("Not filled in yet...(checkJointLimits())");
+/*
   std::vector<double> a = angles;
   if(!sbpl::interp::NormalizeAnglesIntoRange(a, min_limits_, max_limits_))
   {
     ROS_ERROR("Joint angles are out of bounds.");  
     return false;
   }
-  */
+*/
   return true;
 }
 
@@ -237,7 +237,7 @@ bool KDLRobotModel::computeFK(const std::vector<double> &angles, std::string nam
 bool KDLRobotModel::computeFK(const std::vector<double> &angles, std::string name, std::vector<double> &pose)
 {
   KDL::Frame f;
-  pose.resize(6);
+  pose.resize(6,0);
   if(computeFK(angles, name, f))
   {
     pose[0] = f.p[0];
@@ -252,7 +252,7 @@ bool KDLRobotModel::computeFK(const std::vector<double> &angles, std::string nam
 bool KDLRobotModel::computePlanningLinkFK(const std::vector<double> &angles, std::vector<double> &pose)
 {
   KDL::Frame f, f1;
-  pose.resize(6);
+  pose.resize(6,0);
   for(size_t i = 0; i < angles.size(); ++i)
     jnt_pos_in_(i) = angles::normalize_angle(angles[i]);
 

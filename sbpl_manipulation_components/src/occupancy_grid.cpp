@@ -30,6 +30,7 @@
  /** \author Benjamin Cohen */
 
 #include <sbpl_manipulation_components/occupancy_grid.h>
+#include <ros/console.h>
 
 using namespace std;
 
@@ -39,27 +40,38 @@ namespace sbpl_arm_planner
 OccupancyGrid::OccupancyGrid(double dim_x, double dim_y, double dim_z, double resolution, double origin_x, double origin_y, double origin_z)
 {
   grid_resolution_ = resolution;
-  prop_distance_ = 0.40;
-
-  grid_ = new distance_field::PropagationDistanceField(dim_x, dim_y, dim_z, grid_resolution_, origin_x, origin_y,  origin_z, prop_distance_);
+  grid_ = new distance_field::PropagationDistanceField(dim_x, dim_y, dim_z, grid_resolution_, origin_x, origin_y,  origin_z, 0.40);
   grid_->reset();
+}
+
+OccupancyGrid::OccupancyGrid(distance_field::PropagationDistanceField* df)
+{
+  grid_ = df;
+
+  ROS_ERROR("ALREADY MADE GRID DIMS: %0.3f %0.3f %0.3f", df->getSize(distance_field::PropagationDistanceField::DIM_X), df->getSize(distance_field::PropagationDistanceField::DIM_Y), df->getSize(distance_field::PropagationDistanceField::DIM_Z));
+  ROS_ERROR("ALREADY MADE GRID DIMS: %0.3f %0.3f %0.3f", grid_->getSize(distance_field::PropagationDistanceField::DIM_X), grid_->getSize(distance_field::PropagationDistanceField::DIM_Y), grid_->getSize(distance_field::PropagationDistanceField::DIM_Z));
+
+  grid_resolution_ = grid_->getResolution(distance_field::PropagationDistanceField::DIM_X);
 }
 
 OccupancyGrid::~OccupancyGrid()
 {
+  /*
   if(grid_)
     delete grid_;
+  */
 }
 
 void OccupancyGrid::getGridSize(int &dim_x, int &dim_y, int &dim_z)
 {
-  dim_x = grid_->getSize(distance_field::PropagationDistanceField::DIM_X);
-  dim_y = grid_->getSize(distance_field::PropagationDistanceField::DIM_Y);
-  dim_z = grid_->getSize(distance_field::PropagationDistanceField::DIM_Z);
+  dim_x = grid_->getSize(distance_field::PropagationDistanceField::DIM_X) / grid_->getResolution(distance_field::PropagationDistanceField::DIM_X);
+  dim_y = grid_->getSize(distance_field::PropagationDistanceField::DIM_Y) / grid_->getResolution(distance_field::PropagationDistanceField::DIM_Y);
+  dim_z = grid_->getSize(distance_field::PropagationDistanceField::DIM_Z) / grid_->getResolution(distance_field::PropagationDistanceField::DIM_Z);
 }
 
 void OccupancyGrid::getWorldSize(double &dim_x, double &dim_y, double &dim_z)
 {
+  ROS_ERROR("getWorldSize() may be wrong...");
   dim_x = grid_->getSize(distance_field::PropagationDistanceField::DIM_X) *
     grid_->getResolution(distance_field::PropagationDistanceField::DIM_X);
   dim_y = grid_->getSize(distance_field::PropagationDistanceField::DIM_Y) *
