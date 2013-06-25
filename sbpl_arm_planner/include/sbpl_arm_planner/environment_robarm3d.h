@@ -137,7 +137,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 {
   public:
 
-    EnvironmentROBARM3D(OccupancyGrid *grid, RobotModel *rmodel, CollisionChecker *cc, ActionSet* as);
+    EnvironmentROBARM3D(OccupancyGrid *grid, RobotModel *rmodel, CollisionChecker *cc, ActionSet* as, PlanningParams *pm);
     ~EnvironmentROBARM3D();
 
     virtual bool AreEquivalent(int StateID1, int StateID2);
@@ -153,6 +153,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 
     bool initEnvironment();
     bool InitializeMDPCfg(MDPConfig *MDPCfg);
+    bool InitializeEnv(const char* sEnvFile){return false;};
     int GetFromToHeuristic(int FromStateID, int ToStateID);
     int GetGoalHeuristic(int stateID);
     int GetStartHeuristic(int stateID);
@@ -176,7 +177,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     ActionSet *as_;
 
     EnvironmentPlanningData pdata_;
-    SBPLArmPlannerParams prms_;
+    PlanningParams *prm_;
 
     // function pointers for heuristic function
     int (EnvironmentROBARM3D::*getHeuristic_) (int FromStateID, int ToStateID);
@@ -239,7 +240,7 @@ inline void EnvironmentROBARM3D::coordToAngles(const std::vector<int> &coord, st
 {
   angles.resize(coord.size());
   for(size_t i = 0; i < coord.size(); i++)
-    angles[i] = coord[i] * prms_.coord_delta_[i];
+    angles[i] = coord[i] * prm_->coord_delta_[i];
 }
 
 inline void EnvironmentROBARM3D::anglesToCoord(const std::vector<double> &angle, std::vector<int> &coord)
@@ -252,9 +253,9 @@ inline void EnvironmentROBARM3D::anglesToCoord(const std::vector<double> &angle,
     if(pos_angle < 0.0)
       pos_angle += 2*M_PI;
 
-    coord[i] = (int)((pos_angle + prms_.coord_delta_[i]*0.5)/prms_.coord_delta_[i]);
+    coord[i] = (int)((pos_angle + prm_->coord_delta_[i]*0.5)/prm_->coord_delta_[i]);
 
-    if(coord[i] == prms_.coord_vals_[i])
+    if(coord[i] == prm_->coord_vals_[i])
       coord[i] = 0;
   }
 }

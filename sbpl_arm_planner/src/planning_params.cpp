@@ -29,12 +29,13 @@
  /** \author Benjamin Cohen */
 
 #include <sbpl_arm_planner/sbpl_arm_planner_params.h>
-
+#include <leatherman/utils.h>
  
 namespace sbpl_arm_planner {
 
-SBPLArmPlannerParams::SBPLArmPlannerParams()
+PlanningParams::PlanningParams()
 {
+  allowed_time_ = 10.0;
   epsilon_ = 10;
   use_bfs_heuristic_ = true;
   ready_to_plan_ = false;
@@ -42,10 +43,12 @@ SBPLArmPlannerParams::SBPLArmPlannerParams()
   verbose_ = false;
   verbose_heuristics_ = false;
   verbose_collisions_ = false;
-  
+
+  planning_link_sphere_radius_ = 0.1;
+
   cost_multiplier_ = 1000;
   cost_per_cell_ = 1;
-  cost_per_meter_ = 0;
+  cost_per_meter_ = 50;
   cost_per_second_ = cost_multiplier_;
   time_per_cell_ = 0.05;
 
@@ -64,18 +67,23 @@ SBPLArmPlannerParams::SBPLArmPlannerParams()
   solution_log_level_ = "info";
 }
 
-bool SBPLArmPlannerParams::init()
+bool PlanningParams::init()
 {
   ros::NodeHandle nh("~");
 
   /* planning */
-  nh.param("planning/epsilon",epsilon_, 10.0);
-  nh.param("planning/use_bfs_heuristic",use_bfs_heuristic_,true);
-  nh.param("planning/verbose",verbose_,false);
-  nh.param<std::string>("planning/reference_frame",reference_frame_,"");
+  nh.param("planning/epsilon", epsilon_, 10.0);
+  nh.param("planning/use_bfs_heuristic", use_bfs_heuristic_,true);
+  nh.param("planning/verbose", verbose_,false);
+  nh.param ("planning/search_mode", search_mode_, false); //true: stop after first solution
+  nh.param ("planning/shortcut_path", shortcut_path_, false);
+  nh.param ("planning/interpolate_path", interpolate_path_, false);
+  nh.param ("planning/seconds_per_waypoint", waypoint_time_, 0.35);
+  nh.param<std::string>("planning/planning_frame",planning_frame_,"");
   nh.param<std::string>("planning/group_name",group_name_,"");
 
   /* logging */
+  nh.param ("debug/print_out_path", print_path_, true);
   nh.param<std::string>("debug/logging/expands", expands_log_level_, "info");
   nh.param<std::string>("debug/logging/expands2", expands2_log_level_, "info");
   nh.param<std::string>("debug/logging/ik", ik_log_level_, "info");
@@ -83,16 +91,9 @@ bool SBPLArmPlannerParams::init()
   nh.param<std::string>("debug/logging/collisions", cspace_log_level_, "info");
   nh.param<std::string>("debug/logging/solution", solution_log_level_, "info");
 
+  /* planning joints */
   XmlRpc::XmlRpcValue xlist;
   nh.getParam("planning/planning_joints", xlist);
-
-  if(xlist.getType() != XmlRpc::XmlRpcValue::TypeArray)
-  {
-    ROS_ERROR("Planning joints list is not an array. Expecting a list with more than one joint.");
-    return false;
-  }
-
-  // planning joints
   std::string joint_list = std::string(xlist);
   std::stringstream joint_name_stream(joint_list);
   while(joint_name_stream.good() && !joint_name_stream.eof())
@@ -124,53 +125,38 @@ bool SBPLArmPlannerParams::init()
     return false;
   }
 
-  changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + expands_log_, expands_log_level_);
-  changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + expands2_log_, expands2_log_level_);
-  changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + solution_log_, solution_log_level_);
-  changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + ik_log_, ik_log_level_);
-  changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + rmodel_log_, rmodel_log_level_);
-  changeLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + cspace_log_, cspace_log_level_);
+  leatherman::setLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + expands_log_, expands_log_level_);
+  leatherman::setLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + expands2_log_, expands2_log_level_);
+  leatherman::setLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + solution_log_, solution_log_level_);
+  leatherman::setLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + ik_log_, ik_log_level_);
+  leatherman::setLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + rmodel_log_, rmodel_log_level_);
+  leatherman::setLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + cspace_log_, cspace_log_level_);
 
+  printParams("prms");
   return true;
 }
 
-void SBPLArmPlannerParams::setCellCost(int cost_per_cell)
+void PlanningParams::printParams(std::string stream)
 {
-  cost_per_cell_ = cost_per_cell;
-}
-
-void SBPLArmPlannerParams::printParams(std::string stream)
-{
-  ROS_DEBUG_NAMED(stream,"Manipulation Environment Parameters:");
-  ROS_DEBUG_NAMED(stream,"%40s: %.2f", "epsilon",epsilon_);
-  ROS_DEBUG_NAMED(stream,"%40s: %s", "use dijkstra heuristic", use_bfs_heuristic_ ? "yes" : "no");
-  ROS_DEBUG_NAMED(stream,"%40s: %d", "cost per cell", cost_per_cell_);
-  ROS_DEBUG_NAMED(stream,"planning joints: ");
+  ROS_INFO_NAMED(stream," ");
+  ROS_INFO_NAMED(stream,"Manipulation Environment Parameters:");
+  ROS_INFO_NAMED(stream,"%40s: %.2f", "epsilon",epsilon_);
+  ROS_INFO_NAMED(stream,"%40s: %s", "use dijkstra heuristic", use_bfs_heuristic_ ? "yes" : "no");
+  ROS_INFO_NAMED(stream,"%40s: %s", "sbpl search mode", search_mode_ ? "stop_after_first_sol" : "run_until_timeout");
+  ROS_INFO_NAMED(stream,"%40s: %s", "postprocessing: shortcut", shortcut_path_ ? "yes" : "no");
+  ROS_INFO_NAMED(stream,"%40s: %s", "postprocessing: interpolate", interpolate_path_ ? "yes" : "no");
+  ROS_INFO_NAMED(stream,"%40s: %0.3fsec", "time_per_waypoint", waypoint_time_);
+  
+  ROS_INFO_NAMED(stream,"%40s: %d", "cost per cell", cost_per_cell_);
+  ROS_INFO_NAMED(stream,"%40s: %s", "reference frame", planning_frame_.c_str());
+  ROS_INFO_NAMED(stream,"%40s: %s", "group name", group_name_.c_str());
+  ROS_INFO_NAMED(stream,"planning joints: ");
   for(size_t i = 0; i < planning_joints_.size(); ++i)
-    ROS_DEBUG_NAMED(stream,"   [%d] %30s", int(i), planning_joints_[i].c_str());
-  ROS_DEBUG_NAMED(stream,"discretization: ");
-  ROS_DEBUG_NAMED(stream," ");
+    ROS_INFO_NAMED(stream,"   [%d] %30s", int(i), planning_joints_[i].c_str());
+  ROS_INFO_NAMED(stream,"discretization: ");
+  for(size_t i = 0; i < coord_vals_.size(); ++i)
+    ROS_INFO_NAMED(stream,"   [%d] val: %d  delta: %0.3f", int(i), coord_vals_[i], coord_delta_[i]);
+  ROS_INFO_NAMED(stream," ");
 }
-
-void SBPLArmPlannerParams::changeLoggerLevel(std::string name, std::string level)
-{
-  ROSCONSOLE_AUTOINIT;
-
-  //std::string logger_name = ROSCONSOLE_DEFAULT_NAME + std::string(".") + name;
-  std::string logger_name = name;
-
-  ROS_INFO("Setting %s to %s level", logger_name.c_str(), level.c_str());
-
-  log4cxx::LoggerPtr my_logger = log4cxx::Logger::getLogger(logger_name);
-
-  // Set the logger for this package to output all statements
-  if(level.compare("debug") == 0)
-    my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Debug]);
-  else
-    my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Info]);
-
-  ROS_DEBUG_NAMED(name, "This is a debug statement, and should print if you enabled debug.");
-}
-
 
 }

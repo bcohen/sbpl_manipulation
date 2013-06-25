@@ -53,9 +53,17 @@ ActionSet::ActionSet()
   motion_primitive_type_names_.push_back("retract_then_towards_rpy_then_towards_xyz");
 }
 
-bool ActionSet::init(FILE* file, EnvironmentROBARM3D *env)
+bool ActionSet::init(std::string filename, EnvironmentROBARM3D *env)
 {
   env_ = env;
+
+  FILE* file=NULL;
+  if((file=fopen(filename.c_str(),"r")) == NULL)
+  {
+    ROS_ERROR("Failed to open action set file.");
+    return false;
+  }
+
   return getMotionPrimitivesFromFile(file);
 }
 
@@ -118,7 +126,7 @@ bool ActionSet::getMotionPrimitivesFromFile(FILE* fCfg)
       if(fscanf(fCfg,"%s",sTemp) < 1) 
         ROS_WARN("Parsed string has length < 1.");
       if(!feof(fCfg) && strlen(sTemp) != 0)
-        mprim[j] = atof(sTemp);
+        mprim[j] = angles::from_degrees(atof(sTemp));
       else
       {
         ROS_ERROR("ERROR: End of parameter file reached prematurely. Check for newline.");
@@ -130,7 +138,15 @@ bool ActionSet::getMotionPrimitivesFromFile(FILE* fCfg)
     else
       addMotionPrim(mprim,true,true);
   }
- 
+
+  // add amp
+  MotionPrimitive m;
+  m.type = SNAP_TO_XYZ_RPY;
+  m.group = 2;
+  m.id =  mp_.size();
+  m.action.push_back(mprim);
+  mp_.push_back(m);
+
   return true;
 }
 
@@ -216,11 +232,24 @@ bool ActionSet::getAction(const RobotState &parent, double dist_to_goal, MotionP
   else if(mp.type == SNAP_TO_XYZ_RPY)
   {
     if(dist_to_goal > ik_amp_dist_thresh_m_)
+    {
+      ROS_ERROR("dist_to_goal: %0.3f", dist_to_goal);
       return false;
-     
+    }
     action.resize(1);
-    if(!env_->getRobotModel()->computeIK(env_->getGoal(), parent, action[0]))
+    std::vector<double> goal = env_->getGoal();
+    if(!env_->getRobotModel()->computeIK(goal, parent, action[0]))
+    {
+      ROS_ERROR("IK Failed. (dist_to_goal: %0.3f)  (goal:   xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
       return false;
+    }
+    std::vector<double> p(6,0);
+  
+    env_->getRobotModel()->computeFK(action[0], "name", p); 
+
+    ROS_ERROR("[ik] goal:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
+    //ROS_ERROR("[ik]   fk:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", p[0], p[1], p[2], p[3], p[4], p[5]);
+    //ROS_ERROR("[ik] diff:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", fabs(goal[0]-p[0]), fabs(goal[1]-p[1]), fabs(goal[2]-p[2]), fabs(goal[3]-p[3]), fabs(goal[4]-p[4]), fabs(goal[5]-p[5]));
   }
   else
   {
@@ -238,11 +267,15 @@ bool ActionSet::applyMotionPrimitive(const RobotState &state, MotionPrimitive &m
   {
     if(action[i].size() != state.size())
       return false;
-
-    for(size_t j = 0; j < action.size(); ++j)
+    /*
+    ROS_INFO("[action_set] state: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", state[0], state[1], state[2], state[3], state[4], state[5], state[6]);
+    mp.print();
+    */
+    for(size_t j = 0; j < action[i].size(); ++j)
       action[i][j] =  angles::normalize_angle(action[i][j] + state[j]);
   }
   return true;
 }
+
 
 }

@@ -17,22 +17,8 @@
 	<depend package="angles" />
   <depend package="kdl" />
   <depend package="bfs3d" />
+  <depend package="leatherman" />
   <depend package="sbpl_manipulation_components" />
-
-  <!-- <depend package="sbpl_geometry_utils" /> -->
-  <!-- <depend package="tf" /> -->
-  <!-- <depend package="kdl_parser" /> -->
-  <!-- <depend package="urdf" /> -->
-  <!-- <depend package="pr2_arm_kinematics"/> -->
-  <!-- <depend package="distance_field" /> -->
-  <!-- <depend package="sbpl_collision_checking" /> -->
-  <!-- <depend package="planning_models" /> -->
-  <!-- <depend package="planning_models_loader" /> -->
-  <!-- <depend package="collision_distance_field" /> -->
-  <!-- <depend package="geometric_shapes" /> -->
-  <!-- <depend package="collision_distance_field_ros"/> -->
-  <!-- <depend package="planning_scene" /> -->
-  <!-- <rosdep name="eigen" /> -->
 
   <export>
       <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_arm_planner"/>

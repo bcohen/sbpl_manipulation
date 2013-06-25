@@ -30,7 +30,7 @@ class ActionSet
 
     ~ActionSet(){};
 
-    bool init(FILE* fCfg, EnvironmentROBARM3D *env);
+    bool init(std::string filename, EnvironmentROBARM3D *env);
 
     bool getActionSet(const RobotState &parent, std::vector<Action> &actions);
 

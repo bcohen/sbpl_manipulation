@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SBPL_ARM_PLANNER_PARAMS_H_
-#define _SBPL_ARM_PLANNER_PARAMS_H_
+#ifndef _PLANNING_PARAMS_H_
+#define _PLANNING_PARAMS_H_
 
 #include <iostream>
 #include <string>
@@ -43,26 +43,28 @@ using namespace std;
 namespace sbpl_arm_planner {
 
 
-class SBPLArmPlannerParams
+class PlanningParams
 {
   public:
 
-    SBPLArmPlannerParams();
-    ~SBPLArmPlannerParams(){};
+    PlanningParams();
+    ~PlanningParams(){};
 
     bool init();
 
     void printParams(std::string stream);
 
-    void setCellCost(int cost_per_cell);
+    /* Search */
+    bool search_mode_;
+    bool shortcut_path_;
+    bool interpolate_path_;
+    double allowed_time_;
+    double waypoint_time_;
 
-    void changeLoggerLevel(std::string name, std::string level);
-
- 
     /* Planning */
     bool ready_to_plan_;
     int num_joints_;
-    std::string reference_frame_;
+    std::string planning_frame_;
     std::string group_name_;
     std::string planner_name_;
     std::string statespace_type_;
@@ -86,6 +88,7 @@ class SBPLArmPlannerParams
     double max_mprim_offset_;
     
     /* Debugging & Logging */
+    bool print_path_;
     bool verbose_;
     bool verbose_heuristics_;
     bool verbose_collisions_;

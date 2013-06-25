@@ -31,6 +31,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_library(sbpl_arm_planner 
                         src/environment_robarm3d.cpp
                         src/action_set.cpp
-                        src/sbpl_arm_planner_params.cpp)
+                        src/sbpl_arm_planner_params.cpp
+                        src/sbpl_arm_planner_interface.cpp)
 
-target_link_libraries(sbpl_arm_planner sbpl_manipulation_components bfs3d)
+target_link_libraries(sbpl_arm_planner sbpl_geometry_utils sbpl_manipulation_components leatherman bfs3d)

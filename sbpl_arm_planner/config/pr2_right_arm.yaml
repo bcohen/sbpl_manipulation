@@ -1,9 +1,10 @@
 planning:
   epsilon: 100
-  verbose: false
+  verbose: true
+  shortcut_path: false
+  interpolate_path: false
   use_bfs_heuristic: true
   group_name: right_arm
-  reference_frame: base_footprint 
   planning_joints:
     r_shoulder_pan_joint
     r_shoulder_lift_joint
@@ -12,17 +13,17 @@ planning:
     r_forearm_roll_joint
     r_wrist_flex_joint
     r_wrist_roll_joint
-  discretization: 1 1 1 1 1 1 1
+  discretization: 360 360 360 360 360 360 360
 
 debug:
-  print_out_path: false
+  print_out_path: true
   logging:
-    expands: info
-    expands2: info
-    ik: info
-    robot_model: info
-    collisions: info
-    solution: info
+    expands: debug
+    expands2: debug
+    ik: debug
+    robot_model: debug
+    collisions: debug
+    solution: debug
 
 visualizations:
   heuristic: false
@@ -45,8 +46,4 @@ collision_space:
     size_x: 2.0
     size_y: 2.0
     size_z: 2.0
-
-
-fk_service_name: pr2_right_arm_kinematics/get_fk
-ik_service_name: pr2_right_arm_kinematics/get_ik
 
