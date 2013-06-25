@@ -708,7 +708,7 @@ void SBPLCollisionModel::printFrames(const std::vector<std::vector<KDL::Frame> >
       ROS_INFO("[%d %d] %2.3f %2.3f %2.3f", int(i), int(j), f[i][j].p.x(), f[i][j].p.y(), f[i][j].p.z());
 }
 
-bool SBPLCollisionModel::getJointLimits(std::string root_name, std::string tip_name, std::vector<std::string> &joint_names, std::vector<double> min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous)
+bool SBPLCollisionModel::getJointLimits(std::string root_name, std::string tip_name, std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous)
 {
   unsigned int num_joints = 0;
 
@@ -760,8 +760,10 @@ bool SBPLCollisionModel::getJointLimits(std::string root_name, std::string tip_n
         }
         else
         {
-          min_limits[num_joints-i-1] = joint->safety->soft_lower_limit;
-          max_limits[num_joints-i-1] = joint->safety->soft_upper_limit;
+          min_limits[num_joints-i-1] = joint->limits->lower;
+          max_limits[num_joints-i-1] = joint->limits->upper;
+          // min_limits[num_joints-i-1] = joint->safety->soft_lower_limit;
+          // max_limits[num_joints-i-1] = joint->safety->soft_upper_limit;
         }
       }
       else
@@ -808,8 +810,10 @@ bool SBPLCollisionModel::getJointLimits(std::string group_name, std::string join
           }
           else
           {
-            min_limit = joint->safety->soft_lower_limit;
-            max_limit = joint->safety->soft_upper_limit;
+            min_limit = joint->limits->lower;
+            max_limit = joint->limits->upper;
+            //min_limit = joint->safety->soft_lower_limit;
+            //max_limit = joint->safety->soft_upper_limit;
           }
         }
         else

@@ -35,7 +35,8 @@
 #include <vector>
 #include <math.h>
 #include <sbpl_collision_checking/bresenham.h>
-#include <sbpl_collision_checking/occupancy_grid.h>
+#include <sbpl_manipulation_components/occupancy_grid.h>
+#include <sbpl_manipulation_components/collision_checker.h>
 #include <sbpl_collision_checking/sbpl_collision_model.h>
 #include <sbpl_geometry_utils/Interpolator.h>
 #include <sbpl_geometry_utils/Voxelizer.h>
@@ -60,7 +61,7 @@ typedef struct
   bool bIsObstacle;
 } CELL3V;
 
-class SBPLCollisionSpace
+class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 {
   public:
 
@@ -71,7 +72,9 @@ class SBPLCollisionSpace
     bool init(std::string group_name);
 
     void setPadding(double padding);
-    
+   
+    bool setPlanningScene(const arm_navigation_msgs::PlanningScene &scene);
+
     /** --------------- Collision Checking ----------- */
     void resetDistanceField();
 
@@ -98,7 +101,11 @@ class SBPLCollisionSpace
     unsigned char isValidLineSegment(const std::vector<int> a,const std::vector<int> b,const int radius);
 
     bool getClearance(const std::vector<double> &angles, int num_spheres, double &avg_dist, double &min_dist);
-    
+   
+    bool isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
+
+    bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, double &dist);
+
     /** ---------------- Utils ---------------- */
     bool doesLinkExist(std::string name);
 
@@ -137,6 +144,7 @@ class SBPLCollisionSpace
     void getOccupiedVoxels(double x_center, double y_center, double z_center, double radius, std::string text, std::vector<geometry_msgs::Point> &voxels);
     
     /** --------------- Attached Objects --------------*/
+    void attachObject(const arm_navigation_msgs::AttachedCollisionObject &obj);
     void attachSphere(std::string name, std::string link, geometry_msgs::Pose pose, double radius);
     void attachCylinder(std::string link, geometry_msgs::Pose pose, double radius, double length);
     void attachCube(std::string name, std::string link, geometry_msgs::Pose pose, double x_dim, double y_dim, double z_dim);
@@ -150,7 +158,8 @@ class SBPLCollisionSpace
     int num_false_collision_checks_;
     std::vector<sbpl_arm_planner::Sphere> collision_spheres_;
     std::vector<sbpl_arm_planner::Sphere> attached_collision_spheres_;
-
+    visualization_msgs::MarkerArray getVisualization(std::string type);
+    visualization_msgs::MarkerArray getCollisionModelVisualization(const std::vector<double> &angles);
 
   private:
 

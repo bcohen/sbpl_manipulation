@@ -30,15 +30,13 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(sbpl_collision_checking 
                         src/bresenham.cpp 
-                        src/occupancy_grid.cpp 
                         src/sbpl_collision_model.cpp
-                        src/sbpl_collision_space.cpp
-                        src/sbpl_collision_interface.cpp)
+                        src/sbpl_collision_space.cpp)
 
-target_link_libraries(sbpl_collision_checking visualize_arm)
+target_link_libraries(sbpl_collision_checking sbpl_geometry_utils sbpl_manipulation_components)
 
-rosbuild_add_executable(test_model src/test_collision_model.cpp)
-target_link_libraries(test_model sbpl_collision_checking)
+#rosbuild_add_executable(test_model src/test_collision_model.cpp)
+#target_link_libraries(test_model sbpl_collision_checking)
 
-rosbuild_add_executable(test_space src/test_collision_space.cpp)
-target_link_libraries(test_space sbpl_collision_checking)
+#rosbuild_add_executable(test_space src/test_collision_space.cpp)
+#target_link_libraries(test_space sbpl_collision_checking)

@@ -30,6 +30,7 @@
 /** \author Benjamin Cohen */
 
 #include <sbpl_collision_checking/sbpl_collision_space.h>
+#include <leatherman/viz.h>
 
 namespace sbpl_arm_planner{
 
@@ -72,6 +73,9 @@ bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint
     continuous_[i] = cont;
   }
 
+  ROS_INFO("[min_limits] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", min_limits_[0], min_limits_[1], min_limits_[2], min_limits_[3], min_limits_[4], min_limits_[5], min_limits_[6]);
+  ROS_INFO("[max_limits] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", max_limits_[0], max_limits_[1], max_limits_[2], max_limits_[3], max_limits_[4], max_limits_[5], max_limits_[6]);
+  ROS_INFO("[continuous] %s %s %s %s %s %s %s", continuous_[0] ? "yes" : "no", continuous_[1] ? "yes" : "no", continuous_[2] ? "yes" : "no", continuous_[3] ? "yes" : "no", continuous_[4] ? "yes" : "no", continuous_[5] ? "yes" : "no", continuous_[6] ? "yes" : "no");
   // set the order of the planning joints
   model_.setOrderOfJointPositions(planning_joints_, group_name_);
   return true;
@@ -101,6 +105,7 @@ bool SBPLCollisionSpace::init(std::string group_name)
   // get the collision spheres for the robot
   model_.getDefaultGroupSpheres(spheres_);
 
+  model_.printDebugInfo(group_name);
   return true;
 }
 
@@ -161,7 +166,7 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     if(!grid_->isInBounds(x, y, z))
     {
       if(verbose)
-        ROS_INFO("[cspace] Sphere %d %d %d is out of bounds.", x, y, z);
+        ROS_INFO("[cspace] Sphere '%s' with center at {%0.2f %0.2f %0.2f} (%d %d %d) is out of bounds.", spheres_[i]->name.c_str(), v.x(), v.y(), v.z(), x, y, z);
       return false;
     }
 
@@ -169,7 +174,8 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     if((dist_temp = grid_->getCell(x,y,z)) <= int((spheres_[i]->radius + padding_) / grid_->getResolution() + 0.5))
     {
       dist = dist_temp;
-      ROS_DEBUG("    [sphere %d] name: %6s  x: %d y: %d z: %d radius: %0.3f (%d)  dist: %d  *collision*", int(i), spheres_[i]->name.c_str(), x, y, z, spheres_[i]->radius,  int((spheres_[i]->radius + padding_) / grid_->getResolution() + 0.5), grid_->getCell(x,y,z));
+      if(verbose)
+        ROS_INFO("    [sphere %d] name: %6s  x: %d y: %d z: %d radius: %0.3f (%d)  dist: %d  *collision*", int(i), spheres_[i]->name.c_str(), x, y, z, spheres_[i]->radius,  int((spheres_[i]->radius + padding_) / grid_->getResolution() + 0.5), grid_->getCell(x,y,z));
       return false;
     }
 
@@ -293,6 +299,10 @@ bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start,
   {
     path_length = 0;
     ROS_ERROR("[cspace] Failed to interpolate the path. It's probably infeasible due to joint limits.");
+    ROS_ERROR("[interpolate]  start: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", start_norm[0], start_norm[1], start_norm[2], start_norm[3], start_norm[4], start_norm[5], start_norm[6]);
+    ROS_ERROR("[interpolate]    end: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", end_norm[0], end_norm[1], end_norm[2], end_norm[3], end_norm[4], end_norm[5], end_norm[6]);
+    ROS_ERROR("[interpolate]    min: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", min_limits_[0], min_limits_[1], min_limits_[2], min_limits_[3], min_limits_[4], min_limits_[5], min_limits_[6]);
+    ROS_ERROR("[interpolate]    max: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", max_limits_[0], max_limits_[1], max_limits_[2], max_limits_[3], max_limits_[4], max_limits_[5], max_limits_[6]);
     return false;
   }
 
@@ -458,7 +468,7 @@ void SBPLCollisionSpace::addCubesToGrid(std::vector<std::vector<double> > &cubes
 
 void SBPLCollisionSpace::addCubeToGrid(double x, double y, double z, double dim_x, double dim_y, double dim_z)
 {
-  grid_->addCollisionCuboid(x, y, z, dim_x, dim_y, dim_z);
+  grid_->addCube(x, y, z, dim_x, dim_y, dim_z);
 }
 
 bool SBPLCollisionSpace::getCollisionSpheres(const std::vector<double> &angles, std::vector<std::vector<double> > &spheres)
@@ -690,7 +700,7 @@ void SBPLCollisionSpace::addCollisionObject(const arm_navigation_msgs::Collision
       dims[1] = object.shapes[i].dimensions[1];
       dims[2] = object.shapes[i].dimensions[2];
       object_voxel_map_[object.id].clear();
-      grid_->getVoxelsInBox(object.poses[i], dims, object_voxel_map_[object.id]);
+      grid_->getOccupiedVoxels(object.poses[i], dims, object_voxel_map_[object.id]);
     }
     else if(object.shapes[i].type == arm_navigation_msgs::Shape::SPHERE)
     {
@@ -895,6 +905,169 @@ bool SBPLCollisionSpace::getClearance(const std::vector<double> &angles, int num
   ROS_DEBUG("[cspace]  num_spheres: %d  avg_dist: %2.2f   min_dist: %2.2f", num_spheres, avg_dist, min_dist); 
   return true;
 }
+
+bool SBPLCollisionSpace::isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist)
+{
+  unsigned char udist;
+  return checkCollision(angles, verbose, visualize, udist);
+}
+
+bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, double &dist)
+{
+  unsigned char udist;
+  return checkPathForCollision(angles0, angles1, false, path_length, num_checks, udist);
+}
+
+bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)
+{
+  // collision objects
+  for(size_t i = 0; i < scene.collision_objects.size(); ++i)
+  {
+    object_map_[scene.collision_objects[i].id] = scene.collision_objects[i];
+    processCollisionObjectMsg(scene.collision_objects[i]);
+  }
+
+  // attached collision objects
+  for(size_t i = 0; i < scene.attached_collision_objects.size(); ++i)
+  {
+    if(!doesLinkExist(scene.attached_collision_objects[i].link_name))
+    {
+      ROS_WARN("[cspace] This attached object is not intended for the planning joints of the robot.");
+    }
+    // add object
+    else if(scene.attached_collision_objects[i].object.operation.operation == arm_navigation_msgs::CollisionObjectOperation::ADD)
+    {
+      ROS_DEBUG("[cspace] Received a message to ADD an object (%s) with %d shapes.", scene.attached_collision_objects[i].object.id.c_str(), int(scene.attached_collision_objects[i].object.shapes.size()));
+      attachObject(scene.attached_collision_objects[i]);
+    }
+    // remove object
+    else if(scene.attached_collision_objects[i].object.operation.operation == arm_navigation_msgs::CollisionObjectOperation::REMOVE)
+    {
+      ROS_DEBUG("[cspace] Removing object (%s) from gripper.", scene.attached_collision_objects[i].object.id.c_str());
+      removeAttachedObject();
+    }
+    else
+      ROS_WARN("Received a collision object with an unknown operation");
+  }
+  
+  // collision map
+  if(scene.collision_map.header.frame_id.compare(grid_->getReferenceFrame()) != 0)
+    ROS_WARN_ONCE("collision_map_occ is in %s not in %s", scene.collision_map.header.frame_id.c_str(), grid_->getReferenceFrame().c_str());
+
+  if(!scene.collision_map.boxes.empty())
+    grid_->updateFromCollisionMap(scene.collision_map);
+
+  return true;
+}
+
+void SBPLCollisionSpace::attachObject(const arm_navigation_msgs::AttachedCollisionObject &obj)
+{
+  geometry_msgs::PoseStamped pose_in, pose_out;
+  std::string link_name = obj.link_name;
+  arm_navigation_msgs::CollisionObject object(obj.object);
+  ROS_INFO("Received a collision object message with %d shapes.", int(object.shapes.size()));
+
+  for(size_t i = 0; i < object.shapes.size(); i++)
+  {
+    pose_in.header = object.header;
+    pose_in.header.stamp = ros::Time();
+    pose_in.pose = object.poses[i];
+    //sbpl_arm_planner::transformPose(pscene_, pose_in.pose, pose_out.pose, object.header.frame_id, attached_object_frame_);
+    object.poses[i] = pose_out.pose;
+    ROS_WARN("[cspace] [attach_object] Converted shape from %s (%0.2f %0.2f %0.2f) to %s (%0.3f %0.3f %0.3f)", pose_in.header.frame_id.c_str(), pose_in.pose.position.x, pose_in.pose.position.y, pose_in.pose.position.z, attached_object_frame_.c_str(), pose_out.pose.position.x, pose_out.pose.position.y, pose_out.pose.position.z);
+
+    if(object.shapes[i].type == arm_navigation_msgs::Shape::SPHERE)
+    {
+      ROS_INFO("[cspace] Attaching a '%s' sphere with radius: %0.3fm", object.id.c_str(), object.shapes[i].dimensions[0]);
+      attachSphere(object.id, link_name, object.poses[i], object.shapes[i].dimensions[0]);
+    }
+    else if(object.shapes[i].type == arm_navigation_msgs::Shape::CYLINDER)
+    {
+      ROS_INFO("[cspace] Attaching a '%s' cylinder with radius: %0.3fm & length %0.3fm", object.id.c_str(), object.shapes[i].dimensions[0], object.shapes[i].dimensions[1]);
+      attachCylinder(link_name, object.poses[i], object.shapes[i].dimensions[0], object.shapes[i].dimensions[1]);
+    }
+    else if(object.shapes[i].type == arm_navigation_msgs::Shape::MESH)
+    {
+      ROS_INFO("[cspace] Attaching a '%s' mesh with %d triangles & %d vertices is NOT supported right now...", object.id.c_str(), int(object.shapes[i].triangles.size()/3), int(object.shapes[i].vertices.size()));
+      attachMesh(object.id, link_name, object.poses[i], object.shapes[i].vertices, object.shapes[i].triangles);
+    }
+    else if(object.shapes[i].type == arm_navigation_msgs::Shape::BOX)
+    {
+      ROS_INFO("[cspace] Attaching a '%s' cube with dimensions {%0.3fm x %0.3fm x %0.3fm}.", object.id.c_str(), object.shapes[i].dimensions[0], object.shapes[i].dimensions[1], object.shapes[i].dimensions[2]);
+      attachCube(object.id, link_name, object.poses[i], object.shapes[i].dimensions[0], object.shapes[i].dimensions[1], object.shapes[i].dimensions[2]);
+    }
+    else
+      ROS_WARN("[cspace] Currently attaching objects of type '%d' aren't supported.", object.shapes[i].type);
+  }
+}
+
+
+visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string type)
+{
+  visualization_msgs::MarkerArray ma;
+
+  if(type.compare("bounds") == 0)
+    ma = grid_->getVisualization(type);
+  else if(type.compare("distance_field") == 0)
+    ma = grid_->getVisualization(type);
+  else if(type.compare("occupied_voxels") == 0)
+  {
+    visualization_msgs::Marker marker;
+    std::vector<std::vector<double> > points(1,std::vector<double>(3,0));
+    std::vector<double> color(4,1);
+    color[2] = 0;
+    std::vector<geometry_msgs::Pose> vposes;
+    getCollisionObjectVoxelPoses(vposes);
+
+    marker.header.seq = 0;
+    marker.header.stamp = ros::Time::now();
+    marker.header.frame_id = grid_->getReferenceFrame();
+    marker.ns = "collision_object_voxels";
+    marker.id = 1;
+    marker.type = visualization_msgs::Marker::POINTS;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.lifetime = ros::Duration(0.0);
+    marker.scale.x = 0.01;
+    marker.scale.y = 0.01;
+    marker.scale.z = 0.01;
+    marker.color.r = 1;
+    marker.color.g = 1;
+    marker.color.b = 0;
+    marker.color.a = 1;
+    marker.points.resize(vposes.size());
+    for(size_t i = 0; i < vposes.size(); ++i)
+    {
+      marker.points[i].x = vposes[i].position.x;
+      marker.points[i].y = vposes[i].position.y;
+      marker.points[i].z = vposes[i].position.z;
+    }
+    ma.markers.push_back(marker);
+  }
+  else
+    ROS_ERROR("No visualization found of type '%s'.", type.c_str());
+
+  return ma;
+}
+
+visualization_msgs::MarkerArray SBPLCollisionSpace::getCollisionModelVisualization(const std::vector<double> &angles)
+{
+  std::vector<double> rad;
+  std::vector<std::vector<double> > sph;
+  visualization_msgs::MarkerArray ma;
+
+  getCollisionSpheres(angles, sph);
+
+  if(sph.empty() || sph[0].size() < 4)
+    return ma;
+
+  rad.resize(sph.size());
+  for(size_t i = 0; i < sph.size(); ++i)
+    rad[i] = sph[i][3];
+
+  ma = viz::getSpheresMarkerArray(sph, rad, 90, grid_->getReferenceFrame(), "collision_model", 0); 
+  return ma;
+}
+
 
 }
 

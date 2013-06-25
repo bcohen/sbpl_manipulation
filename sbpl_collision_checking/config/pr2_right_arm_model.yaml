@@ -11,7 +11,7 @@ collision_groups:
       r_wrist_roll_joint
     redundancy:
       name: r_upper_arm_roll_joint
-    root_name: base_footprint
+    root_name: torso_lift_link
     tip_name: r_wrist_roll_link
     collision_links:
     - name: shoulder

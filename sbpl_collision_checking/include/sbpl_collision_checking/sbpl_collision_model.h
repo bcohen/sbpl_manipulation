@@ -121,7 +121,7 @@ class SBPLCollisionModel
 
     void getGroupNames(std::vector<std::string> &names);
 
-    bool getJointLimits(std::string root_name, std::string tip_name, std::vector<std::string> &joint_names, std::vector<double> min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous);
+    bool getJointLimits(std::string root_name, std::string tip_name, std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous);
 
     bool getJointLimits(std::string group_name, std::string joint_name, double &min_limit, double &max_limit, bool &continuous);
 
