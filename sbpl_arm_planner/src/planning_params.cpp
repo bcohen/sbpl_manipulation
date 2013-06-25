@@ -28,7 +28,7 @@
  */
  /** \author Benjamin Cohen */
 
-#include <sbpl_arm_planner/sbpl_arm_planner_params.h>
+#include <sbpl_arm_planner/planning_params.h>
 #include <leatherman/utils.h>
  
 namespace sbpl_arm_planner {

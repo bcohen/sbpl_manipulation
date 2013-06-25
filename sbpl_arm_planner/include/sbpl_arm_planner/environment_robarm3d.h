@@ -45,7 +45,7 @@
 #include <sbpl_manipulation_components/robot_model.h>
 #include <sbpl_manipulation_components/collision_checker.h>
 #include <sbpl_arm_planner/action_set.h>
-#include <sbpl_arm_planner/sbpl_arm_planner_params.h>
+#include <sbpl_arm_planner/planning_params.h>
 #include <trajectory_msgs/JointTrajectory.h>
 
 namespace sbpl_arm_planner {
