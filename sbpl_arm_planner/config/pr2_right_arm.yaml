@@ -34,17 +34,11 @@ visualizations:
   collision_model_trajectory: false
   trajectory_throttle: 1
 
-collision_space:
-  group_name: right_arm
-  reference_frame: odom_combined
-  resolution: 0.02
-  collision_map_topic: collision_map_occ
-
-  occupancy_grid:
-    origin_x: -0.75
-    origin_y: -1.25
-    origin_z: -0.05
-    size_x: 2.0
-    size_y: 2.0
-    size_z: 2.0
+#  occupancy_grid:
+#    origin_x: -0.75
+#    origin_y: -1.25
+#    origin_z: -0.05
+#    size_x: 2.0
+#    size_y: 2.0
+#    size_z: 2.0
 
