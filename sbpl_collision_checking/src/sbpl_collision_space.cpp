@@ -91,21 +91,36 @@ bool SBPLCollisionSpace::init(std::string group_name)
     ROS_ERROR("[cspace] The robot's collision model failed to initialize.");
     return false;
   }
+
+  if(!model_.initAllGroups())
+  {
+    ROS_ERROR("Failed to initialize all groups.");
+    return false;
+  } 
   
+  /*
   // initialize the collision group
   if(!model_.initGroup(group_name))
   {
     ROS_ERROR("[cspace] Failed to initialize group '%s'.", group_name.c_str());
     return false;
   }
-  
+  */
+
   // choose the group we are planning for
   model_.setDefaultGroup(group_name_);
 
   // get the collision spheres for the robot
   model_.getDefaultGroupSpheres(spheres_);
 
+  model_.printGroups();
   model_.printDebugInfo(group_name);
+
+  if(!updateVoxelGroup("body"))
+    return false;
+  if(!updateVoxelGroup("left_arm"))
+    return false;
+
   return true;
 }
 
@@ -184,6 +199,44 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   }
 
   num_false_collision_checks_++;
+  return true;
+}
+
+bool SBPLCollisionSpace::updateVoxelGroup(std::string name)
+{
+  KDL::Vector v;
+  std::vector<double> angles;
+  std::vector<std::vector<KDL::Frame> > frames;
+  std::vector<Eigen::Vector3d> pts;
+  Group* g = model_.getGroup(name);
+
+  // compute foward kinematics
+  if(!model_.computeGroupFK(angles, g, frames))
+  {
+    ROS_ERROR("[cspace] Failed to compute foward kinematics for group '%s'.", g->name_.c_str());
+    return false;
+  }
+
+  ROS_ERROR("frames: %d    links: %d", int(frames.size()), int(g->links_.size()));
+  for(size_t i = 0; i < g->links_.size(); ++i)
+  {
+    //ROS_ERROR("%d voxels", int(g->links_[i].voxels_.v.size()));
+    Link* l = &(g->links_[i]);
+    //ROS_ERROR("%d voxels", int(l->voxels_.v.size()));
+    pts.resize(l->voxels_.v.size());
+
+    for(size_t j = 0; j < l->voxels_.v.size(); ++j)
+    {
+      //ROS_ERROR("frames[0].size(): %d", int(frames[l->voxels_.kdl_chain].size()));
+      //ROS_INFO("kdl_chain: %d  kdl_segment: %d", l->voxels_.kdl_chain, l->voxels_.kdl_segment);
+      v = frames[l->voxels_.kdl_chain][l->voxels_.kdl_segment] * l->voxels_.v[j];
+      pts[j].x() = v.x();
+      pts[j].y() = v.y();
+      pts[j].z() = v.z();
+    }
+    grid_->addPointsToField(pts);
+  }
+
   return true;
 }
 
@@ -920,6 +973,13 @@ bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0,
 
 bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)
 {
+  // robot state
+  if(scene.robot_state.joint_state.name.size() != scene.robot_state.joint_state.position.size())
+    return false;
+
+  for(size_t i = 0; i < scene.robot_state.joint_state.name.size(); ++i)
+    model_.setJointPosition(scene.robot_state.joint_state.name[i], scene.robot_state.joint_state.position[i]);
+
   // collision objects
   for(size_t i = 0; i < scene.collision_objects.size(); ++i)
   {
@@ -1010,6 +1070,19 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
     ma = grid_->getVisualization(type);
   else if(type.compare("distance_field") == 0)
     ma = grid_->getVisualization(type);
+  else if(type.compare("collision_objects") == 0)
+  {
+    visualization_msgs::MarkerArray ma1;
+    for(size_t i = 0; i < known_objects_.size(); ++i)
+    {
+      if(object_map_.find(known_objects_[i]) != object_map_.end())
+      {
+        std::vector<double> hue(object_map_[known_objects_[i]].shapes.size(), 200);
+        ma1 = viz::getCollisionObjectMarkerArray(object_map_[known_objects_[i]], hue, object_map_[known_objects_[i]].id, 0);
+        ma.markers.insert(ma.markers.end(), ma1.markers.begin(), ma1.markers.end());
+      }
+    }
+  }
   else if(type.compare("occupied_voxels") == 0)
   {
     visualization_msgs::Marker marker;

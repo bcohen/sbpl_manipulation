@@ -44,10 +44,13 @@
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
+#include <leatherman/utils.h>
+#include <leatherman/print.h>
+#include <sbpl_collision_checking/group.h>
 
 namespace sbpl_arm_planner
 {
-
+/*
   struct Sphere
   { 
     std::string name;
@@ -85,7 +88,7 @@ namespace sbpl_arm_planner
       }
     }
 
-    bool init; // TODO: Add underscore
+    bool init_;
     std::string name_;
     std::string root_name_;
     std::string tip_name_;
@@ -102,7 +105,7 @@ namespace sbpl_arm_planner
     std::vector<Link> links_;
     std::vector<Sphere*> spheres_;
   };
-
+*/
 
 class SBPLCollisionModel
 {
@@ -114,6 +117,8 @@ class SBPLCollisionModel
     bool init();
 
     bool initGroup(Group* group);
+
+    bool initVoxelGroup(Group* group);
 
     bool initGroup(std::string group_name);
 
@@ -143,9 +148,9 @@ class SBPLCollisionModel
 
     void printGroups();
     void printSpheres(std::string group_name);
-    void printChain(KDL::Chain &chain);
     void printDebugInfo(std::string group_name);
-    void printFrames(const std::vector<std::vector<KDL::Frame> > &f);
+
+    Group* getGroup(std::string name);
 
   private:
 
@@ -165,15 +170,17 @@ class SBPLCollisionModel
     
     void sortSpheres(std::string group_name);
 
-    bool initKDLChainForGroup(std::string &chain_root_name, Group* group);
+    //bool initKDLChainForGroup(std::string &chain_root_name, Group* group);
 
     bool initKDLChainForGroup(Group* group);
 
     void initFKSolvers(Group* group);
 
-    int getSegmentNumber(std::string &name, KDL::Chain &chain);
+    //int getSegmentNumber(std::string &name, KDL::Chain &chain);
 
     bool computeFK(const std::vector<double> &angles, Group* group, int chain, int segment, KDL::Frame &frame);
+
+    bool getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels);
 };
 
 }

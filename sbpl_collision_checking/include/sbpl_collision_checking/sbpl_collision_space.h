@@ -161,6 +161,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     visualization_msgs::MarkerArray getVisualization(std::string type);
     visualization_msgs::MarkerArray getCollisionModelVisualization(const std::vector<double> &angles);
 
+    bool updateVoxelGroup(std::string name);
+
   private:
 
     sbpl_arm_planner::SBPLCollisionModel model_;

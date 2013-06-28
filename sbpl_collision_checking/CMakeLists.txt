@@ -7,7 +7,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-set(ROS_BUILD_TYPE Debug)
+set(ROS_BUILD_TYPE RelWithDebInfo)
 
 # Add a ROS C++ macro to tell SBPL to use ROS print statements
 add_definitions(-DROS)
@@ -33,7 +33,7 @@ rosbuild_add_library(sbpl_collision_checking
                         src/sbpl_collision_model.cpp
                         src/sbpl_collision_space.cpp)
 
-target_link_libraries(sbpl_collision_checking sbpl_geometry_utils sbpl_manipulation_components)
+target_link_libraries(sbpl_collision_checking sbpl_geometry_utils sbpl_manipulation_components leatherman)
 
 #rosbuild_add_executable(test_model src/test_collision_model.cpp)
 #target_link_libraries(test_model sbpl_collision_checking)

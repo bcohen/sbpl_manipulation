@@ -1,16 +1,17 @@
 collision_groups:
 
+  - name: base
+    type: voxels
+    root_name: base_link
+    tip_name: link7
+    collision_links:
+    - name: base
+      root: base_link  
+    - name: link2
+      root: link2
+
   - name: hdt_arm
-    planning_joints:
-      joint1_shoulder_yaw
-      joint2_shoulder_pitch
-      joint3_arm_roll
-      joint4_elbow
-      joint5_forearm_roll
-      joint6_wrist_pitch
-      joint7_wrist_roll
-    redundancy:
-      name: joint3_arm_roll
+    type: spheres
     root_name: base_link
     tip_name: link7
     collision_links:
@@ -35,6 +36,9 @@ collision_groups:
     - name: link7
       root: link7
       spheres: l7_0
+    - name: gripper_base
+      root: gripper_base
+      spheres: gb_0 gb_1 gb_2 gb_3 gb_4 gb_5 gb_6 gb_7 gb_8 gb_9 gb_10 gb_11 gb_12 gb_13 
 
 
 # <cylinder length="0.1143" radius="0.0381"/>
@@ -123,4 +127,21 @@ l6_1: {x: 0.0, y: 0.0, z: 0.01, radius: 0.0127, priority: 5}
 # <cylinder length="0.01905" radius="0.0127"/>
 # <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
 l7_0: {x: 0.0, y: 0.0, z: 0.00, radius: 0.0127, priority: 5}
+
+# <box size="0.022 0.140 0.075"/>
+# <origin rpy="0 0 0" xyz="0.12405 0 0"/>
+gb_0: {x: 0.01, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_1: {x: 0.01, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_2: {x: 0.03, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_3: {x: 0.03, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_4: {x: 0.05, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_5: {x: 0.05, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_6: {x: 0.07, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_7: {x: 0.07, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_8: {x: 0.09, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_9: {x: 0.09, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_10: {x: 0.11, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_11: {x: 0.11, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_12: {x: 0.13, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+gb_13: {x: 0.13, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
 
