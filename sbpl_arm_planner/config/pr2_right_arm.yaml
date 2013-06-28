@@ -1,6 +1,7 @@
 planning:
   epsilon: 100
-  verbose: true
+  verbose: false
+  verbose_collisions: false
   shortcut_path: false
   interpolate_path: false
   use_bfs_heuristic: true
@@ -16,9 +17,9 @@ planning:
   discretization: 360 360 360 360 360 360 360
 
 debug:
-  print_out_path: true
+  print_out_path: false
   logging:
-    expands: debug
+    expands: info
     expands2: debug
     ik: debug
     robot_model: debug

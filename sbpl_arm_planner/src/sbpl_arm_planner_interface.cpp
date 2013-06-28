@@ -57,10 +57,6 @@ SBPLArmPlannerInterface::~SBPLArmPlannerInterface()
 
 bool SBPLArmPlannerInterface::init()
 {
-  prm_ = new PlanningParams();
-  if(!prm_->init())
-    return false;
-
   if(!initializePlannerAndEnvironment())
     return false;
 
@@ -71,6 +67,10 @@ bool SBPLArmPlannerInterface::init()
 
 bool SBPLArmPlannerInterface::initializePlannerAndEnvironment()
 {
+  prm_ = new sbpl_arm_planner::PlanningParams();
+  if(!prm_->init())
+    return false;
+
   grid_ = new sbpl_arm_planner::OccupancyGrid(df_);
   sbpl_arm_env_ = new sbpl_arm_planner::EnvironmentROBARM3D(grid_, rm_, cc_, as_, prm_);
 
@@ -81,8 +81,7 @@ bool SBPLArmPlannerInterface::initializePlannerAndEnvironment()
   {
     ROS_ERROR("Failed to initialize the action set.");
     return false;
-  }
-  
+  } 
   as_->print();
 
   //initialize environment  
@@ -294,23 +293,24 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
   //sbpl_arm_planner::transformPose(pscene_, gpose, gpose_out, req.motion_plan_request.goal_constraints[0].position_constraints[0].header.frame_id, prm_->planning_frame);
   goal_constraints.orientation_constraints[0].orientation = gpose_out.orientation;
 
-  ROS_INFO("Setting start.");
   // set start
+  ROS_INFO("Setting start.");
   if(!setStart(req.motion_plan_request.start_state.joint_state))
   {
     status = -1;
     ROS_ERROR("Failed to set initial configuration of robot.");
   }
 
-  ROS_INFO("Setting goal.");
   // set goal
+  ROS_INFO("Setting goal.");
   if(!setGoalPosition(goal_constraints) && status == 0)
   {
     status = -2;
     ROS_ERROR("Failed to set goal position.");
   }
-  ROS_INFO("Calling plan()"); 
+  
   // plan 
+  ROS_INFO("Calling planner"); 
   if(plan(res.trajectory.joint_trajectory) && status == 0)
   {
     res.trajectory.joint_trajectory.header.seq = req.motion_plan_request.goal_constraints.position_constraints[0].header.seq; 
@@ -324,7 +324,7 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
     res.planning_time = ros::Duration((clock() - starttime) / (double)CLOCKS_PER_SEC);
 
     // shortcut path
-    if(shortcut_path_)
+    if(prm_->shortcut_path_)
     {
       trajectory_msgs::JointTrajectory straj;
       if(!interpolateTrajectory(cc_, res.trajectory.joint_trajectory.points, straj.points))
@@ -334,13 +334,13 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
     }
 
     // interpolate path
-    if(interpolate_path_)
+    if(prm_->interpolate_path_)
     {
       trajectory_msgs::JointTrajectory itraj = res.trajectory.joint_trajectory;
       interpolateTrajectory(cc_, itraj.points, res.trajectory.joint_trajectory.points);
     }
 
-    if(print_path_)
+    if(prm_->print_path_)
       leatherman::printJointTrajectory(res.trajectory.joint_trajectory, "path");
   }
   else

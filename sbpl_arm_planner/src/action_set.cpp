@@ -233,7 +233,7 @@ bool ActionSet::getAction(const RobotState &parent, double dist_to_goal, MotionP
   {
     if(dist_to_goal > ik_amp_dist_thresh_m_)
     {
-      ROS_ERROR("dist_to_goal: %0.3f", dist_to_goal);
+      ROS_DEBUG("dist_to_goal: %0.3f", dist_to_goal);
       return false;
     }
     action.resize(1);
@@ -243,13 +243,14 @@ bool ActionSet::getAction(const RobotState &parent, double dist_to_goal, MotionP
       ROS_ERROR("IK Failed. (dist_to_goal: %0.3f)  (goal:   xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
       return false;
     }
-    std::vector<double> p(6,0);
-  
-    env_->getRobotModel()->computeFK(action[0], "name", p); 
 
-    ROS_ERROR("[ik] goal:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
-    //ROS_ERROR("[ik]   fk:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", p[0], p[1], p[2], p[3], p[4], p[5]);
-    //ROS_ERROR("[ik] diff:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", fabs(goal[0]-p[0]), fabs(goal[1]-p[1]), fabs(goal[2]-p[2]), fabs(goal[3]-p[3]), fabs(goal[4]-p[4]), fabs(goal[5]-p[5]));
+    /*
+    std::vector<double> p(6,0);
+    env_->getRobotModel()->computeFK(action[0], "name", p);
+    ROS_WARN("[ik] goal:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
+    ROS_WARN("[ik]   fk:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", p[0], p[1], p[2], p[3], p[4], p[5]);
+    ROS_WARN("[ik] diff:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", fabs(goal[0]-p[0]), fabs(goal[1]-p[1]), fabs(goal[2]-p[2]), fabs(goal[3]-p[3]), fabs(goal[4]-p[4]), fabs(goal[5]-p[5]));
+    */
   }
   else
   {

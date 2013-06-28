@@ -183,7 +183,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     return;
   }
 
-  ROS_INFO("[parent: %d] angles: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f  xyz: %3d %3d %3d  #_actions: %d  heur: %d dist: %0.3f", SourceStateID, source_angles[0],source_angles[1],source_angles[2],source_angles[3],source_angles[4],source_angles[5],source_angles[6], parent_entry->xyz[0],parent_entry->xyz[1],parent_entry->xyz[2], int(actions.size()), getXYZHeuristic(SourceStateID, 1), double(bfs_->getDistance(parent_entry->xyz[0],parent_entry->xyz[1], parent_entry->xyz[2])) * grid_->getResolution());
+  ROS_DEBUG_NAMED(prm_->expands_log_, "[parent: %d] angles: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f  xyz: %3d %3d %3d  #_actions: %d  heur: %d dist: %0.3f", SourceStateID, source_angles[0],source_angles[1],source_angles[2],source_angles[3],source_angles[4],source_angles[5],source_angles[6], parent_entry->xyz[0],parent_entry->xyz[1],parent_entry->xyz[2], int(actions.size()), getXYZHeuristic(SourceStateID, 1), double(bfs_->getDistance(parent_entry->xyz[0],parent_entry->xyz[1], parent_entry->xyz[2])) * grid_->getResolution());
 
   // check actions for validity
   for (int i = 0; i < int(actions.size()); ++i)
@@ -191,7 +191,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     valid = 1;
     for(size_t j = 0; j < actions[i].size(); ++j)
     {
-      ROS_INFO("[ succ: %d] angles: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f  %0.3f", i, actions[i][j][0], actions[i][j][1], actions[i][j][2], actions[i][j][3], actions[i][j][4], actions[i][j][5], actions[i][j][6]);
+      ROS_DEBUG_NAMED(prm_->expands_log_, "[ succ: %d] angles: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f  %0.3f", i, actions[i][j][0], actions[i][j][1], actions[i][j][2], actions[i][j][3], actions[i][j][4], actions[i][j][5], actions[i][j][6]);
 
       // check joint limits
       if(!rmodel_->checkJointLimits(actions[i][j]))
@@ -204,23 +204,19 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
         valid = -2;
       }
 
-      //ROS_INFO("[ succ: %d] in-first-loop valid: %d", int(i), valid);
       if(valid < 1)
         break;
     }
-    //ROS_INFO("[ succ: %d] after-first-loop valid: %d", int(i), valid);
 
     if(valid < 1)
       continue;
 
-    //ROS_INFO("[ succ: %d] Checking interpolated path from source to waypoint 0.", int(i));
     // check for collisions along path from parent to first waypoint
     if(!cc_->isStateToStateValid(source_angles, actions[i][0], path_length, nchecks, dist))
     {
       ROS_DEBUG_NAMED(prm_->expands_log_, " succ: %2d  dist: %0.3f is in collision along interpolated path. (path_length: %d)", i, dist, path_length);
       valid = -3;
     }
-    //ROS_INFO("[ succ: %d] after-first-interpolated-check valid: %d", int(i), valid);
 
     if(valid < 1)
       continue;
@@ -236,7 +232,6 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
         break;
       }
     }
-    //ROS_INFO("[ succ: %d] after-interpolated-check valid: %d", int(i), valid);
 
     if(valid < 1)
       continue;
@@ -255,9 +250,9 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     // discretize planning link pose
     grid_->worldToGrid(pose[0],pose[1],pose[2],endeff[0],endeff[1],endeff[2]);
    
-    //ROS_INFO("[ succ: %d] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", int(i), actions[i].back()[0], actions[i].back()[1], actions[i].back()[2], actions[i].back()[3], actions[i].back()[4], actions[i].back()[5], actions[i].back()[6]);
-    ROS_INFO("[ succ: %d]   pose: %0.3f %0.3f %0.3f   %0.3f %0.3f %0.3f", int(i), pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
-    ROS_INFO("[ succ: %d]    xyz: %d %d %d  goal: %d %d %d  (diff: %d %d %d)", int(i), endeff[0], endeff[1], endeff[2], pdata_.goal_entry->xyz[0], pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2], abs(pdata_.goal_entry->xyz[0] - endeff[0]), abs(pdata_.goal_entry->xyz[1] - endeff[1]), abs(pdata_.goal_entry->xyz[2] - endeff[2]));
+    //ROS_DEBUG_NAMED(prm_->expands_log_, "[ succ: %d] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", int(i), actions[i].back()[0], actions[i].back()[1], actions[i].back()[2], actions[i].back()[3], actions[i].back()[4], actions[i].back()[5], actions[i].back()[6]);
+    ROS_DEBUG_NAMED(prm_->expands_log_, "[ succ: %d]   pose: %0.3f %0.3f %0.3f   %0.3f %0.3f %0.3f", int(i), pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
+    ROS_DEBUG_NAMED(prm_->expands_log_, "[ succ: %d]    xyz: %d %d %d  goal: %d %d %d  (diff: %d %d %d)", int(i), endeff[0], endeff[1], endeff[2], pdata_.goal_entry->xyz[0], pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2], abs(pdata_.goal_entry->xyz[0] - endeff[0]), abs(pdata_.goal_entry->xyz[1] - endeff[1]), abs(pdata_.goal_entry->xyz[2] - endeff[2]));
 
     //check if this state meets the goal criteria
     if(isGoalState(pose, pdata_.goal))
@@ -425,12 +420,6 @@ int EnvironmentROBARM3D::cost(EnvROBARM3DHashEntry_t* HashEntry1, EnvROBARM3DHas
 
 bool EnvironmentROBARM3D::initEnvironment()
 {
-  if(!prm_->init())
-  {
-    ROS_ERROR("Failed to initialize the environment parameters.");
-    return false;
-  }
-
   // initialize environment data
   pdata_.init();
 
@@ -446,7 +435,6 @@ bool EnvironmentROBARM3D::initEnvironment()
   //initialize BFS
   int dimX, dimY, dimZ;
   grid_->getGridSize(dimX, dimY, dimZ);
-  ROS_ERROR("DIMS: %d %d %d", dimX, dimY, dimZ);
   bfs_ = new BFS_3D(dimX, dimY, dimZ);
 
   //set heuristic function pointer

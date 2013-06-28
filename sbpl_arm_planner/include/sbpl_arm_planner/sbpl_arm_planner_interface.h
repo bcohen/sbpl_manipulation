@@ -82,16 +82,8 @@ class SBPLArmPlannerInterface
 
     /* params */
     bool planner_initialized_;
-    bool print_path_;
-    bool use_first_solution_;
-    bool shortcut_path_;
-    bool interpolate_path_;
     int num_joints_;
     int solution_cost_;
-
-    std::string reference_frame_;
-    std::string planning_joint_;
-    std::vector<std::string> planning_joints_;
 
     /* planner & environment */
     MDPConfig mdp_cfg_;

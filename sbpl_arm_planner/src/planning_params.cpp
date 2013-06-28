@@ -75,6 +75,7 @@ bool PlanningParams::init()
   nh.param("planning/epsilon", epsilon_, 10.0);
   nh.param("planning/use_bfs_heuristic", use_bfs_heuristic_,true);
   nh.param("planning/verbose", verbose_,false);
+  nh.param("planning/verbose_collisions", verbose_collisions_,false);
   nh.param ("planning/search_mode", search_mode_, false); //true: stop after first solution
   nh.param ("planning/shortcut_path", shortcut_path_, false);
   nh.param ("planning/interpolate_path", interpolate_path_, false);
