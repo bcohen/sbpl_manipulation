@@ -1,0 +1,42 @@
+planning:
+  epsilon: 100
+  verbose: false
+  use_bfs_heuristic: true
+  group_name: right_arm
+  reference_frame: base_link 
+  planning_joints:
+    joint1_shoulder_yaw
+    joint2_shoulder_pitch
+    joint3_arm_roll
+    joint4_elbow
+    joint5_forearm_roll
+    joint6_wrist_pitch
+    joint7_wrist_roll
+  discretization: 360 360 360 360 360 360 360
+
+debug:
+  print_out_path: false
+  logging:
+    expands: info
+    expands2: info
+    ik: debug
+    robot_model: debug
+    collisions: debug
+    solution: debug
+
+visualizations:
+  heuristic: false
+  goal: true
+  expanded_states: true
+  trajectory: false
+  collision_model_trajectory: false
+  trajectory_throttle: 1
+
+occupancy_grid:
+  origin_x: -0.75
+  origin_y: -1.25
+  origin_z: -0.05
+  size_x: 2.0
+  size_y: 2.0
+  size_z: 2.0
+
