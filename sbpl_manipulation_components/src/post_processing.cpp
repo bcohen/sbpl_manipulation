@@ -79,7 +79,7 @@ bool sbpl_arm_planner::interpolateTrajectory(sbpl_arm_planner::CollisionChecker 
  
   int num_joints = traj[0].positions.size();
   std::vector<std::vector<double> > path, ipath;
-  std::vector<double> start(num_joints,0), end(num_joints,0), inc(num_joints,0.0348);
+  std::vector<double> start(num_joints,0), end(num_joints,0), inc(num_joints,0.069);
 
   // tack on the first point of the trajectory
   for(size_t j = 0; j < traj[0].positions.size(); ++j)
@@ -122,6 +122,7 @@ bool sbpl_arm_planner::interpolateTrajectory(sbpl_arm_planner::CollisionChecker 
     traj_out[i].positions.resize(path[i].size());
     for(size_t j = 0; j < path[i].size(); ++j)
       traj_out[i].positions[j] = path[i][j];
+    traj_out[i].time_from_start.fromSec(double(i+1) * (traj.back().time_from_start.toSec()/double(path.size())));
   }
   ROS_INFO("Original path length: %d   Interpolated path length: %d", int(traj.size()), int(traj_out.size()));
   return true;

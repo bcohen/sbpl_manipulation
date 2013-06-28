@@ -42,11 +42,15 @@ KDLRobotModel::KDLRobotModel() : ik_solver_(NULL), ik_vel_solver_(NULL), fk_solv
 {
   ros::NodeHandle ph("~");
   ph.param<std::string>("robot_model/chain_root_link", chain_root_name_, " ");
+  ph.param<std::string>("robot_model/chain_tip_link", chain_tip_name_, " ");
+  ph.param("robot_model/free_angle", free_angle_, 2);
 }
 
-KDLRobotModel::KDLRobotModel(std::string chain_root_link) : ik_solver_(NULL), ik_vel_solver_(NULL), fk_solver_(NULL)
+KDLRobotModel::KDLRobotModel(std::string chain_root_link, std::string chain_tip_link) : ik_solver_(NULL), ik_vel_solver_(NULL), fk_solver_(NULL)
 {
+  free_angle_ = 2;
   chain_root_name_ = chain_root_link;
+  chain_tip_name_ = chain_tip_link;
 }
 
 KDLRobotModel::~KDLRobotModel()
@@ -84,26 +88,19 @@ bool KDLRobotModel::init(std::string robot_description, std::vector<std::string>
     }
   }
 
+  /*
   if(!leatherman::getChainTip(ktree_, segments, chain_root_name_, chain_tip_name_))
   {
     ROS_ERROR("Failed to find a valid chain tip link.");
     return false;
   }
+  */
 
   if(!ktree_.getChain(chain_root_name_, chain_tip_name_, kchain_))
   {
     ROS_ERROR("Failed to fetch the KDL chain for the robot. (root: %s, tip: %s)", chain_root_name_.c_str(), chain_tip_name_.c_str());
     return false;
   }
-
-  // FK solver
-  fk_solver_ = new KDL::ChainFkSolverPos_recursive(kchain_);
-  jnt_pos_in_.resize(kchain_.getNrOfJoints());
-  jnt_pos_out_.resize(kchain_.getNrOfJoints());
-
-  // IK solver
-  ik_vel_solver_ = new KDL::ChainIkSolverVel_pinv(kchain_);
-  ik_solver_ = new KDL::ChainIkSolverPos_NR(kchain_, *fk_solver_, *ik_vel_solver_, 200);
 
   // check if our chain includes all planning joints
   for(size_t i = 0; i < planning_joints.size(); ++i)
@@ -116,7 +113,7 @@ bool KDLRobotModel::init(std::string robot_description, std::vector<std::string>
     int index;
     if(!leatherman::getJointIndex(kchain_, planning_joints[i], index))
     {
-      ROS_ERROR("Failed to find '%s' in the kinematic chain. Maybe your chain root or tip joints are wrong?", planning_joints[i].c_str());
+      ROS_ERROR("Failed to find '%s' in the kinematic chain. Maybe your chain root or tip joints are wrong? (%s, %s)", planning_joints[i].c_str(), chain_root_name_.c_str(), chain_tip_name_.c_str());
       return false;
     }
   }
@@ -128,6 +125,22 @@ bool KDLRobotModel::init(std::string robot_description, std::vector<std::string>
     ROS_ERROR("Failed to get the joint limits.");
     return false;
   }
+
+  // FK solver
+  fk_solver_ = new KDL::ChainFkSolverPos_recursive(kchain_);
+  jnt_pos_in_.resize(kchain_.getNrOfJoints());
+  jnt_pos_out_.resize(kchain_.getNrOfJoints());
+
+  // IK solver
+  KDL::JntArray q_min(planning_joints_.size());
+  KDL::JntArray q_max(planning_joints_.size());
+  for(size_t i = 0; i < planning_joints_.size(); ++i)
+  {
+    q_min(i) = min_limits_[i];
+    q_max(i) = max_limits_[i];
+  }
+  ik_vel_solver_ = new KDL::ChainIkSolverVel_pinv(kchain_);
+  ik_solver_ = new KDL::ChainIkSolverPos_NR_JL(kchain_, q_min, q_max, *fk_solver_, *ik_vel_solver_, 200, 0.001);
 
   // joint name -> index mapping
   for(size_t i = 0; i < planning_joints_.size(); ++i)
@@ -229,8 +242,23 @@ bool KDLRobotModel::computeFK(const std::vector<double> &angles, std::string nam
     ROS_ERROR("JntToCart returned < 0.");
     return false;
   }
-
   f = T_kinematics_to_planning_ * f1;
+
+  /*
+  KDL::Frame f1;
+  for(std::map<std::string, int>::const_iterator iter = link_map_.begin(); iter != link_map_.end(); ++iter)
+  {
+    if(fk_solver_->JntToCart(jnt_pos_in_, f1, iter->second) < 0)
+    {
+      ROS_ERROR("JntToCart returned < 0.");
+      return false;
+    }
+
+    f = T_kinematics_to_planning_ * f1;
+    leatherman::printKDLFrame(f,iter->first);
+  }
+  */
+
   return true;
 }
 
@@ -273,7 +301,8 @@ bool KDLRobotModel::computePlanningLinkFK(const std::vector<double> &angles, std
 
 bool KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
 {
-  return computeFastIK(pose, start, solution);
+  return computeIKSearch(pose, start, solution, 0.005);
+  //return computeFastIK(pose, start, solution);
 }
 
 bool KDLRobotModel::computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
@@ -304,9 +333,68 @@ bool KDLRobotModel::computeFastIK(const std::vector<double> &pose, const std::ve
 
   solution.resize(start.size());
   for(size_t i = 0; i < solution.size(); ++i)
-    solution[i] = jnt_pos_out_(i);
+    solution[i] = angles::normalize_angle(jnt_pos_out_(i));
 
   return true;
+}
+
+bool KDLRobotModel::computeIKSearch(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, double timeout)
+{
+  //pose: {x,y,z,r,p,y} or {x,y,z,qx,qy,qz,qw}
+  KDL::Frame frame_des;
+  frame_des.p.x(pose[0]);
+  frame_des.p.y(pose[1]);
+  frame_des.p.z(pose[2]);
+
+  // RPY
+  if(pose.size() == 6)
+    frame_des.M = KDL::Rotation::RPY(pose[3],pose[4],pose[5]);
+  // quaternion
+  else
+    frame_des.M = KDL::Rotation::Quaternion(pose[3],pose[4],pose[5],pose[6]);
+
+  // transform into kinematics frame
+  frame_des = T_planning_to_kinematics_ * frame_des;
+
+  // seed configuration
+  for(size_t i = 0; i < start.size(); i++)
+    jnt_pos_in_(i) = angles::normalize_angle(start[i]); // must be normalized for CartToJntSearch
+
+  double initial_guess = jnt_pos_in_(free_angle_);
+  double search_discretization_angle = 0.02;
+
+  ros::Time start_time = ros::Time::now();
+  double loop_time = 0;
+  int count = 0;
+
+  int num_positive_increments = (int)((min_limits_[free_angle_]-initial_guess)/search_discretization_angle);
+  int num_negative_increments = (int)((initial_guess-min_limits_[free_angle_])/search_discretization_angle);
+  while(loop_time < timeout)
+  {
+    if(ik_solver_->CartToJnt(jnt_pos_in_, frame_des, jnt_pos_out_) >= 0)
+    {
+      solution.resize(start.size());
+      for(size_t i = 0; i < solution.size(); ++i)
+        solution[i] = angles::normalize_angle(jnt_pos_out_(i));
+      return true;
+    }
+    if(!getCount(count,num_positive_increments,-num_negative_increments))
+      return false;
+    jnt_pos_in_(free_angle_) = initial_guess + search_discretization_angle * count;
+    ROS_DEBUG("%d, %f",count,jnt_pos_in_(free_angle_));
+    loop_time = (ros::Time::now()-start_time).toSec();
+  }
+  if(loop_time >= timeout)
+  {
+    ROS_DEBUG("IK Timed out in %f seconds",timeout);
+    return false;
+  }
+  else
+  {
+    ROS_DEBUG("No IK solution was found");
+    return false;
+  }
+  return false;
 }
 
 void KDLRobotModel::printRobotModelInformation()
@@ -320,6 +408,43 @@ void KDLRobotModel::printRobotModelInformation()
   ROS_INFO("Link<->KDL_Index Map:");
   for(std::map<std::string, int>::const_iterator iter = link_map_.begin(); iter != link_map_.end(); ++iter)
      ROS_INFO("%22s: %d", iter->first.c_str(), iter->second);
+}
+
+
+bool KDLRobotModel::getCount(int &count, const int &max_count, const int &min_count)
+{
+  if(count > 0)
+  {
+    if(-count >= min_count)
+    {
+      count = -count;
+      return true;
+    }
+    else if(count+1 <= max_count)
+    {
+      count = count+1;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+  else
+  {
+    if(1-count <= max_count)
+    {
+      count = 1-count;
+      return true;
+    }
+    else if(count-1 >= min_count)
+    {
+      count = count -1;
+      return true;
+    }
+    else
+      return false;
+  }
 }
 
 }

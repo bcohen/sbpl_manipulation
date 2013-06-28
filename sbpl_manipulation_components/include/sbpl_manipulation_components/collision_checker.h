@@ -23,12 +23,12 @@ class CollisionChecker
     /* Initialization */
     virtual bool init(std::string group_name);
 
-    virtual void setPlanningJoints(const std::vector<std::string> &planning_joints);
+    virtual bool setPlanningJoints(const std::vector<std::string> &planning_joints);
 
     /* World Update */
     virtual void setRobotState(const arm_navigation_msgs::RobotState &state);
 
-    virtual void setPlanningScene(const arm_navigation_msgs::PlanningScene &scene);
+    virtual bool setPlanningScene(const arm_navigation_msgs::PlanningScene &scene);
 
     /* Collision Checking */
     virtual bool isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);

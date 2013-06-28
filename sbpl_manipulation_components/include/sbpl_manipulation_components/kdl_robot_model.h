@@ -40,7 +40,7 @@
 #include <kdl/jntarray.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/chain.hpp>
-#include <kdl/chainiksolverpos_nr.hpp>
+#include <kdl/chainiksolverpos_nr_jl.hpp>
 #include <kdl/chainiksolvervel_pinv.hpp>
 #include <sbpl_geometry_utils/interpolation.h>
 #include <sbpl_manipulation_components/robot_model.h>
@@ -55,7 +55,7 @@ class KDLRobotModel : public RobotModel {
   public:
 
     KDLRobotModel();
-    KDLRobotModel(std::string chain_root_link);
+    KDLRobotModel(std::string chain_root_link, std::string chain_tip_link);
     ~KDLRobotModel();
    
     /* Initialization */
@@ -78,13 +78,15 @@ class KDLRobotModel : public RobotModel {
 
     virtual bool computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution);
 
+    bool computeIKSearch(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, double timeout);
+
     /* Debug Output */
     virtual void printRobotModelInformation();
 
-  private:
+  protected:
 
     boost::shared_ptr<urdf::Model> urdf_;
-
+    int free_angle_;
     std::string chain_root_name_;
     std::string chain_tip_name_;
 
@@ -93,10 +95,10 @@ class KDLRobotModel : public RobotModel {
     KDL::JntArray jnt_pos_in_;
     KDL::JntArray jnt_pos_out_;
     KDL::Frame p_out_;
-    KDL::ChainIkSolverPos_NR *ik_solver_;
+    KDL::ChainIkSolverPos_NR_JL *ik_solver_;
     KDL::ChainIkSolverVel_pinv *ik_vel_solver_;
     KDL::ChainFkSolverPos_recursive *fk_solver_;
-    
+
     std::vector<bool> continuous_;
     std::vector<double> min_limits_;
     std::vector<double> max_limits_;
@@ -106,6 +108,8 @@ class KDLRobotModel : public RobotModel {
     bool getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous);
     
     bool getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous);
+
+    bool getCount(int &count, const int &max_count, const int &min_count);
 };
 
 }

@@ -23,7 +23,7 @@
   <depend package="arm_navigation_msgs" />
   <depend package="visualization_msgs" />
   <depend package="leatherman" />
-
+  <depend package="pr2_arm_kinematics" />
   <export>
       <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_manipulation_components"/>
   </export>

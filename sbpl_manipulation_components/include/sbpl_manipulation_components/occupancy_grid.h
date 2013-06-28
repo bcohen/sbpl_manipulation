@@ -40,7 +40,7 @@
 #include <distance_field/voxel_grid.h>
 #include <distance_field/propagation_distance_field.h>
 #include <arm_navigation_msgs/CollisionMap.h>
-
+#include <visualization_msgs/MarkerArray.h>
 
 /* \brief At this point, this is a very lightweight layer on top of the
  * PropagationDistanceField class. I'll eventually get rid of it once the
@@ -107,10 +107,7 @@ class OccupancyGrid
 
     /** @brief update the distance field from the collision_map */
     void updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map);
-    
-    /** @brief display distance field visualizations to rviz */
-//    void visualize();
-    
+       
     /** 
      * @brief manually add a cuboid to the collision map
      * @param X_origin_of_cuboid 
@@ -120,11 +117,11 @@ class OccupancyGrid
      * @param size along the Y dimension (meters)
      * @param size along the Z dimension (meters)
     */
-    void addCollisionCuboid(double origin_x, double origin_y, double origin_z, double size_x, double size_y, double size_z);
+    void addCube(double origin_x, double origin_y, double origin_z, double size_x, double size_y, double size_z);
 
     void addPointsToField(const std::vector<Eigen::Vector3d> &points);
 
-    void getVoxelsInBox(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<Eigen::Vector3d> &voxels);
+    void getOccupiedVoxels(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<Eigen::Vector3d> &voxels);
 
     std::string getReferenceFrame();
 
@@ -132,9 +129,9 @@ class OccupancyGrid
 
     void reset();
 
-  private:
+    visualization_msgs::MarkerArray getVisualization(std::string type);
 
-    double grid_resolution_;
+  private:
 
     std::string reference_frame_;
     distance_field::PropagationDistanceField* grid_;
@@ -152,7 +149,14 @@ inline void OccupancyGrid::gridToWorld(int x, int y, int z, double &wx, double &
 
 inline void OccupancyGrid::worldToGrid(double wx, double wy, double wz, int &x, int &y, int &z)
 {
-  grid_->worldToGrid (wx, wy, wz, x, y, z);
+  grid_->worldToGrid(wx, wy, wz, x, y, z);
+
+  if((x > 10000) || (y > 10000) || (z > 10000) ||
+     (x < 0) || (y < 0) || (z < 0))
+  {
+    ROS_ERROR("[grid] worldToGrid converted %0.5f %0.5f %0.5f to %d %d %d", wx, wy, wz, x, y, z);
+    fflush(stdout);
+  }
 }
 
 inline double OccupancyGrid::getDistance(int x, int y, int z)
@@ -162,7 +166,7 @@ inline double OccupancyGrid::getDistance(int x, int y, int z)
 
 inline unsigned char OccupancyGrid::getCell(int x, int y, int z)
 {
-  return (unsigned char)(grid_->getDistanceFromCell(x,y,z) / grid_resolution_);
+  return (unsigned char)(grid_->getDistanceFromCell(x,y,z) / grid_->getResolution(distance_field::PropagationDistanceField::DIM_X));
 }
 
 inline double OccupancyGrid::getCell(int *xyz)

@@ -12,9 +12,10 @@ bool CollisionChecker::init(std::string name)
   return true;
 }
 
-void CollisionChecker::setPlanningJoints(const std::vector<std::string> &planning_joints)
+bool CollisionChecker::setPlanningJoints(const std::vector<std::string> &planning_joints)
 {
   planning_joints_ = planning_joints;
+  return true;
 }
 
 void CollisionChecker::setRobotState(const arm_navigation_msgs::RobotState &state)
@@ -22,9 +23,10 @@ void CollisionChecker::setRobotState(const arm_navigation_msgs::RobotState &stat
   robot_state_ = state;
 }
 
-void CollisionChecker::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)
+bool CollisionChecker::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)
 {
   planning_scene_  = scene;
+  return false;
 }
 
 bool CollisionChecker::isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist)
