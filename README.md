@@ -3,7 +3,8 @@ sbpl_manipulation
 
 This repository contains a set of motion planners for robotic arms that use the SBPL planning library.
 
-0. Get the code:
+1) Get the code:
+
 	git clone https://github.com/bcohen/sbpl_manipulation
 
 	git clone https://github.com/bcohen/leatherman
@@ -12,17 +13,21 @@ This repository contains a set of motion planners for robotic arms that use the 
 
 	git clone https://github.com/sbpl/sbpl
 
-1. Build everything:
+2) Build everything:
+
 	rosmake sbpl_arm_planner_test
 
-2. Bring up a roscore & rviz (I do it seperatly, you don't have to)
+3) Bring up a roscore & rviz (I do it seperatly, you don't have to)
+
 	Terminal 1: roscore
 	Terminal 2: rosrun rviz rviz
 
 	In rviz:
 		a) Set Fixed Frame: base_footprint
 		b) Add display for visualization_markers
-3. Plan for the PR2:
+
+4) Plan for the PR2:
+
 	roslaunch sbpl_arm_planner_test goal_pr2.launch
 
 	If the plan was successful, you should see:
