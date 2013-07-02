@@ -26,6 +26,11 @@ This repository contains a set of motion planners for robotic arms that use the 
 		a) Set Fixed Frame: base_footprint
 		b) Add display for visualization_markers
 
+3a) This is a temporary hack required to deal with a temporarily hardcoded path:
+
+	roscd sbpl_arm_planner
+	cp config/pr2.mprim /tmp
+
 4) Plan for the PR2:
 
 	roslaunch sbpl_arm_planner_test goal_pr2.launch
