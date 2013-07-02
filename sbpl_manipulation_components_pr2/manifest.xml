@@ -1,0 +1,22 @@
+<package>
+  <description brief="Motion Planning Research for a Robotic Manipulator">
+
+    Benjamin Cohen - University of Pennsylvania
+    Advised by:
+    Sachin Chitta - Willow Garage
+    Maxim Likhachev - Carnegie Mellon University
+
+  </description>
+  <author>Benjamin Cohen/bcohen@seas.upenn.edu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes="" />
+  <url>http://www.ros.org/wiki/sbpl_arm_planner</url>
+
+  <depend package="sbpl_manipulation_components" />
+  <depend package="pr2_arm_kinematics" />
+  
+  <export>
+      <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_manipulation_components_pr2"/>
+  </export>
+
+</package>
