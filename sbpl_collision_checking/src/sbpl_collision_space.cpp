@@ -32,16 +32,15 @@
 #include <sbpl_collision_checking/sbpl_collision_space.h>
 #include <leatherman/viz.h>
 
-namespace sbpl_arm_planner{
+namespace sbpl_arm_planner
+{
 
 SBPLCollisionSpace::SBPLCollisionSpace(sbpl_arm_planner::OccupancyGrid* grid)
 {
   grid_ = grid;
   group_name_ = "";
   object_attached_ = false;
-  padding_ = 0.00;
-  num_collision_checks_ = 0;
-  num_false_collision_checks_ = 0;
+  padding_ = 0.01;
 }
 
 void SBPLCollisionSpace::setPadding(double padding)
@@ -98,16 +97,7 @@ bool SBPLCollisionSpace::init(std::string group_name)
     ROS_ERROR("Failed to initialize all groups.");
     return false;
   } 
-  
-  /*
-  // initialize the collision group
-  if(!model_.initGroup(group_name))
-  {
-    ROS_ERROR("[cspace] Failed to initialize group '%s'.", group_name.c_str());
-    return false;
-  }
-  */
-
+ 
   // choose the group we are planning for
   model_.setDefaultGroup(group_name_);
 
@@ -125,16 +115,16 @@ bool SBPLCollisionSpace::init(std::string group_name)
   return true;
 }
 
-bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, unsigned char &dist)
+bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist)
 {
-  // 'visualize' is not being used right now
-  unsigned char dist_temp=100;
-  dist = 100;
+  double dist_temp=100.0;
+  dist = 100.0;
   KDL::Vector v;
   int x,y,z;
-
-  // for debugging
-  num_collision_checks_++;
+  Sphere s;
+  bool in_collision = false;
+  if(visualize)
+    collision_spheres_.clear();
 
   // compute foward kinematics
   if(!model_.computeDefaultGroupFK(angles, frames_))
@@ -161,10 +151,19 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
       }
 
       // check for collision with world
-      if((dist_temp = grid_->getCell(x,y,z)) <= int((object_spheres_[i].radius) / grid_->getResolution() + 0.5))
+      if((dist_temp = grid_->getDistance(x,y,z)) <= object_spheres_[i].radius)
       {
         dist = dist_temp;
-        return false;
+
+        if(visualize)
+        {
+          in_collision = true;
+          s = *(spheres_[i]);
+          s.v = v;
+          collision_spheres_.push_back(s);
+        }
+        else
+          return false;
       }
       if(dist_temp < dist)
         dist = dist_temp;
@@ -187,19 +186,30 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     }
 
     // check for collision with world
-    if((dist_temp = grid_->getCell(x,y,z)) <= int((spheres_[i]->radius + padding_) / grid_->getResolution() + 0.5))
+    if((dist_temp = grid_->getDistance(x,y,z)) <= (spheres_[i]->radius + padding_))
     {
       dist = dist_temp;
       if(verbose)
-        ROS_INFO("    [sphere %d] name: %6s  x: %d y: %d z: %d radius: %0.3f (%d)  dist: %d  *collision*", int(i), spheres_[i]->name.c_str(), x, y, z, spheres_[i]->radius,  int((spheres_[i]->radius + padding_) / grid_->getResolution() + 0.5), grid_->getCell(x,y,z));
-      return false;
+        ROS_INFO("    [sphere %d] name: %6s  x: %d y: %d z: %d radius: %0.3fm  dist: %0.3fm  *collision*", int(i), spheres_[i]->name.c_str(), x, y, z, spheres_[i]->radius + padding_, grid_->getDistance(x,y,z));
+
+      if(visualize)
+      {
+        in_collision = true;
+        s = *(spheres_[i]);
+        s.v = v;
+        collision_spheres_.push_back(s);
+      }
+      else
+        return false;
     }
 
     if(dist_temp < dist)
       dist = dist_temp;
   }
 
-  num_false_collision_checks_++;
+  if(visualize && in_collision)
+    return false;
+
   return true;
 }
 
@@ -214,7 +224,7 @@ bool SBPLCollisionSpace::updateVoxelGroup(std::string name)
   // compute foward kinematics
   if(!model_.computeGroupFK(angles, g, frames))
   {
-    ROS_ERROR("[cspace] Failed to compute foward kinematics for group '%s'.", g->name_.c_str());
+    ROS_ERROR("[cspace] Failed to compute foward kinematics for group '%s'.", g->getName().c_str());
     return false;
   }
 
@@ -241,102 +251,10 @@ bool SBPLCollisionSpace::updateVoxelGroup(std::string name)
   return true;
 }
 
-bool SBPLCollisionSpace::checkCollisionWithVisualizations(const std::vector<double> &angles, unsigned char &dist)
-{
-  unsigned char dist_temp=100;
-  dist = 100;
-  KDL::Vector v;
-  Sphere s;
-  int x,y,z;
-  bool in_collision = false;
-
-  // compute foward kinematics
-  if(!model_.computeDefaultGroupFK(angles, frames_))
-  {
-    ROS_ERROR("[cspace] Failed to compute foward kinematics.");
-    return false;
-  }
-
-  // transform the spheres into their new positions, check collisions
-  for(size_t i = 0; i < spheres_.size(); ++i)
-  {
-    v = frames_[spheres_[i]->kdl_chain][spheres_[i]->kdl_segment] * spheres_[i]->v;
-
-    grid_->worldToGrid(v.x(), v.y(), v.z(), x, y, z);
-
-    ROS_DEBUG("[%2d] chain: %d segment: %2d origin: {%2.2f %2.2f %2.2f}  sphere: {%3.2f %3.2f %2.2f} radius: %2.2f priority: %d", int(i), spheres_[i]->kdl_chain, spheres_[i]->kdl_segment, frames_[spheres_[i]->kdl_chain][spheres_[i]->kdl_segment].p.x(), frames_[spheres_[i]->kdl_chain][spheres_[i]->kdl_segment].p.y(), frames_[spheres_[i]->kdl_chain][spheres_[i]->kdl_segment].p.z(), v.x(), v.y(), v.z(), spheres_[i]->radius, spheres_[i]->priority);
-
-    // check bounds
-    if(!grid_->isInBounds(x, y, z))
-    {
-        ROS_INFO("Sphere %d %d %d is out of bounds.", x, y, z);
-      return false;
-    }
-
-    // check for collision with world
-    if((dist_temp = grid_->getCell(x,y,z)) <= int((spheres_[i]->radius + padding_) / grid_->getResolution() + 0.5))
-    {
-      dist = dist_temp;
-      in_collision = true;
-      s = *(spheres_[i]); 
-      s.v = v;
-      collision_spheres_.push_back(s);
-    }
-
-    ROS_DEBUG("x: %d y: %d z: %d radius: %0.3f (%d)  dist: %d (dist_min: %d)", x, y, z, spheres_[i]->radius,  int(spheres_[i]->radius / grid_->getResolution() + 0.5), grid_->getCell(x,y,z), int(dist));
-    
-    if(dist_temp < dist)
-      dist = dist_temp;
-  }
-
-  if(object_attached_)
-  {
-    for(size_t i = 0; i < object_spheres_.size(); ++i)
-    {
-      v = frames_[object_spheres_[i].kdl_chain][object_spheres_[i].kdl_segment] * object_spheres_[i].v;
-
-      grid_->worldToGrid(v.x(), v.y(), v.z(), x, y, z);
-
-      ROS_INFO("[cspace] [%d] x: %d y: %d z: %d radius: %0.3f (%d)  dist: %d (dist_min: %d)", int(i), x, y, z, object_spheres_[i].radius,  int(object_spheres_[i].radius / grid_->getResolution() + 0.5), grid_->getCell(x,y,z), int(dist));
-
-      // check bounds
-      if(!grid_->isInBounds(x, y, z))
-      {
-        ROS_INFO("[cspace] Sphere %d %d %d is out of bounds.", x, y, z);
-        return false;
-      }
-
-      // check for collision with world
-      if((dist_temp = grid_->getCell(x,y,z)) <= int((object_spheres_[i].radius) / grid_->getResolution() + 0.5))
-      {
-        dist = dist_temp;
-        in_collision = true;
-        s = *(spheres_[i]); 
-        s.v = v;
-        collision_spheres_.push_back(s);
-      }
-
-      if(dist_temp < dist)
-        dist = dist_temp;
-    }
-  }
-
-  if(in_collision)
-    return false;
-
-  return true;
-}
-
-bool SBPLCollisionSpace::checkLinkForCollision(const std::vector<double> &angles, int link_num, bool verbose, unsigned char &dist)
-{
-  ROS_ERROR("[cspace] checkLinkForCollision() isn't implemented yet.");
-  return true;
-}
-
-bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, unsigned char &dist)
+bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist)
 {
   int inc_cc = 5;
-  unsigned char dist_temp = 0;
+  double dist_temp = 0;
   std::vector<double> start_norm(start);
   std::vector<double> end_norm(end);
   std::vector<std::vector<double> > path;
@@ -401,76 +319,11 @@ bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start,
   return true;
 }
 
-bool SBPLCollisionSpace::checkPathForCollisionWithVisualizations(const std::vector<double> &start, const std::vector<double> &end, bool verbose, unsigned char &dist)
-{
-  int inc_cc = 5;
-  unsigned char dist_temp = 0;
-  std::vector<double> start_norm(start);
-  std::vector<double> end_norm(end);
-  std::vector<std::vector<double> > path;
-  dist = 100;
-
-  for(size_t i=0; i < start.size(); ++i)
-  {
-    start_norm[i] = angles::normalize_angle(start[i]);
-    end_norm[i] = angles::normalize_angle(end[i]);
-  }
-
-
-  if(!interpolatePath(start_norm, end_norm, inc_, path))
-  {
-    ROS_ERROR("[cspace] Failed to interpolate the path. It's probably infeasible due to joint limits.");
-    return false;
-  }
-  // try to find collisions that might come later in the path earlier
-  if(int(path.size()) > inc_cc)
-  {
-    for(int i = 0; i < inc_cc; i++)
-    {
-      for(size_t j = i; j < path.size(); j=j+inc_cc)
-      {
-        if(!checkCollisionWithVisualizations(path[j], dist_temp))
-        {
-          ROS_INFO("    collision found in waypoint %d of %d", int(j), int(path.size()));
-          dist = dist_temp;
-          return false; 
-        }
-
-        if(dist_temp < dist)
-          dist = dist_temp;
-      }
-    }
-  }
-  else
-  {
-    for(size_t i = 0; i < path.size(); i++)
-    {
-      if(!checkCollision(path[i], verbose, false, dist_temp))
-      {
-        ROS_INFO("    collision found in waypoint %d of %d", int(i), int(path.size()));
-        dist = dist_temp;
-        return false;
-      }
-
-      if(dist_temp < dist)
-        dist = dist_temp;
-    }
-  }
-
-  return true;
-}
-
-bool SBPLCollisionSpace::checkLinkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, int link_num, bool verbose, unsigned char &dist)
-{
-  ROS_ERROR("[cspace] checkLinkPathForCollision() isn't implemented yet.");
-  return true;
-}
-
-unsigned char SBPLCollisionSpace::isValidLineSegment(const std::vector<int> a, const std::vector<int> b, const int radius)
+double SBPLCollisionSpace::isValidLineSegment(const std::vector<int> a, const std::vector<int> b, const int radius)
 {
   bresenham3d_param_t params;
   int nXYZ[3], retvalue = 1;
-  unsigned char cell_val, min_dist = 255;
+  double cell_val, min_dist = 100.0;
   CELL3V tempcell;
   vector<CELL3V>* pTestedCells=NULL;
 
@@ -482,7 +335,7 @@ unsigned char SBPLCollisionSpace::isValidLineSegment(const std::vector<int> a, c
     if(!grid_->isInBounds(nXYZ[0],nXYZ[1],nXYZ[2]))
       return 0;
 
-    cell_val = grid_->getCell(nXYZ[0],nXYZ[1],nXYZ[2]);
+    cell_val = grid_->getDistance(nXYZ[0],nXYZ[1],nXYZ[2]);
     if(cell_val <= radius)
     {
       if(pTestedCells == NULL)
@@ -512,17 +365,6 @@ unsigned char SBPLCollisionSpace::isValidLineSegment(const std::vector<int> a, c
     return min_dist;
   else
     return 0;
-}
-
-void SBPLCollisionSpace::addCubesToGrid(std::vector<std::vector<double> > &cubes)
-{
-  for(size_t i = 0; i < cubes.size(); ++i)
-    addCubeToGrid(cubes[i][0], cubes[i][1], cubes[i][2], cubes[i][3], cubes[i][4], cubes[i][5]);
-}
-
-void SBPLCollisionSpace::addCubeToGrid(double x, double y, double z, double dim_x, double dim_y, double dim_z)
-{
-  grid_->addCube(x, y, z, dim_x, dim_y, dim_z);
 }
 
 bool SBPLCollisionSpace::getCollisionSpheres(const std::vector<double> &angles, std::vector<std::vector<double> > &spheres)
@@ -565,7 +407,8 @@ bool SBPLCollisionSpace::getCollisionSpheres(const std::vector<double> &angles, 
   return true;
 }
 
-void SBPLCollisionSpace::getLineSegment(const std::vector<int> a,const std::vector<int> b,std::vector<std::vector<int> > &points){
+void SBPLCollisionSpace::getLineSegment(const std::vector<int> a,const std::vector<int> b,std::vector<std::vector<int> > &points)
+{
   bresenham3d_param_t params;
   std::vector<int> nXYZ(3,0);
 
@@ -883,30 +726,6 @@ void SBPLCollisionSpace::setJointPosition(std::string name, double position)
   model_.setJointPosition(name, position);
 }
 
-void SBPLCollisionSpace::getOccupiedVoxels(double x_center, double y_center, double z_center, double radius, std::string text, std::vector<geometry_msgs::Point> &voxels)
-{
-  int x_c, y_c, z_c, radius_c;
-  geometry_msgs::Point v;
- 
-  grid_->worldToGrid(x_center, y_center, z_center, x_c, y_c, z_c);
-  radius_c = radius/grid_->getResolution() + 0.5;
-  
-  for(int z = z_c-radius_c; z < z_c+radius_c; ++z)
-  {
-    for(int y = y_c-radius_c; y < y_c+radius_c; ++y)
-    {
-      for(int x = x_c-radius_c; x < x_c+radius_c; ++x)
-      {
-        if(grid_->getCell(x,y,z) == 0)
-        {
-          grid_->gridToWorld(x, y, z, v.x, v.y, v.z);
-          voxels.push_back(v);
-        }
-      }
-    }
-  }
-}
-
 bool SBPLCollisionSpace::doesLinkExist(std::string name)
 {
   int chain, segment;
@@ -962,14 +781,12 @@ bool SBPLCollisionSpace::getClearance(const std::vector<double> &angles, int num
 
 bool SBPLCollisionSpace::isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist)
 {
-  unsigned char udist;
-  return checkCollision(angles, verbose, visualize, udist);
+  return checkCollision(angles, verbose, visualize, dist);
 }
 
 bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, double &dist)
 {
-  unsigned char udist;
-  return checkPathForCollision(angles0, angles1, false, path_length, num_checks, udist);
+  return checkPathForCollision(angles0, angles1, false, path_length, num_checks, dist);
 }
 
 bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)
@@ -1062,7 +879,6 @@ void SBPLCollisionSpace::attachObject(const arm_navigation_msgs::AttachedCollisi
   }
 }
 
-
 visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string type)
 {
   visualization_msgs::MarkerArray ma;
@@ -1083,6 +899,19 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
         ma.markers.insert(ma.markers.end(), ma1.markers.begin(), ma1.markers.end());
       }
     }
+  }
+  else if(type.compare("collisions") == 0)
+  {
+    std::vector<double> rad(collision_spheres_.size());
+    std::vector<std::vector<double> > sph(collision_spheres_.size(), std::vector<double>(3,0));
+    for(size_t i = 0; i < collision_spheres_.size(); ++i)
+    {
+      sph[i][0] = collision_spheres_[i].v.x();
+      sph[i][1] = collision_spheres_[i].v.y();
+      sph[i][2] = collision_spheres_[i].v.z();
+      rad[i] = spheres_[i]->radius;
+    } 
+    ma = viz::getSpheresMarkerArray(sph, rad, 10, grid_->getReferenceFrame(), "collision_spheres", 0);
   }
   else if(type.compare("occupied_voxels") == 0)
   {

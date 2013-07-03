@@ -79,26 +79,15 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     void resetDistanceField();
 
     /** \brief check joint configuration for collision (0: collision) */
-    bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, unsigned char &dist);
-
-    bool checkCollisionWithVisualizations(const std::vector<double> &angles, unsigned char &dist);
+    bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
 
     /** \brief check linearly interpolated path for collisions */
-    bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, unsigned char &dist);
+    bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist);
 
-    bool checkPathForCollisionWithVisualizations(const std::vector<double> &start, const std::vector<double> &end, bool verbose, unsigned char &dist);
-
-    /** \brief check if a specific link is in collision (0: collision) */
-    bool checkLinkForCollision(const std::vector<double> &angles, int link_num, bool verbose, unsigned char &dist);
-
-    /** \brief check linearly interpolated path for collision of a specific link */
-    bool checkLinkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, int link_num, bool verbose, unsigned char &dist);
-
-    /** \brief check if the cell's distance to nearest obstacle > radius */
     inline bool isValidCell(const int x, const int y, const int z, const int radius);
 
     /** \brief check if a line segment lies on an invalid cell (0: collision) */
-    unsigned char isValidLineSegment(const std::vector<int> a,const std::vector<int> b,const int radius);
+    double isValidLineSegment(const std::vector<int> a,const std::vector<int> b,const int radius);
 
     bool getClearance(const std::vector<double> &angles, int num_spheres, double &avg_dist, double &min_dist);
    
@@ -108,11 +97,6 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     /** ---------------- Utils ---------------- */
     bool doesLinkExist(std::string name);
-
-    /** \brief transform a pose from one frame to another */
-    //void transformPose(std::string current_frame, std::string desired_frame, geometry_msgs::Pose &pose_in, geometry_msgs::Pose &pose_out);
-
-    void transformPose(const std::string &current_frame, const std::string &desired_frame, const geometry_msgs::Pose &pose_in, geometry_msgs::Pose &pose_out);
 
     bool interpolatePath(const std::vector<double>& start, const std::vector<double>& end, std::vector<std::vector<double> >& path);
     
@@ -133,15 +117,12 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     bool getCollisionSpheres(const std::vector<double> &angles, std::vector<std::vector<double> > &spheres);
 
     /* ------------- Collision Objects -------------- */
-    void addCubeToGrid(double x, double y, double z, double dim_x, double dim_y, double dim_z);
-    void addCubesToGrid(std::vector<std::vector<double> > &cubes);
     void addCollisionObject(const arm_navigation_msgs::CollisionObject &object);
     void removeCollisionObject(const arm_navigation_msgs::CollisionObject &object);
     void processCollisionObjectMsg(const arm_navigation_msgs::CollisionObject &object);
     void removeAllCollisionObjects();
     void putCollisionObjectsInGrid();
     void getCollisionObjectVoxelPoses(std::vector<geometry_msgs::Pose> &points);
-    void getOccupiedVoxels(double x_center, double y_center, double z_center, double radius, std::string text, std::vector<geometry_msgs::Point> &voxels);
     
     /** --------------- Attached Objects --------------*/
     void attachObject(const arm_navigation_msgs::AttachedCollisionObject &obj);
@@ -149,15 +130,10 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     void attachCylinder(std::string link, geometry_msgs::Pose pose, double radius, double length);
     void attachCube(std::string name, std::string link, geometry_msgs::Pose pose, double x_dim, double y_dim, double z_dim);
     void attachMesh(std::string name, std::string link, geometry_msgs::Pose pose, const std::vector<geometry_msgs::Point> &vertices, const std::vector<int> &triangles);
-
     void removeAttachedObject();
     bool getAttachedObject(const std::vector<double> &angles, std::vector<std::vector<double> > &xyz);
    
     /** --------------- Debugging ----------------*/
-    int num_collision_checks_; 
-    int num_false_collision_checks_;
-    std::vector<sbpl_arm_planner::Sphere> collision_spheres_;
-    std::vector<sbpl_arm_planner::Sphere> attached_collision_spheres_;
     visualization_msgs::MarkerArray getVisualization(std::string type);
     visualization_msgs::MarkerArray getCollisionModelVisualization(const std::vector<double> &angles);
 
@@ -194,6 +170,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     int attached_object_chain_num_;
     std::string attached_object_frame_;
     std::vector<Sphere> object_spheres_;
+    
+    std::vector<sbpl_arm_planner::Sphere> collision_spheres_;
 };
 
 inline bool SBPLCollisionSpace::isValidCell(const int x, const int y, const int z, const int radius)
