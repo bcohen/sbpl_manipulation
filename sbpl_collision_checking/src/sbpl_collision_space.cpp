@@ -73,9 +73,10 @@ bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint
     continuous_[i] = cont;
   }
 
-  ROS_INFO("[min_limits] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", min_limits_[0], min_limits_[1], min_limits_[2], min_limits_[3], min_limits_[4], min_limits_[5], min_limits_[6]);
-  ROS_INFO("[max_limits] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", max_limits_[0], max_limits_[1], max_limits_[2], max_limits_[3], max_limits_[4], max_limits_[5], max_limits_[6]);
-  ROS_INFO("[continuous] %s %s %s %s %s %s %s", continuous_[0] ? "yes" : "no", continuous_[1] ? "yes" : "no", continuous_[2] ? "yes" : "no", continuous_[3] ? "yes" : "no", continuous_[4] ? "yes" : "no", continuous_[5] ? "yes" : "no", continuous_[6] ? "yes" : "no");
+  ROS_INFO("[min_limits] %s", leatherman::getString(min_limits_).c_str());
+  ROS_INFO("[max_limits] %s", leatherman::getString(max_limits_).c_str());
+  ROS_INFO("[continuous] %s", leatherman::getString(continuous_, "yes", "no").c_str());
+
   // set the order of the planning joints
   model_.setOrderOfJointPositions(planning_joints_, group_name_);
   return true;

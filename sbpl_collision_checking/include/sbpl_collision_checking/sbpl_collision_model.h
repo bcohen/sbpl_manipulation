@@ -50,77 +50,22 @@
 
 namespace sbpl_arm_planner
 {
-/*
-  struct Sphere
-  { 
-    std::string name;
-    KDL::Vector v;
-    double radius;
-    int priority;
-    int kdl_chain;
-    int kdl_segment;
-  };
-
-  struct Link
-  {
-    int i_chain_;
-    std::string name_;
-    std::string root_name_;
-    std::vector<Sphere> spheres_;
-  };
-
-  struct Group
-  {
-    Group(std::string name) : name_(name)
-    {
-      init = false;
-    }
-
-    ~Group()
-    {
-      for(size_t i = 0; i < solvers_.size(); i++)
-      {
-        if(solvers_[i] != NULL)
-        {
-          delete solvers_[i];
-          solvers_[i] = NULL;
-        }
-      }
-    }
-
-    bool init_;
-    std::string name_;
-    std::string root_name_;
-    std::string tip_name_;
-    std::string redundancy_name_; 
-    KDL::Chain chain_;
-    std::vector<KDL::Chain> chains_;
-    std::vector<KDL::ChainFkSolverPos_recursive*> solvers_;
-    std::vector<KDL::JntArray> joint_positions_;
-    std::vector<std::vector<int> > frames_;
-    std::vector<std::vector<std::string> > jntarray_names_;
-    std::vector<std::vector<int> > angles_to_jntarray_;
-    std::vector<std::string> joint_names_;
-    std::vector<std::string> order_of_input_angles_;
-    std::vector<Link> links_;
-    std::vector<Sphere*> spheres_;
-  };
-*/
 
 class SBPLCollisionModel
 {
   public:
     
     SBPLCollisionModel();
+
     ~SBPLCollisionModel();
 
     bool init();
 
-    bool initGroup(Group* group);
+    //bool initGroup(Group* group);
 
-    bool initVoxelGroup(Group* group);
+    //bool initVoxelGroup(Group* group);
 
-    bool initGroup(std::string group_name);
+    //bool initGroup(std::string group_name);
 
     bool initAllGroups();
 
@@ -146,11 +91,13 @@ class SBPLCollisionModel
 
     std::string getReferenceFrame(std::string group_name);
 
-    void printGroups();
-    void printSpheres(std::string group_name);
-    void printDebugInfo(std::string group_name);
-
     Group* getGroup(std::string name);
+
+    void printGroups();
+    
+    //void printSpheres(std::string group_name);
+    
+    void printDebugInfo(std::string group_name);
 
   private:
 
@@ -160,27 +107,21 @@ class SBPLCollisionModel
     
     boost::shared_ptr<urdf::Model> urdf_;
     
-    KDL::Tree kdl_tree_;
-
     Group* dgroup_;
 
     bool getRobotModel();
 
     void readGroups();
     
-    void sortSpheres(std::string group_name);
+    //void sortSpheres(std::string group_name);
 
-    //bool initKDLChainForGroup(std::string &chain_root_name, Group* group);
+    //bool initKDLChainForGroup(Group* group);
 
-    bool initKDLChainForGroup(Group* group);
-
-    void initFKSolvers(Group* group);
-
-    //int getSegmentNumber(std::string &name, KDL::Chain &chain);
+    //void initFKSolvers(Group* group);
 
     bool computeFK(const std::vector<double> &angles, Group* group, int chain, int segment, KDL::Frame &frame);
 
-    bool getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels);
+    //bool getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels);
 };
 
 }
