@@ -35,17 +35,8 @@
 #include <iostream>
 #include <map>
 #include <vector>
-#include <sstream>
-#include <algorithm>
 #include <boost/shared_ptr.hpp>
-#include <boost/algorithm/string.hpp>
 #include <urdf/model.h>
-#include <kdl_parser/kdl_parser.hpp>
-#include <kdl/chain.hpp>
-#include <kdl/frames.hpp>
-#include <kdl/chainfksolverpos_recursive.hpp>
-#include <leatherman/utils.h>
-#include <leatherman/print.h>
 #include <sbpl_collision_checking/group.h>
 
 namespace sbpl_arm_planner
@@ -61,17 +52,9 @@ class SBPLCollisionModel
 
     bool init();
 
-    //bool initGroup(Group* group);
-
-    //bool initVoxelGroup(Group* group);
-
-    //bool initGroup(std::string group_name);
-
     bool initAllGroups();
 
     void getGroupNames(std::vector<std::string> &names);
-
-    bool getJointLimits(std::string root_name, std::string tip_name, std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous);
 
     bool getJointLimits(std::string group_name, std::string joint_name, double &min_limit, double &max_limit, bool &continuous);
 
@@ -95,15 +78,13 @@ class SBPLCollisionModel
 
     void printGroups();
     
-    //void printSpheres(std::string group_name);
-    
     void printDebugInfo(std::string group_name);
 
   private:
 
     ros::NodeHandle nh_, ph_;
 
-    std::map< std::string, Group*> group_config_map_;
+    std::map<std::string, Group*> group_config_map_;
     
     boost::shared_ptr<urdf::Model> urdf_;
     
@@ -111,17 +92,9 @@ class SBPLCollisionModel
 
     bool getRobotModel();
 
-    void readGroups();
-    
-    //void sortSpheres(std::string group_name);
-
-    //bool initKDLChainForGroup(Group* group);
-
-    //void initFKSolvers(Group* group);
-
+    bool readGroups();
+   
     bool computeFK(const std::vector<double> &angles, Group* group, int chain, int segment, KDL::Frame &frame);
-
-    //bool getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels);
 };
 
 }

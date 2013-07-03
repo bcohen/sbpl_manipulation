@@ -29,54 +29,6 @@ Group::~Group()
   }
 }
 
-void Group::print()
-{
-  if(!init_)
-  {
-    ROS_ERROR("Failed to print %s group information because has not yet been initialized.", name_.c_str());
-    return;
-  }
-
-  ROS_INFO("name: %s", name_.c_str());
-  ROS_INFO("type: %d", type_);
-  ROS_INFO("root name: %s", root_name_.c_str());
-  ROS_INFO(" tip name: %s", tip_name_.c_str());
-  ROS_INFO("collision links: ");
-  for(std::size_t i = 0; i < links_.size(); ++i)
-  {
-    ROS_INFO(" name: %s", links_[i].name_.c_str());
-    ROS_INFO(" root: %s", links_[i].root_name_.c_str());
-    if(type_ == sbpl_arm_planner::Group::SPHERES)
-    {
-      ROS_INFO(" spheres: %d", int(links_[i].spheres_.size()));
-      for(std::size_t j = 0; j < links_[i].spheres_.size(); ++j)
-        ROS_INFO("  [%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d", links_[i].spheres_[j].name.c_str(), links_[i].spheres_[j].v.x(), links_[i].spheres_[j].v.y(), links_[i].spheres_[j].v.z(), links_[i].spheres_[j].radius, links_[i].spheres_[j].priority);
-    }
-    else if(type_ == sbpl_arm_planner::Group::VOXELS)
-    {
-      ROS_INFO(" voxels: %d", int(links_[i].voxels_.v.size()));
-      for(std::size_t j = 0; j < links_[i].voxels_.v.size(); ++j)
-        ROS_DEBUG("  [%d] x: %0.3f y: %0.3f z: %0.3f", int(j), links_[i].voxels_.v[j].x(), links_[i].voxels_.v[j].y(), links_[i].voxels_.v[j].z());
-    }
-    if(i < links_.size()-1)
-      ROS_INFO(" ---");
-  }
-  ROS_INFO(" ");
-  if(type_ == sbpl_arm_planner::Group::SPHERES)
-  {
-    ROS_INFO("sorted spheres: ");
-    for(std::size_t j = 0; j < spheres_.size(); ++j)
-    {
-      ROS_INFO("  [%s] x: %0.3f  y:%0.3f  z:%0.3f  radius: %0.3f  priority: %d", spheres_[j]->name.c_str(), spheres_[j]->v.x(), spheres_[j]->v.y(), spheres_[j]->v.z(), spheres_[j]->radius, spheres_[j]->priority);
-    }
-    ROS_INFO(" ");
-  }
-  ROS_INFO("kinematic chain(s): ");
-  for(std::size_t j = 0; j < chains_.size(); ++j)
-    leatherman::printKDLChain(chains_[j], "chain " + boost::lexical_cast<std::string>(j));
-  ROS_INFO(" ");
-}
-
 bool Group::init(boost::shared_ptr<urdf::Model> urdf)
 {
   urdf_ = urdf;
@@ -473,6 +425,22 @@ bool Group::computeFK(const std::vector<double> &angles, int chain, int segment,
   return true;
 }
 
+bool Group::computeFK(const std::vector<double> &angles, std::vector<std::vector<KDL::Frame> > &frames)
+{
+  frames.resize(chains_.size());
+  for(int i = 0; i < int(frames_.size()); ++i)
+  {
+    frames[i].resize(chains_[i].getNrOfSegments());
+    for(size_t j = 0; j < frames_[i].size(); ++j)
+    {
+      ROS_DEBUG("chain: %d   frame_index: %d  frame: %d  size_of_frames_vector: %d", i, int(j), int(frames_[i][j]), int(frames[i].size()));
+      if(!computeFK(angles, i, frames_[i][j]+1, frames[i][frames_[i][j]]))
+        return false;
+    }
+  }
+  return true;
+}
+
 void Group::setOrderOfJointPositions(const std::vector<std::string> &joint_names)
 {
   // store the desired order of the input angles for debug information
@@ -527,6 +495,16 @@ std::string Group::getReferenceFrame()
   if(!init_)
     return "";
   return root_name_;
+}
+
+std::string Group::getName()
+{
+  return name_;
+}
+
+void Group::getSpheres(std::vector<Sphere*> &spheres)
+{
+  spheres = spheres_;
 }
 
 bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
@@ -626,5 +604,69 @@ bool Group::getFrameInfo(std::string &name, int &chain, int &segment)
   return false;
 }
 
+void Group::print()
+{
+  if(!init_)
+  {
+    ROS_ERROR("Failed to print %s group information because has not yet been initialized.", name_.c_str());
+    return;
+  }
+
+  ROS_INFO("name: %s", name_.c_str());
+  ROS_INFO("type: %d", type_);
+  ROS_INFO("root name: %s", root_name_.c_str());
+  ROS_INFO(" tip name: %s", tip_name_.c_str());
+  ROS_INFO("collision links: ");
+  for(std::size_t i = 0; i < links_.size(); ++i)
+  {
+    ROS_INFO(" name: %s", links_[i].name_.c_str());
+    ROS_INFO(" root: %s", links_[i].root_name_.c_str());
+    if(type_ == sbpl_arm_planner::Group::SPHERES)
+    {
+      ROS_INFO(" spheres: %d", int(links_[i].spheres_.size()));
+      for(std::size_t j = 0; j < links_[i].spheres_.size(); ++j)
+        ROS_INFO("  [%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d", links_[i].spheres_[j].name.c_str(), links_[i].spheres_[j].v.x(), links_[i].spheres_[j].v.y(), links_[i].spheres_[j].v.z(), links_[i].spheres_[j].radius, links_[i].spheres_[j].priority);
+    }
+    else if(type_ == sbpl_arm_planner::Group::VOXELS)
+    {
+      ROS_INFO(" voxels: %d", int(links_[i].voxels_.v.size()));
+      for(std::size_t j = 0; j < links_[i].voxels_.v.size(); ++j)
+        ROS_DEBUG("  [%d] x: %0.3f y: %0.3f z: %0.3f", int(j), links_[i].voxels_.v[j].x(), links_[i].voxels_.v[j].y(), links_[i].voxels_.v[j].z());
+    }
+    if(i < links_.size()-1)
+      ROS_INFO(" ---");
+  }
+  ROS_INFO(" ");
+  if(type_ == sbpl_arm_planner::Group::SPHERES)
+  {
+    ROS_INFO("sorted spheres: ");
+    for(std::size_t j = 0; j < spheres_.size(); ++j)
+    {
+      ROS_INFO("  [%s] x: %0.3f  y:%0.3f  z:%0.3f  radius: %0.3f  priority: %d", spheres_[j]->name.c_str(), spheres_[j]->v.x(), spheres_[j]->v.y(), spheres_[j]->v.z(), spheres_[j]->radius, spheres_[j]->priority);
+    }
+    ROS_INFO(" ");
+  }
+  ROS_INFO("kinematic chain(s): ");
+  for(std::size_t j = 0; j < chains_.size(); ++j)
+    leatherman::printKDLChain(chains_[j], "chain " + boost::lexical_cast<std::string>(j));
+  ROS_INFO(" ");
+}
+
+void Group::printDebugInfo()
+{
+  ROS_INFO("[name] %s", name_.c_str());
+  ROS_INFO("[chains] %d", int(chains_.size()));
+  ROS_INFO("[solvers] %d", int(solvers_.size()));
+  ROS_INFO("[joint_positions] %d", int(joint_positions_.size()));
+  ROS_INFO("[frames] %d", int(frames_.size()));
+  for(size_t i = 0; i < frames_.size(); ++i)
+    ROS_INFO("[frames] [%d] %d", int(i), int(frames_[i].size()));
+  ROS_INFO("[jntarray_names] %d", int(jntarray_names_.size()));
+  for(size_t i = 0; i < jntarray_names_.size(); ++i)
+    ROS_INFO("[jntarray_names] [%d] %d", int(i), int(jntarray_names_[i].size()));
+  ROS_INFO("[angles_to_jntarray] %d", int(angles_to_jntarray_.size()));
+  for(size_t i = 0; i < angles_to_jntarray_.size(); ++i)
+    ROS_INFO("[angles_to_jntarray] [%d] %d", int(i), int(angles_to_jntarray_[i].size()));
+}
 
 }

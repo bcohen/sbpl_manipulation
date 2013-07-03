@@ -59,9 +59,15 @@ class Group
 
     bool getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres);
 
+    std::string getName();
+
+    std::string getReferenceFrame();
+
     void getSpheres(std::vector<Sphere*> &spheres);
     
     bool computeFK(const std::vector<double> &angles, int chain, int segment, KDL::Frame &frame);
+
+    bool computeFK(const std::vector<double> &angles, std::vector<std::vector<KDL::Frame> > &frames);
 
     void setOrderOfJointPositions(const std::vector<std::string> &joint_names);
 
@@ -69,18 +75,22 @@ class Group
 
     bool getFrameInfo(std::string &name, int &chain, int &segment);
 
-    std::string getReferenceFrame();
-
     void printSpheres();
+
+    void printDebugInfo();
 
     bool init_;
     enum {SPHERES, VOXELS} type_;
+    std::string tip_name_;
+    std::vector<Link> links_;
+
+  private:
+
+    boost::shared_ptr<urdf::Model> urdf_;
 
     std::string name_;
     std::string root_name_;
-    std::string tip_name_;
-    std::string redundancy_name_;
-    KDL::Chain chain_;
+
     std::vector<KDL::Chain> chains_;
     std::vector<KDL::ChainFkSolverPos_recursive*> solvers_;
     std::vector<KDL::JntArray> joint_positions_;
@@ -89,14 +99,7 @@ class Group
     std::vector<std::vector<int> > angles_to_jntarray_;
     std::vector<std::string> joint_names_;
     std::vector<std::string> order_of_input_angles_;
-    std::vector<Link> links_;
     std::vector<Sphere*> spheres_;
-
-  private:
-
-    boost::shared_ptr<urdf::Model> urdf_;
-
-    //void getParams();
 
     bool initSpheres();
 
