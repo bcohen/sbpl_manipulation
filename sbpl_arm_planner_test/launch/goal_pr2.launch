@@ -2,7 +2,7 @@
 
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_description)/robots/pr2.urdf.xacro'" />
 
-  <node pkg="sbpl_arm_planner_interface" type="callPlanner" name="call_planner" output="screen" respawn="false" >
+  <node pkg="sbpl_arm_planner_test" type="callPlanner" name="call_planner" output="screen" respawn="false" >
 
     <rosparam command="load" file="$(find sbpl_arm_planner)/config/pr2_right_arm.yaml" />
     
@@ -13,7 +13,7 @@
     <param name="planning_frame" value="base_footprint" />
     <param name="planning_link" value="r_gripper_palm_link" />
     <param name="chain_tip_link" value="r_gripper_palm_link" />
-    <param name="object_filename" value="$(find sbpl_arm_planner_interface)/env/tabletop.env" />
+    <param name="object_filename" value="$(find sbpl_arm_planner_test)/env/tabletop.env" />
 
     <param name="goal/x" value="0.6" />
     <param name="goal/y" value="-0.3" />
