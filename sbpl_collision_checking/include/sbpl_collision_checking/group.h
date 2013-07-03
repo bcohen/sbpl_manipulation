@@ -56,7 +56,9 @@ class Group
     bool init(boost::shared_ptr<urdf::Model> urdf);
 
     void print();
-    
+
+    bool getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres);
+
     void getSpheres(std::vector<Sphere*> &spheres);
     
     bool computeFK(const std::vector<double> &angles, int chain, int segment, KDL::Frame &frame);

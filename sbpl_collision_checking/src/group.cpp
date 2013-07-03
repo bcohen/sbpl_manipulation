@@ -79,6 +79,7 @@ void Group::print()
 
 bool Group::init(boost::shared_ptr<urdf::Model> urdf)
 {
+  urdf_ = urdf;
   if(!initKinematics())
     return false;
 
@@ -204,134 +205,107 @@ bool Group::initKinematics()
   return true;
 }
 
-/*
-void Group::getParams()
+
+bool Group::getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres)
 {
-  ros::NodeHandle ph_("~");
-  XmlRpc::XmlRpcValue all_groups;
-
-  std::string group_name = "collision_groups";
-
-  if(!ph_.hasParam(group_name)) 
+  if(!grp.hasMember("name"))
   {
-    ROS_WARN_STREAM("No groups for planning specified in " << group_name);
-    return;
+    ROS_WARN("All groups must have a name.");
+    return false;
   }
-  ph_.getParam(group_name, all_groups);
+  name_ = std::string(grp["name"]);
 
-  if(all_groups.getType() != XmlRpc::XmlRpcValue::TypeArray) 
-    ROS_WARN("Groups is not an array.");
-
-  if(all_groups.size() == 0) 
+  if(!grp.hasMember("type"))
   {
-    ROS_WARN("No groups in groups");
-    return;
+    ROS_WARN("All groups must have a type. (voxels or spheres)");
+    return false;
+  }
+  if(std::string(grp["type"]).compare("voxels") == 0)
+    type_ = sbpl_arm_planner::Group::VOXELS;
+  else if(std::string(grp["type"]).compare("spheres") == 0)
+    type_ = sbpl_arm_planner::Group::SPHERES;
+  else
+  {
+    ROS_ERROR("Illegal group type. (voxels or spheres)");
+    return false;
   }
 
-  for(int i = 0; i < all_groups.size(); i++) 
+  if(!grp.hasMember("root_name"))
   {
-    if(!all_groups[i].hasMember("name"))
-    {
-      ROS_WARN("All groups must have a name.");
-      continue;
-    }
-    std::string gname = all_groups[i]["name"];
-    Group* gc = new Group(gname);
-    gc->init_ = false;
-    std::map< std::string, Group*>::iterator group_iterator = group_config_map_.find(gname);
-    if(group_iterator != group_config_map_.end())
-    {
-      ROS_WARN_STREAM("Already have group name " << gname);
-      delete gc;
-      continue;
-    }
-    group_config_map_[gname] = gc;
+    ROS_WARN("All groups must have a root_name.");
+    return false;
+  }
+  root_name_ = std::string(grp["root_name"]);
 
-    if(!all_groups[i].hasMember("type"))
+  if(!grp.hasMember("tip_name"))
+  {
+    ROS_WARN("All groups must have a tip_name.");
+    return false;
+  }
+  tip_name_ = std::string(grp["tip_name"]);
+
+  if(grp.hasMember("collision_links"))
+  {
+    XmlRpc::XmlRpcValue all_links = grp["collision_links"];
+
+    if(all_links.getType() != XmlRpc::XmlRpcValue::TypeArray)
     {
-      ROS_WARN("All groups must have a type. (voxels or spheres)");
-      continue;
-    }
-    if(std::string(all_groups[i]["type"]).compare("voxels") == 0)
-      group_config_map_[gname]->type_ = sbpl_arm_planner::Group::VOXELS;
-    else if(std::string(all_groups[i]["type"]).compare("spheres") == 0)
-      group_config_map_[gname]->type_ = sbpl_arm_planner::Group::SPHERES;
-    else
-    {
-      ROS_ERROR("Illegal group type. (voxels or spheres)");
-      continue;
+      ROS_WARN("Collision links is not an array.");
+      return false;
     }
 
-    if(!all_groups[i].hasMember("root_name"))
+    if(all_links.size() == 0) 
     {
-      ROS_WARN("All groups must have a root_name.");
-      continue;
+      ROS_WARN("No links in collision links");
+      return false;
     }
-    group_config_map_[gname]->root_name_ = std::string(all_groups[i]["root_name"]);
 
-    if(!all_groups[i].hasMember("tip_name"))
+    Link link;
+    for(int j = 0; j < all_links.size(); j++) 
     {
-      ROS_WARN("All groups must have a tip_name.");
-      continue;
-    }
-    group_config_map_[gname]->tip_name_ = std::string(all_groups[i]["tip_name"]);
+      link.spheres_.clear();
+      if(all_links[j].hasMember("name"))
+        link.name_ = std::string(all_links[j]["name"]);
+      if(all_links[j].hasMember("root"))
+        link.root_name_ = std::string(all_links[j]["root"]);
+      else
+        ROS_WARN("No root name");
 
-    if(all_groups[i].hasMember("collision_links"))
-    {
-      XmlRpc::XmlRpcValue all_links = all_groups[i]["collision_links"];
-
-      if(all_links.getType() != XmlRpc::XmlRpcValue::TypeArray)
+      if(type_ == sbpl_arm_planner::Group::SPHERES)
       {
-        ROS_WARN("Collision links is not an array.");
-        return;
-      }
-
-      if(all_links.size() == 0) 
-      {
-        ROS_WARN("No links in collision links");
-        return;
-      }
-
-      Link link;
-      for(int j = 0; j < all_links.size(); j++) 
-      {
-        link.spheres_.clear();
-        if(all_links[j].hasMember("name"))
-          link.name_ = std::string(all_links[j]["name"]);
-        if(all_links[j].hasMember("root"))
-          link.root_name_ = std::string(all_links[j]["root"]);
-        else
-          ROS_WARN("No root name");
-
-        if(group_config_map_[gname]->type_ == sbpl_arm_planner::Group::SPHERES)
+        std::stringstream ss(all_links[j]["spheres"]);
+        Sphere sphere;
+        std::string sphere_name;
+        while(ss >> sphere_name)
         {
-          std::stringstream ss(all_links[j]["spheres"]);
-          Sphere sphere;
-          double x,y,z;
-          std::vector<Sphere> link_spheres;
-          std::string sphere_name;
-          while(ss >> sphere_name)
+          int i;
+          for(i = 0; i < spheres.size(); ++i)
           {
-            ros::NodeHandle sphere_node(ph_, sphere_name);
-            sphere.name = sphere_name;
-            sphere_node.param("x", x, 0.0);
-            sphere_node.param("y", y, 0.0);
-            sphere_node.param("z", z, 0.0);
-            sphere_node.param("radius", sphere.radius, 0.0);
-            sphere_node.param("priority", sphere.priority, 1);
-            sphere.v.x(x);
-            sphere.v.y(y);
-            sphere.v.z(z);
-            link.spheres_.push_back(sphere);
+            if(std::string(spheres[i]["name"]).compare(sphere_name) == 0)
+            {
+              sphere.name = std::string(spheres[i]["name"]);
+              sphere.v.x(spheres[i]["x"]);
+              sphere.v.y(spheres[i]["y"]);
+              sphere.v.z(spheres[i]["z"]);
+              sphere.priority = spheres[i]["priority"];
+              sphere.radius = spheres[i]["radius"];
+              link.spheres_.push_back(sphere);
+              break;
+            }
+          }
+          if(i == spheres.size())
+          {
+            ROS_ERROR("Failed to find sphere %s in the sphere list.", sphere_name.c_str());
+            return false;
           }
         }
-        group_config_map_[gname]->links_.push_back(link);
       }
+      links_.push_back(link);
     }
   }
-  ROS_INFO("Successfully parsed collision model");
+  return true;
 }
-*/
+
 
 void Group::printSpheres()
 {
@@ -634,5 +608,23 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
 
   return true;
 }
+
+bool Group::getFrameInfo(std::string &name, int &chain, int &segment)
+{
+  for(size_t i = 0; i < chains_.size(); ++i)
+  {
+    for(size_t k = 0; k < chains_[i].getNrOfSegments(); ++k)
+    {
+      if(chains_[i].getSegment(k).getName().compare(name) == 0)
+      {
+        chain = i;
+        segment = k;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 
 }

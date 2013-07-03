@@ -197,6 +197,82 @@ bool SBPLCollisionModel::initGroup(std::string group_name)
 
 void SBPLCollisionModel::readGroups()
 {
+  XmlRpc::XmlRpcValue all_groups, all_spheres;
+
+  // collision spheres
+  std::string spheres_name = "collision_spheres";
+  if(!ph_.hasParam(spheres_name)) 
+  {
+    ROS_WARN_STREAM("No groups for planning specified in " << spheres_name);
+    return;
+  }
+  ph_.getParam(spheres_name, all_spheres);
+
+  if(all_spheres.getType() != XmlRpc::XmlRpcValue::TypeArray) 
+    ROS_WARN("Spheres is not an array.");
+
+  if(all_spheres.size() == 0) 
+  {
+    ROS_WARN("No spheres in spheres");
+    return;
+  }
+  
+  for(int i = 0; i < all_spheres.size(); i++) 
+  {
+    Sphere sphere;
+    sphere.name = std::string(all_spheres[i]["name"]);
+    sphere.v.x(all_spheres[i]["x"]);
+    sphere.v.y(all_spheres[i]["y"]);
+    sphere.v.z(all_spheres[i]["z"]);
+    sphere.priority = all_spheres[i]["priority"];
+    sphere.radius = all_spheres[i]["radius"];
+    //link.spheres_.push_back(sphere);
+  }
+
+  // collision groups
+  std::string group_name = "collision_groups";
+  if(!ph_.hasParam(group_name)) 
+  {
+    ROS_WARN_STREAM("No groups for planning specified in " << group_name);
+    return;
+  }
+  ph_.getParam(group_name, all_groups);
+
+  if(all_groups.getType() != XmlRpc::XmlRpcValue::TypeArray) 
+    ROS_WARN("Groups is not an array.");
+
+  if(all_groups.size() == 0) 
+  {
+    ROS_WARN("No groups in groups");
+    return;
+  }
+
+  for(int i = 0; i < all_groups.size(); i++) 
+  {
+    if(!all_groups[i].hasMember("name"))
+    {
+      ROS_WARN("All groups must have a name.");
+      continue;
+    }
+    std::string gname = all_groups[i]["name"];
+    Group* gc = new Group(gname);
+    std::map< std::string, Group*>::iterator group_iterator = group_config_map_.find(gname);
+    if(group_iterator != group_config_map_.end())
+    {
+      ROS_WARN_STREAM("Already have group name " << gname);
+      delete gc;
+      continue;
+    }
+    group_config_map_[gname] = gc;
+    if(!group_config_map_[gname]->getParams(all_groups[i], all_spheres))
+      ROS_ERROR("Failed to get params for %s", gname.c_str());
+  }
+  ROS_INFO("Successfully parsed collision model");
+}
+
+/*
+void SBPLCollisionModel::readGroups()
+{
   XmlRpc::XmlRpcValue all_groups;
 
   std::string group_name = "collision_groups";
@@ -321,6 +397,7 @@ void SBPLCollisionModel::readGroups()
 
   ROS_INFO("Successfully parsed collision model");
 }
+*/
 
 void SBPLCollisionModel::getGroupNames(std::vector<std::string> &names)
 {
