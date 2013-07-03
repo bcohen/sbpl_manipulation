@@ -2,6 +2,7 @@
 #define _MOTION_PRIMITIVE_
 
 #include <vector>
+#include <sstream>
 #include <ros/console.h>
 
 namespace sbpl_arm_planner {
@@ -20,9 +21,14 @@ typedef struct MotionPrimitive
   void print()
   { 
     ROS_INFO("type: %d  id: %d  nsteps: %d  group: %d", type, id, int(action.size()), group);
+    std::stringstream os;
     for(std::size_t j = 0; j < action.size(); ++j)
     {
-      ROS_INFO("[step: %d/%d] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", int(j+1),int(action.size()), action[j][0],action[j][1],action[j][2],action[j][3],action[j][4],action[j][5],action[j][6]);
+      os.str("");
+      os << "[step: " << int(j+1) << "/" << int(action.size()) << "] ";
+      for(std::size_t k = 0; k < action[j].size(); ++k)
+        os << std::setw(4) << std::setprecision(3) << std::fixed << action[j][k] << " ";
+      ROS_INFO_STREAM(os.str());
     }
   }
 
