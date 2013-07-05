@@ -1,3 +1,6 @@
+#ifndef _BFS_3D_
+#define _BFS_3D_
+
 #define WALL         0x7FFFFFFF
 #define UNDISCOVERED 0xFFFFFFFF
 
@@ -32,3 +35,5 @@ class BFS_3D {
         int getDistance(int, int, int);
 };
 }
+
+#endif
