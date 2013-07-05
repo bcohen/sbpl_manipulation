@@ -336,16 +336,16 @@ bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start,
 
 double SBPLCollisionSpace::isValidLineSegment(const std::vector<int> a, const std::vector<int> b, const int radius)
 {
-  bresenham3d_param_t params;
+  leatherman::bresenham3d_param_t params;
   int nXYZ[3], retvalue = 1;
   double cell_val, min_dist = 100.0;
-  CELL3V tempcell;
-  vector<CELL3V>* pTestedCells=NULL;
+  leatherman::CELL3V tempcell;
+  vector<leatherman::CELL3V>* pTestedCells=NULL;
 
   //iterate through the points on the segment
-  get_bresenham3d_parameters(a[0], a[1], a[2], b[0], b[1], b[2], &params);
+  leatherman::get_bresenham3d_parameters(a[0], a[1], a[2], b[0], b[1], b[2], &params);
   do {
-    get_current_point3d(&params, &(nXYZ[0]), &(nXYZ[1]), &(nXYZ[2]));
+    leatherman::get_current_point3d(&params, &(nXYZ[0]), &(nXYZ[1]), &(nXYZ[2]));
 
     if(!grid_->isInBounds(nXYZ[0],nXYZ[1],nXYZ[2]))
       return 0;
@@ -374,7 +374,7 @@ double SBPLCollisionSpace::isValidLineSegment(const std::vector<int> a, const st
       tempcell.z = nXYZ[2];
       pTestedCells->push_back(tempcell);
     }
-  } while (get_next_point3d(&params));
+  } while (leatherman::get_next_point3d(&params));
 
   if(retvalue)
     return min_dist;

@@ -34,13 +34,13 @@
 #include <ros/ros.h>
 #include <vector>
 #include <math.h>
-#include <sbpl_collision_checking/bresenham.h>
 #include <sbpl_manipulation_components/occupancy_grid.h>
 #include <sbpl_manipulation_components/collision_checker.h>
 #include <sbpl_collision_checking/sbpl_collision_model.h>
 #include <sbpl_geometry_utils/Interpolator.h>
 #include <sbpl_geometry_utils/Voxelizer.h>
 #include <sbpl_geometry_utils/SphereEncloser.h>
+#include <leatherman/bresenham.h>
 #include <leatherman/utils.h>
 #include <tf_conversions/tf_kdl.h>
 #include <angles/angles.h>
@@ -49,16 +49,8 @@
 
 using namespace std;
 
-namespace sbpl_arm_planner{
-
-/** @brief coords - used to pass around lists of valid cells */
-typedef struct
+namespace sbpl_arm_planner
 {
-  int x;
-  int y;
-  int z;
-  bool bIsObstacle;
-} CELL3V;
 
 class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 {
