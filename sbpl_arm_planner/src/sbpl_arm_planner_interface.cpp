@@ -82,7 +82,7 @@ bool SBPLArmPlannerInterface::initializePlannerAndEnvironment()
     ROS_ERROR("Failed to initialize the action set.");
     return false;
   } 
-  as_->print();
+  //as_->print();
 
   //initialize environment  
   planner_ = new ARAPlanner(sbpl_arm_env_, true);
@@ -122,7 +122,6 @@ bool SBPLArmPlannerInterface::solve(const arm_navigation_msgs::PlanningSceneCons
   cc_->setPlanningScene(*planning_scene); 
   prm_->planning_frame_ = planning_scene->collision_map.header.frame_id;
   // TODO: set kinematics to planning frame
-  // TODO: update the self collision model
   double preprocess_time = (clock() - t_preprocess) / (double)CLOCKS_PER_SEC;
 
   // plan
@@ -311,7 +310,7 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
   
   // plan 
   ROS_INFO("Calling planner"); 
-  if(plan(res.trajectory.joint_trajectory) && status == 0)
+  if(status == 0 && plan(res.trajectory.joint_trajectory))
   {
     res.trajectory.joint_trajectory.header.seq = req.motion_plan_request.goal_constraints.position_constraints[0].header.seq; 
     res.trajectory.joint_trajectory.header.stamp = ros::Time::now();
@@ -477,7 +476,7 @@ visualization_msgs::MarkerArray SBPLArmPlannerInterface::getVisualization(std::s
     }
   }
   else
-    ROS_ERROR("No such marker type, '%s'.", type.c_str());
+    ma = sbpl_arm_env_->getVisualization(type);
 
   return ma;
 }

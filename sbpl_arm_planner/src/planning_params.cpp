@@ -44,7 +44,7 @@ PlanningParams::PlanningParams()
   verbose_heuristics_ = false;
   verbose_collisions_ = false;
 
-  planning_link_sphere_radius_ = 0.1;
+  planning_link_sphere_radius_ = 0.08;
 
   cost_multiplier_ = 1000;
   cost_per_cell_ = 1;

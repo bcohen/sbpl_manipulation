@@ -168,6 +168,8 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     std::vector<double> getGoal();
     double getDistanceToGoal(double x, double y, double z);
 
+    visualization_msgs::MarkerArray getVisualization(std::string type);
+
   protected:
 
     OccupancyGrid *grid_;

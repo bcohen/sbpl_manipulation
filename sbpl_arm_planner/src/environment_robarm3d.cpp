@@ -29,6 +29,8 @@
 /** \author Benjamin Cohen */
 
 #include <sbpl_arm_planner/environment_robarm3d.h>
+//#include <bfs3d/BFS_Util.hpp>
+#include <leatherman/viz.h>
 
 #define DEG2RAD(d) ((d)*(M_PI/180.0))
 #define RAD2DEG(r) ((r)*(180.0/M_PI))
@@ -611,34 +613,34 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
 
   // push obstacles into bfs grid
   ros::WallTime start = ros::WallTime::now();
-  distance_field::PropagationDistanceField* df = grid_->getDistanceFieldPtr();
+  start = ros::WallTime::now();
   int dimX, dimY, dimZ;
   grid_->getGridSize(dimX, dimY, dimZ);
-
   int walls=0;
   for (int z = 0; z < dimZ - 2; z++)
     for (int y = 0; y < dimY - 2; y++)
       for (int x = 0; x < dimX - 2; x++)
-        if(df->getDistanceFromCell(x,y,z) <= prm_->planning_link_sphere_radius_)
+        if(grid_->getDistance(x,y,z) <= prm_->planning_link_sphere_radius_)
         {
-          bfs_->setWall(x + 1, y + 1, z + 1);
+          bfs_->setWall(x + 1, y + 1, z + 1); //, true);
           walls++;
         }
-  
   double set_walls_time = (ros::WallTime::now() - start).toSec();
   ROS_INFO("[env] %0.5fsec to set walls in new bfs. (%d walls (%0.3f percent))", set_walls_time, walls, double(walls)/double(dimX*dimY*dimZ));
+
+  /*
   start = ros::WallTime::now();
+  ROS_ERROR("sphere radius: %0.3fm  %dcells", prm_->planning_link_sphere_radius_, int(prm_->planning_link_sphere_radius_/grid_->getResolution() + 0.5));
+  setDistanceField(bfs_, grid_->getDistanceFieldPtr(), int(prm_->planning_link_sphere_radius_/grid_->getResolution() + 0.5));
+  ROS_INFO("[env] %0.5fsec to set walls in bfs.", (ros::WallTime::now() - start).toSec());
+  */
   if((pdata_.goal_entry->xyz[0] < 0) || (pdata_.goal_entry->xyz[1] < 0) || (pdata_.goal_entry->xyz[2] < 0))
   {
     ROS_ERROR("Goal is out of bounds. Can't run BFS with {%d %d %d} as start.", pdata_.goal_entry->xyz[0], pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2]);
     return false;
   }
   bfs_->run(pdata_.goal_entry->xyz[0], pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2]);
-  
-  /*
-  ros::Duration bfs_start = ros::WallTime::now() - start;
-  ROS_INFO("[env] Time required to compute at least enough of the BFS to reach the start state: %0.4fsec", bfs_start.toSec());
-  */
+  //bfs_->configure(pdata_.goal_entry->xyz[0], pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2]);
 
   pdata_.near_goal = false; 
   pdata_.t_start = clock();
@@ -746,7 +748,10 @@ void EnvironmentROBARM3D::computeCostPerCell()
 
 int EnvironmentROBARM3D::getBFSCostToGoal(int x, int y, int z) const
 {
-  return bfs_->getDistance(x,y,z) * prm_->cost_per_cell_;
+  if(bfs_->getDistance(x,y,z) > 1000000)
+    return INT_MAX;
+  else
+    return int(bfs_->getDistance(x,y,z)) * prm_->cost_per_cell_;
 }
 
 int EnvironmentROBARM3D::getXYZHeuristic(int FromStateID, int ToStateID)
@@ -803,8 +808,53 @@ double EnvironmentROBARM3D::getDistanceToGoal(double x, double y, double z)
 
 std::vector<double> EnvironmentROBARM3D::getGoal()
 {
-  //ROS_ERROR("goal: xyz: %0.3f %0.3f %0.3f   rpy: %0.3f %0.3f %0.3f", pdata_.goal.pose[0], pdata_.goal.pose[1], pdata_.goal.pose[2], pdata_.goal.pose[3], pdata_.goal.pose[4], pdata_.goal.pose[5]);
   return pdata_.goal.pose;
+}
+
+visualization_msgs::MarkerArray EnvironmentROBARM3D::getVisualization(std::string type)
+{
+  visualization_msgs::MarkerArray ma;
+
+  if(type.compare("bfs_walls") == 0)
+  {
+    std::vector<geometry_msgs::Point> pnts;
+    geometry_msgs::Point p;
+    int dimX, dimY, dimZ;
+    grid_->getGridSize(dimX, dimY, dimZ);
+    for (int z = 0; z < dimZ - 2; z++)
+      for (int y = 0; y < dimY - 2; y++)
+        for (int x = 0; x < dimX - 2; x++)
+          if(bfs_->isWall(x+1, y+1, z+1))
+          {
+            grid_->gridToWorld(x, y, z, p.x, p.y, p.z);
+            pnts.push_back(p);
+          }
+    if(!pnts.empty())
+      ma.markers.push_back(viz::getSpheresMarker(pnts, 0.02, 210, "map", "bfs_walls", 0));
+  }
+  else if(type.compare("bfs_values") == 0)
+  {
+    geometry_msgs::Pose p;
+    p.orientation.w = 1.0;
+    int dimX, dimY, dimZ;
+    grid_->getGridSize(dimX, dimY, dimZ);
+    for (int z = 65; z < 100 - 2; z++)
+      for (int y = 50; y < 100 - 2; y++)
+        for (int x = 65; x < 100 - 2; x++)
+        {
+          int d = bfs_->getDistance(x+1, y+1, z+1);
+          if(d < 10000)
+          {
+            grid_->gridToWorld(x, y, z, p.position.x, p.position.y, p.position.z);
+            double hue = d/30.0 * 300;
+            ma.markers.push_back(viz::getTextMarker(p, boost::lexical_cast<std::string>(d), 0.009, hue, "map", "bfs_values", ma.markers.size()));
+          }
+        }
+  }
+  else
+    ROS_ERROR("No such marker type, '%s'.", type.c_str());
+
+  return ma;
 }
 
 }
