@@ -220,5 +220,45 @@ Group* SBPLCollisionModel::getGroup(std::string name)
   return group_config_map_[name];
 }
 
+void SBPLCollisionModel::getVoxelGroups(std::vector<Group*> &vg)
+{
+  vg.clear();
+  for(std::map<std::string, Group*>::const_iterator iter = group_config_map_.begin(); iter != group_config_map_.end(); ++iter)
+  {
+    if(iter->second->type_ == sbpl_arm_planner::Group::VOXELS)
+      vg.push_back(iter->second);
+  }
 }
 
+bool SBPLCollisionModel::doesLinkExist(std::string name, std::string group_name)
+{ 
+  int chain, segment;
+  return getFrameInfo(name, group_name, chain, segment);
+}
+
+bool SBPLCollisionModel::setModelToWorldTransform(const arm_navigation_msgs::MultiDOFJointState &state, std::string world_frame)
+{
+  KDL::Frame f;
+
+  for(std::map<std::string, Group*>::const_iterator iter = group_config_map_.begin(); iter != group_config_map_.end(); ++iter)
+  {
+    if(world_frame.compare(iter->second->getReferenceFrame()) != 0)
+    {
+      if(!leatherman::getFrame(state, world_frame, iter->second->getReferenceFrame(), f))
+      { 
+        ROS_ERROR("Failed to get transform from world frame, '%s', to the reference frame, '%s' for collision group, '%s'.", world_frame.c_str(), iter->second->getReferenceFrame().c_str(), iter->second->getName().c_str());
+        return false;
+      }
+      else
+        iter->second->setGroupToWorldTransform(f);
+    }
+    else
+    {
+      f = KDL::Frame::Identity();
+      iter->second->setGroupToWorldTransform(f);
+    }
+  }
+  return true;
+}
+
+}

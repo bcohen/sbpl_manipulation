@@ -79,6 +79,10 @@ class Group
 
     void printDebugInfo();
 
+    void setGroupToWorldTransform(const KDL::Frame &f);
+
+    KDL::Frame getGroupToWorldTransform();
+
     bool init_;
     enum {SPHERES, VOXELS} type_;
     std::string tip_name_;
@@ -90,6 +94,7 @@ class Group
 
     std::string name_;
     std::string root_name_;
+    KDL::Frame T_root_to_world_;
 
     std::vector<KDL::Chain> chains_;
     std::vector<KDL::ChainFkSolverPos_recursive*> solvers_;
@@ -109,6 +114,16 @@ class Group
 
     bool getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels);
 };
+
+inline void Group::setGroupToWorldTransform(const KDL::Frame &f)
+{
+  T_root_to_world_ = f;
+}
+
+inline KDL::Frame Group::getGroupToWorldTransform()
+{
+  return T_root_to_world_;
+}
 
 }
 

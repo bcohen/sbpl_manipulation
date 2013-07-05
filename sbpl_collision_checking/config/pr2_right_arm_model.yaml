@@ -23,7 +23,7 @@ collision_groups:
 
   - name: left_arm
     type: voxels
-    root_name: base_footprint
+    root_name: torso_lift_link
     tip_name: l_wrist_roll_link
     collision_links:
     - name: shoulder

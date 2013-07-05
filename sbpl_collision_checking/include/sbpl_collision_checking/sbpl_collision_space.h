@@ -44,7 +44,6 @@
 #include <leatherman/utils.h>
 #include <tf_conversions/tf_kdl.h>
 #include <angles/angles.h>
-
 #include <arm_navigation_msgs/CollisionObject.h>
 #include <geometry_msgs/Point.h>
 
@@ -76,44 +75,23 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     bool setPlanningScene(const arm_navigation_msgs::PlanningScene &scene);
 
     /** --------------- Collision Checking ----------- */
-    void resetDistanceField();
-
-    /** \brief check joint configuration for collision (0: collision) */
     bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
-
-    /** \brief check linearly interpolated path for collisions */
     bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist);
-
     inline bool isValidCell(const int x, const int y, const int z, const int radius);
-
-    /** \brief check if a line segment lies on an invalid cell (0: collision) */
-    double isValidLineSegment(const std::vector<int> a,const std::vector<int> b,const int radius);
-
+    double isValidLineSegment(const std::vector<int> a, const std::vector<int> b, const int radius);
     bool getClearance(const std::vector<double> &angles, int num_spheres, double &avg_dist, double &min_dist);
-   
     bool isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
-
     bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, double &dist);
 
     /** ---------------- Utils ---------------- */
-    bool doesLinkExist(std::string name);
-
     bool interpolatePath(const std::vector<double>& start, const std::vector<double>& end, std::vector<std::vector<double> >& path);
-    
     bool interpolatePath(const std::vector<double>& start, const std::vector<double>& end, const std::vector<double>& inc, std::vector<std::vector<double> >& path);
-    
-    /** \brief get coordinates of cells that a line segment intersects */
-    void getLineSegment(const std::vector<int> a,const std::vector<int> b,std::vector<std::vector<int> > &points);
 
     /** ------------ Kinematics ----------------- */
     std::string getGroupName() { return group_name_; };
-   
     std::string getReferenceFrame() { return model_.getReferenceFrame(group_name_); };
-
     void setJointPosition(std::string name, double position);
-
     bool setPlanningJoints(const std::vector<std::string> &joint_names);
-
     bool getCollisionSpheres(const std::vector<double> &angles, std::vector<std::vector<double> > &spheres);
 
     /* ------------- Collision Objects -------------- */
@@ -124,7 +102,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     void putCollisionObjectsInGrid();
     void getCollisionObjectVoxelPoses(std::vector<geometry_msgs::Pose> &points);
     
-    /** --------------- Attached Objects --------------*/
+    /** --------------- Attached Objects -------------- */
     void attachObject(const arm_navigation_msgs::AttachedCollisionObject &obj);
     void attachSphere(std::string name, std::string link, geometry_msgs::Pose pose, double radius);
     void attachCylinder(std::string link, geometry_msgs::Pose pose, double radius, double length);
@@ -133,10 +111,13 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     void removeAttachedObject();
     bool getAttachedObject(const std::vector<double> &angles, std::vector<std::vector<double> > &xyz);
    
-    /** --------------- Debugging ----------------*/
+    /** --------------- Debugging ---------------- */
     visualization_msgs::MarkerArray getVisualization(std::string type);
     visualization_msgs::MarkerArray getCollisionModelVisualization(const std::vector<double> &angles);
 
+    /** ------------- Self Collision ----------- */
+    bool updateVoxelGroups();
+    bool updateVoxelGroup(Group *g);
     bool updateVoxelGroup(std::string name);
 
   private:
@@ -150,7 +131,6 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     double object_enclosing_sphere_radius_;
 
     /* ----------- Robot ------------ */
-    std::vector<std::string> planning_joints_;
     std::vector<double> inc_;
     std::vector<double> min_limits_;
     std::vector<double> max_limits_;

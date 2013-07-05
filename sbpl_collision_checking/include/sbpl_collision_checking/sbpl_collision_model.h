@@ -38,6 +38,7 @@
 #include <boost/shared_ptr.hpp>
 #include <urdf/model.h>
 #include <sbpl_collision_checking/group.h>
+#include <arm_navigation_msgs/MultiDOFJointState.h>
 
 namespace sbpl_arm_planner
 {
@@ -62,6 +63,8 @@ class SBPLCollisionModel
 
     void getDefaultGroupSpheres(std::vector<Sphere*> &spheres);
 
+    void getVoxelGroups(std::vector<Group*> &vg);
+
     bool computeDefaultGroupFK(const std::vector<double> &angles, std::vector<std::vector<KDL::Frame> > &frames);
 
     bool computeGroupFK(const std::vector<double> &angles, Group* group, std::vector<std::vector<KDL::Frame> > &frames);
@@ -72,6 +75,8 @@ class SBPLCollisionModel
 
     bool getFrameInfo(std::string &name, std::string group_name, int &chain, int &segment);
 
+    bool doesLinkExist(std::string name, std::string group_name);
+
     std::string getReferenceFrame(std::string group_name);
 
     Group* getGroup(std::string name);
@@ -79,6 +84,8 @@ class SBPLCollisionModel
     void printGroups();
     
     void printDebugInfo(std::string group_name);
+
+    bool setModelToWorldTransform(const arm_navigation_msgs::MultiDOFJointState &state, std::string world_frame);
 
   private:
 

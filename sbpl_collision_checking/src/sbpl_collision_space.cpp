@@ -56,17 +56,16 @@ bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint
     return false;
   }
 
-  planning_joints_ = joint_names;
-  inc_.resize(planning_joints_.size(),0.0348);
-  min_limits_.resize(planning_joints_.size(), 0.0);
-  max_limits_.resize(planning_joints_.size(), 0.0);
-  continuous_.resize(planning_joints_.size(), false);
-  for(size_t i = 0; i < planning_joints_.size(); ++i)
+  inc_.resize(joint_names.size(),0.0348);
+  min_limits_.resize(joint_names.size(), 0.0);
+  max_limits_.resize(joint_names.size(), 0.0);
+  continuous_.resize(joint_names.size(), false);
+  for(size_t i = 0; i < joint_names.size(); ++i)
   {
     bool cont = false;
-    if(!model_.getJointLimits(group_name_, planning_joints_[i], min_limits_[i], max_limits_[i], cont))
+    if(!model_.getJointLimits(group_name_, joint_names[i], min_limits_[i], max_limits_[i], cont))
     {
-      ROS_ERROR("[cspace] Failed to retrieve joint limits for %s.", planning_joints_[i].c_str()); 
+      ROS_ERROR("[cspace] Failed to retrieve joint limits for %s.", joint_names[i].c_str()); 
       return false;
     }
     continuous_[i] = cont;
@@ -77,7 +76,7 @@ bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint
   ROS_INFO("[continuous] %s", leatherman::getString(continuous_, "yes", "no").c_str());
 
   // set the order of the planning joints
-  model_.setOrderOfJointPositions(planning_joints_, group_name_);
+  model_.setOrderOfJointPositions(joint_names, group_name_);
   return true;
 }
 
@@ -104,12 +103,10 @@ bool SBPLCollisionSpace::init(std::string group_name)
   // get the collision spheres for the robot
   model_.getDefaultGroupSpheres(spheres_);
 
-  model_.printGroups();
-  model_.printDebugInfo(group_name);
+  //model_.printGroups();
+  //model_.printDebugInfo(group_name);
 
-  if(!updateVoxelGroup("body"))
-    return false;
-  if(!updateVoxelGroup("left_arm"))
+  if(!updateVoxelGroups())
     return false;
 
   return true;
@@ -213,41 +210,57 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   return true;
 }
 
+bool SBPLCollisionSpace::updateVoxelGroups()
+{
+  bool ret = true;
+  std::vector<Group*> vg;
+  model_.getVoxelGroups(vg);
+
+  for(size_t i = 0; i < vg.size(); ++i)
+  {
+    if(!updateVoxelGroup(vg[i]))
+    {
+      ROS_ERROR("Failed to update the '%s' voxel group.", vg[i]->getName().c_str());
+      ret = false;
+    }
+  }
+  return ret;
+}
+
 bool SBPLCollisionSpace::updateVoxelGroup(std::string name)
+{
+  Group* g = model_.getGroup(name);
+  return updateVoxelGroup(g);
+}
+
+bool SBPLCollisionSpace::updateVoxelGroup(Group *g)
 {
   KDL::Vector v;
   std::vector<double> angles;
   std::vector<std::vector<KDL::Frame> > frames;
   std::vector<Eigen::Vector3d> pts;
-  Group* g = model_.getGroup(name);
 
-  // compute foward kinematics
   if(!model_.computeGroupFK(angles, g, frames))
   {
     ROS_ERROR("[cspace] Failed to compute foward kinematics for group '%s'.", g->getName().c_str());
     return false;
   }
 
-  ROS_ERROR("frames: %d    links: %d", int(frames.size()), int(g->links_.size()));
   for(size_t i = 0; i < g->links_.size(); ++i)
   {
-    //ROS_ERROR("%d voxels", int(g->links_[i].voxels_.v.size()));
     Link* l = &(g->links_[i]);
-    //ROS_ERROR("%d voxels", int(l->voxels_.v.size()));
     pts.resize(l->voxels_.v.size());
 
     for(size_t j = 0; j < l->voxels_.v.size(); ++j)
     {
-      //ROS_ERROR("frames[0].size(): %d", int(frames[l->voxels_.kdl_chain].size()));
-      //ROS_INFO("kdl_chain: %d  kdl_segment: %d", l->voxels_.kdl_chain, l->voxels_.kdl_segment);
       v = frames[l->voxels_.kdl_chain][l->voxels_.kdl_segment] * l->voxels_.v[j];
       pts[j].x() = v.x();
       pts[j].y() = v.y();
       pts[j].z() = v.z();
     }
+    //grid_->updatePointsInField(pts, false);
     grid_->addPointsToField(pts);
   }
-
   return true;
 }
 
@@ -270,11 +283,13 @@ bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start,
   if(!interpolatePath(start_norm, end_norm, inc_, path))
   {
     path_length = 0;
-    ROS_ERROR("[cspace] Failed to interpolate the path. It's probably infeasible due to joint limits.");
+    ROS_ERROR_ONCE("[cspace] Failed to interpolate the path. It's probably infeasible due to joint limits.");
+    /*
     ROS_ERROR("[interpolate]  start: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", start_norm[0], start_norm[1], start_norm[2], start_norm[3], start_norm[4], start_norm[5], start_norm[6]);
     ROS_ERROR("[interpolate]    end: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", end_norm[0], end_norm[1], end_norm[2], end_norm[3], end_norm[4], end_norm[5], end_norm[6]);
     ROS_ERROR("[interpolate]    min: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", min_limits_[0], min_limits_[1], min_limits_[2], min_limits_[3], min_limits_[4], min_limits_[5], min_limits_[6]);
     ROS_ERROR("[interpolate]    max: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", max_limits_[0], max_limits_[1], max_limits_[2], max_limits_[3], max_limits_[4], max_limits_[5], max_limits_[6]);
+    */
     return false;
   }
 
@@ -405,21 +420,6 @@ bool SBPLCollisionSpace::getCollisionSpheres(const std::vector<double> &angles, 
     }
   }
   return true;
-}
-
-void SBPLCollisionSpace::getLineSegment(const std::vector<int> a,const std::vector<int> b,std::vector<std::vector<int> > &points)
-{
-  bresenham3d_param_t params;
-  std::vector<int> nXYZ(3,0);
-
-  //iterate through the points on the segment
-  get_bresenham3d_parameters(a[0], a[1], a[2], b[0], b[1], b[2], &params);
-  do {
-    get_current_point3d(&params, &(nXYZ[0]), &(nXYZ[1]), &(nXYZ[2]));
-
-    points.push_back(nXYZ);
-
-  } while (get_next_point3d(&params));
 }
 
 void SBPLCollisionSpace::removeAttachedObject()
@@ -679,11 +679,6 @@ void SBPLCollisionSpace::removeCollisionObject(const arm_navigation_msgs::Collis
   }
 }
 
-void SBPLCollisionSpace::resetDistanceField()
-{
-  grid_->reset();
-}
-
 void SBPLCollisionSpace::removeAllCollisionObjects()
 {
   known_objects_.clear();
@@ -702,10 +697,6 @@ void SBPLCollisionSpace::putCollisionObjectsInGrid()
 void SBPLCollisionSpace::getCollisionObjectVoxelPoses(std::vector<geometry_msgs::Pose> &points)
 {
   geometry_msgs::Pose pose;
-
-  pose.orientation.x = 0; 
-  pose.orientation.y = 0;
-  pose.orientation.z = 0; 
   pose.orientation.w = 1;
 
   for(size_t i = 0; i < known_objects_.size(); ++i)
@@ -724,12 +715,6 @@ void SBPLCollisionSpace::setJointPosition(std::string name, double position)
 {
   ROS_DEBUG("[cspace] Setting %s with position = %0.3f.", name.c_str(), position);
   model_.setJointPosition(name, position);
-}
-
-bool SBPLCollisionSpace::doesLinkExist(std::string name)
-{
-  int chain, segment;
-  return model_.getFrameInfo(name, group_name_, chain, segment);
 }
 
 bool SBPLCollisionSpace::interpolatePath(const std::vector<double>& start,
@@ -798,6 +783,15 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
   for(size_t i = 0; i < scene.robot_state.joint_state.name.size(); ++i)
     model_.setJointPosition(scene.robot_state.joint_state.name[i], scene.robot_state.joint_state.position[i]);
 
+  if(!model_.setModelToWorldTransform(scene.robot_state.multi_dof_joint_state, scene.collision_map.header.frame_id))
+  {
+    ROS_ERROR("Failed to set the model-to-world transform. The collision model's frame is different from the collision map's frame.");
+    return false;
+  }
+
+  // reset the distance field (TODO...shouldn't have to reset everytime)
+  grid_->reset();
+
   // collision objects
   for(size_t i = 0; i < scene.collision_objects.size(); ++i)
   {
@@ -808,7 +802,7 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
   // attached collision objects
   for(size_t i = 0; i < scene.attached_collision_objects.size(); ++i)
   {
-    if(!doesLinkExist(scene.attached_collision_objects[i].link_name))
+    if(!model_.doesLinkExist(scene.attached_collision_objects[i].link_name, group_name_))
     {
       ROS_WARN("[cspace] This attached object is not intended for the planning joints of the robot.");
     }
@@ -835,6 +829,8 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
   if(!scene.collision_map.boxes.empty())
     grid_->updateFromCollisionMap(scene.collision_map);
 
+  // self collision
+  updateVoxelGroups();
   return true;
 }
 
@@ -970,7 +966,6 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getCollisionModelVisualizati
   ma = viz::getSpheresMarkerArray(sph, rad, 90, grid_->getReferenceFrame(), "collision_model", 0); 
   return ma;
 }
-
 
 }
 

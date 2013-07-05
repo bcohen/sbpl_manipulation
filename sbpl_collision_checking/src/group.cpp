@@ -422,6 +422,7 @@ bool Group::computeFK(const std::vector<double> &angles, int chain, int segment,
     ROS_ERROR("JntToCart returned < 0. Exiting.");
     return false;
   }
+  frame = T_root_to_world_ * frame;
   return true;
 }
 
@@ -539,9 +540,9 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
       ROS_ERROR("Failed to get mesh from file. (%s)", mesh->filename.c_str());
       return false;
     }
-    ROS_INFO("mesh: %s  triangles: %u  vertices: %u", name.c_str(), int(triangles.size()), int(vertices.size()));
+    ROS_DEBUG("mesh: %s  triangles: %u  vertices: %u", name.c_str(), int(triangles.size()), int(vertices.size()));
     sbpl::Voxelizer::voxelizeMesh(vertices, triangles, RESOLUTION, v, false, 100000); 
-    ROS_INFO("mesh: %s  voxels: %u", name.c_str(), int(v.size()));
+    ROS_DEBUG("mesh: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
     {
@@ -555,7 +556,7 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
     std::vector<std::vector<double> > v;
     urdf::Box* box = (urdf::Box*) geom.get();
     sbpl::Voxelizer::voxelizeBox(box->dim.x, box->dim.y, box->dim.z, RESOLUTION, v, false); 
-    ROS_INFO("box: %s  voxels: %u", name.c_str(), int(v.size()));
+    ROS_DEBUG("box: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
     {
@@ -569,7 +570,7 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
     std::vector<std::vector<double> > v;
     urdf::Sphere* sph = (urdf::Sphere*) geom.get();
     sbpl::Voxelizer::voxelizeSphere(sph->radius, RESOLUTION, v, false); 
-    ROS_INFO("sphere: %s  voxels: %u", name.c_str(), int(v.size()));
+    ROS_DEBUG("sphere: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
     {
