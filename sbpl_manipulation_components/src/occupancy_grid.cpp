@@ -140,6 +140,29 @@ void OccupancyGrid::getOccupiedVoxels(const geometry_msgs::Pose &pose, const std
   }
 }
 
+void OccupancyGrid::getOccupiedVoxels(double x_center, double y_center, double z_center, double radius, std::string text, std::vector<geometry_msgs::Point> &voxels)
+{
+  int x_c, y_c, z_c, radius_c;
+  geometry_msgs::Point v;
+  worldToGrid(x_center, y_center, z_center, x_c, y_c, z_c);
+  radius_c = radius/getResolution() + 0.5;
+
+  for(int z = z_c-radius_c; z < z_c+radius_c; ++z)
+  {
+    for(int y = y_c-radius_c; y < y_c+radius_c; ++y)
+    {
+      for(int x = x_c-radius_c; x < x_c+radius_c; ++x)
+      {
+        if(getCell(x,y,z) == 0)
+        {
+          gridToWorld(x, y, z, v.x, v.y, v.z);
+          voxels.push_back(v);
+        }
+      }
+    }
+  }
+}
+
 visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type)
 {
   visualization_msgs::MarkerArray ma;

@@ -121,7 +121,11 @@ class OccupancyGrid
 
     void addPointsToField(const std::vector<Eigen::Vector3d> &points);
 
+    void updatePointsInField(const std::vector<Eigen::Vector3d> &points, bool iterative=false);
+
     void getOccupiedVoxels(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<Eigen::Vector3d> &voxels);
+
+    void getOccupiedVoxels(double x_center, double y_center, double z_center, double radius, std::string text, std::vector<geometry_msgs::Point> &voxels);
 
     std::string getReferenceFrame();
 
@@ -201,6 +205,17 @@ inline void OccupancyGrid::addPointsToField(const std::vector<Eigen::Vector3d> &
   grid_->addPointsToField(pts);
 }
 
+inline void OccupancyGrid::updatePointsInField(const std::vector<Eigen::Vector3d> &points, bool iterative)
+{
+  if(points.empty())
+    return;
+
+  std::vector<tf::Vector3> pts(points.size());
+  for(size_t i = 0; i < points.size(); ++i)
+    pts[i] = tf::Vector3(points[i].x(), points[i].y(), points[i].z());
+  
+  grid_->updatePointsInField(pts, iterative);
+}
 
 }
 
