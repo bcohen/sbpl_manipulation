@@ -54,13 +54,13 @@ PR2KDLRobotModel::~PR2KDLRobotModel()
 bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::string> &planning_joints)
 {
   urdf_ = boost::shared_ptr<urdf::Model>(new urdf::Model());
-  if (!urdf_->initString(robot_description))
+  if(!urdf_->initString(robot_description))
   {
     ROS_ERROR("Failed to parse the URDF.");
     return false;
   }
-
-  if (!kdl_parser::treeFromUrdfModel(*urdf_, ktree_))
+ 
+  if(!kdl_parser::treeFromUrdfModel(*urdf_, ktree_))
   {
     ROS_ERROR("Failed to parse the kdl tree from robot description.");
     return false;
@@ -133,6 +133,10 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
   // joint name -> index mapping
   for(size_t i = 0; i < planning_joints_.size(); ++i)
     joint_map_[planning_joints_[i]] = i;
+
+  // TODO: figure out why the link_map_ can be initialized incorrectly in
+  // some cases causing it to seg fault in the next for loop.
+  link_map_ = std::map<std::string, int>();
 
   // link name -> kdl index mapping
   for(size_t i = 0; i < kchain_.getNrOfSegments(); ++i)

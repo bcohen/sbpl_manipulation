@@ -32,6 +32,17 @@
 
 #include <string>
 #include <vector>
+#include <ros/console.h>
+#include <angles/angles.h>
+#include <urdf/model.h>
+#include <kdl/frames.hpp>
+#include <kdl_parser/kdl_parser.hpp>
+#include <kdl/jntarray.hpp>
+#include <kdl/chainfksolverpos_recursive.hpp>
+#include <kdl/chain.hpp>
+#include <kdl/chainiksolverpos_nr_jl.hpp>
+#include <kdl/chainiksolvervel_pinv.hpp>
+#include <sbpl_geometry_utils/interpolation.h>
 #include <sbpl_manipulation_components/kdl_robot_model.h>
 #include <pr2_arm_kinematics/pr2_arm_ik_solver.h>
 
@@ -45,8 +56,6 @@ class PR2KDLRobotModel : public KDLRobotModel {
   public:
 
     PR2KDLRobotModel();
-
-    // PR2KDLRobotModel(std::string chain_root_link, std::string chain_tip_link);
 
     ~PR2KDLRobotModel();
    

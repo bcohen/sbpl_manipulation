@@ -137,6 +137,7 @@ class OccupancyGrid
 
   private:
 
+    bool delete_grid_;
     std::string reference_frame_;
     distance_field::PropagationDistanceField* grid_;
 };
