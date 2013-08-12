@@ -14,6 +14,9 @@ add_definitions(-DROS)
 
 rosbuild_init()
 
+rosbuild_find_ros_package(sbpl_geometry_utils)
+include_directories(include ${sbpl_geometry_utils_PACKAGE_PATH}/include)
+
 rosbuild_add_boost_directories()
 
 #find_package(Eigen REQUIRED)
@@ -35,7 +38,7 @@ rosbuild_add_library(sbpl_manipulation_components
         src/collision_checker.cpp
         src/post_processing.cpp)
 
-target_link_libraries(sbpl_manipulation_components sbpl_geometry_utils)
+target_link_libraries(sbpl_manipulation_components ${sbpl_geometry_util_LIBRARIES})
 
 rosbuild_add_executable(test_kdl src/test_kdl_robot_model.cpp)
 target_link_libraries(test_kdl sbpl_manipulation_components)
