@@ -16,6 +16,9 @@ rosbuild_init()
 
 rosbuild_add_boost_directories()
 
+rosbuild_find_ros_package(sbpl_geometry_utils)
+include_directories(include ${sbpl_geometry_utils_PACKAGE_PATH}/include)
+
 find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
@@ -29,12 +32,14 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(sbpl_collision_checking 
-                        src/bresenham.cpp
                         src/group.cpp 
                         src/sbpl_collision_model.cpp
                         src/sbpl_collision_space.cpp)
 
-target_link_libraries(sbpl_collision_checking sbpl_geometry_utils sbpl_manipulation_components leatherman)
+target_link_libraries(sbpl_collision_checking 
+                        ${sbpl_geometry_utils_PACKAGE_PATH}/devel/lib/libsbpl_geometry_utils.so
+                        sbpl_manipulation_components
+                        leatherman)
 
 #rosbuild_add_executable(test_model src/test_collision_model.cpp)
 #target_link_libraries(test_model sbpl_collision_checking)

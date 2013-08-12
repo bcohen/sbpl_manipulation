@@ -23,7 +23,6 @@
   <depend package="sensor_msgs" />
   <depend package="message_filters" />
   <depend package="geometry_msgs"/>
-  <depend package="sbpl_geometry_utils" />
   <depend package="sbpl_manipulation_components" />
   <depend package="leatherman" />
   <depend package="visualization_msgs" />

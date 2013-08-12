@@ -531,11 +531,13 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
 
   if(geom->type == urdf::Geometry::MESH)
   {
+    geometry_msgs::Vector3 scale;
+    scale.x = 1; scale.y = 1; scale.z = 1;
     std::vector<int> triangles;
     std::vector<geometry_msgs::Point> vertices;
     std::vector<std::vector<double> > v;
     urdf::Mesh* mesh = (urdf::Mesh*) geom.get();
-    if(!leatherman::getMeshComponentsFromResource(mesh->filename, triangles, vertices))
+    if(!leatherman::getMeshComponentsFromResource(mesh->filename, scale, triangles, vertices))
     {
       ROS_ERROR("Failed to get mesh from file. (%s)", mesh->filename.c_str());
       return false;
