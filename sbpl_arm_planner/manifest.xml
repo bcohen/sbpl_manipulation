@@ -12,16 +12,17 @@
   <review status="unreviewed" notes="" />
   <url>http://www.ros.org/wiki/sbpl_arm_planner</url>
 
-	<depend package="roscpp"/>
-  <depend package="sbpl" />
-	<depend package="angles" />
+  <depend package="roscpp"/>
+  <depend package="angles" />
   <depend package="kdl" />
   <depend package="bfs3d" />
   <depend package="leatherman" />
   <depend package="sbpl_manipulation_components" />
 
+  <rosdep name="sbpl" />
+
   <export>
-      <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_arm_planner"/>
+    <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_arm_planner"/>
   </export>
 
 </package>

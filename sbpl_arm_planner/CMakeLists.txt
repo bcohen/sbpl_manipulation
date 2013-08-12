@@ -16,6 +16,14 @@ rosbuild_init()
 
 rosbuild_add_boost_directories()
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SBPL REQUIRED sbpl)
+include_directories(${SBPL_INCLUDE_DIRS})
+link_directories(${SBPL_LIBRARY_DIRS})
+
+rosbuild_find_ros_package(sbpl_geometry_utils)
+include_directories(include ${sbpl_geometry_utils_PACKAGE_PATH}/include)
+
 find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
@@ -34,4 +42,4 @@ rosbuild_add_library(sbpl_arm_planner
                         src/planning_params.cpp
                         src/sbpl_arm_planner_interface.cpp)
 
-target_link_libraries(sbpl_arm_planner sbpl_geometry_utils sbpl_manipulation_components leatherman bfs3d)
+target_link_libraries(sbpl_arm_planner ${sbpl_geometry_utils_LIBRARIES} sbpl_manipulation_components leatherman bfs3d)
