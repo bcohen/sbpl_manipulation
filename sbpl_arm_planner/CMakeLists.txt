@@ -42,4 +42,4 @@ rosbuild_add_library(sbpl_arm_planner
                         src/planning_params.cpp
                         src/sbpl_arm_planner_interface.cpp)
 
-target_link_libraries(sbpl_arm_planner ${sbpl_geometry_utils_LIBRARIES} sbpl_manipulation_components leatherman bfs3d)
+target_link_libraries(sbpl_arm_planner sbpl_manipulation_components leatherman bfs3d sbpl)
