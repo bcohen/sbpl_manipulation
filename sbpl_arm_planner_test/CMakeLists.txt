@@ -11,6 +11,9 @@ set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
 
+rosbuild_find_ros_package(sbpl_geometry_utils)
+include_directories(include ${sbpl_geometry_utils_PACKAGE_PATH}/include)
+
 rosbuild_add_boost_directories()
 
 find_package(Eigen REQUIRED)
@@ -25,4 +28,4 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_executable(callPlanner src/call_planner.cpp)
-target_link_libraries(callPlanner sbpl_arm_planner sbpl_collision_checking sbpl_geometry_utils)
+target_link_libraries(callPlanner sbpl_arm_planner sbpl_collision_checking)

@@ -15,7 +15,6 @@
 	<depend package="arm_navigation_msgs" />
 	<depend package="sbpl_arm_planner" />
 	<depend package="sbpl_collision_checking" />
-	<depend package="sbpl_geometry_utils" />
  	<depend package="geometry_msgs"/>
 	<depend package="pviz" />
 	<depend package="leatherman" />
