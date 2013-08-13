@@ -1,5 +1,7 @@
 <launch>
 
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_description)/robots/pr2.urdf.xacro'" />
+
   <node pkg="sbpl_collision_checking" type="test_space" name="sbpl_collision_space_test" output="screen" respawn="false" >
 
     <param name="group_name" value="left_arm" />
@@ -20,7 +22,7 @@
     <param name="joint_5" value="l_wrist_flex_joint" />
     <param name="joint_6" value="l_wrist_roll_joint" />
 
-    <rosparam command="load" file="$(find sbpl_collision_checking)/config/pr2_left_arm.yaml" />
+    <rosparam command="load" file="$(find sbpl_collision_checking)/config/pr2_left_arm_model.yaml" />
 
   </node>
 

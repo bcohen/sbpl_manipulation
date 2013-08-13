@@ -1,26 +1,28 @@
 <launch>
 
-  <node pkg="sbpl_collision_checking" type="test_space" name="sbpl_collision_space_test" output="screen" respawn="false" >
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_description)/robots/pr2.urdf.xacro'" />
+
+  <node launch-prefix="gdb -ex run --args" pkg="sbpl_collision_checking" type="test_space" name="sbpl_collision_space_test_pr2_right" output="screen" respawn="false" >
 
     <param name="group_name" value="right_arm" />
 
-    <param name="dims/x" value="2.0" />
-    <param name="dims/y" value="2.0" />
-    <param name="dims/z" value="2.0" />
+    <param name="dims/x" value="3.0" />
+    <param name="dims/y" value="3.0" />
+    <param name="dims/z" value="3.0" />
 
     <param name="origin/x" value="-0.75" />
     <param name="origin/y" value="1.25" />
     <param name="origin/z" value="-0.3" />
 
     <param name="joint_0" value="r_shoulder_pan_joint" />
-    <param name="joint_1" value="r_shoulder_pitch_joint" />
+    <param name="joint_1" value="r_shoulder_lift_joint" />
     <param name="joint_2" value="r_upper_arm_roll_joint" />
     <param name="joint_3" value="r_elbow_flex_joint" />
     <param name="joint_4" value="r_forearm_roll_joint" />
     <param name="joint_5" value="r_wrist_flex_joint" />
     <param name="joint_6" value="r_wrist_roll_joint" />
 
-    <rosparam command="load" file="$(find sbpl_collision_checking)/config/pr2_right_arm.yaml" />
+    <rosparam command="load" file="$(find sbpl_collision_checking)/config/pr2_right_arm_model.yaml" />
 
   </node>
 
