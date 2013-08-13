@@ -38,7 +38,7 @@ rosbuild_add_library(sbpl_manipulation_components
         src/collision_checker.cpp
         src/post_processing.cpp)
 
-target_link_libraries(sbpl_manipulation_components ${sbpl_geometry_util_LIBRARIES})
+target_link_libraries(sbpl_manipulation_components ${sbpl_geometry_utils_LIBRARIES})
 
 rosbuild_add_executable(test_kdl src/test_kdl_robot_model.cpp)
 target_link_libraries(test_kdl sbpl_manipulation_components)
