@@ -543,7 +543,7 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
       return false;
     }
     ROS_DEBUG("mesh: %s  triangles: %u  vertices: %u", name.c_str(), int(triangles.size()), int(vertices.size()));
-    sbpl::Voxelizer::voxelizeMesh(vertices, triangles, RESOLUTION, v, false, 100000); 
+    sbpl::VoxelizeMesh(vertices, triangles, RESOLUTION, v); 
     ROS_DEBUG("mesh: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
