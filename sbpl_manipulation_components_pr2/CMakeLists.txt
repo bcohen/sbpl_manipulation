@@ -14,6 +14,9 @@ add_definitions(-DROS)
 
 rosbuild_init()
 
+rosbuild_find_ros_package(sbpl_geometry_utils)
+include_directories(include ${sbpl_geometry_utils_PACKAGE_PATH}/include)
+
 rosbuild_add_boost_directories()
 
 #find_package(Eigen REQUIRED)
