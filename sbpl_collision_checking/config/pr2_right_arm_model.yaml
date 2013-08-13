@@ -1,4 +1,3 @@
-
 collision_groups:
 
   - name: body
@@ -75,10 +74,7 @@ collision_groups:
 
 collision_spheres:
 
-  # With old model
-  #sh0, x: 0.09, y: 0.0, z: -0.02, radius: 0.18, priority: 5}
-
-  # With new collision links
+# - {name: sh0, x: 0.09, y: 0.0, z: -0.02, radius: 0.18, priority: 5}
   - {name: sh0, x: 0.13, y: 0.0, z: -0.04, radius: 0.16, priority: 5}
 
   - {name: ua0, x: 0.18, y: 0.0, z: -0.015, radius: 0.11, priority: 4}
