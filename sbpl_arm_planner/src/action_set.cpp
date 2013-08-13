@@ -33,13 +33,14 @@
  
 namespace sbpl_arm_planner {
 
-ActionSet::ActionSet()
+ActionSet::ActionSet(std::string action_file)
 {
   env_ = NULL;
   use_multires_mprims_ = true;
   use_ik_ = true;
   short_dist_mprims_thresh_m_ = 0.2;
   ik_amp_dist_thresh_m_= 0.20;
+  action_file_ = action_file;
 
   motion_primitive_type_names_.push_back("long_distance");
   motion_primitive_type_names_.push_back("short_distance");
@@ -53,14 +54,14 @@ ActionSet::ActionSet()
   motion_primitive_type_names_.push_back("retract_then_towards_rpy_then_towards_xyz");
 }
 
-bool ActionSet::init(std::string filename, EnvironmentROBARM3D *env)
+bool ActionSet::init(EnvironmentROBARM3D *env)
 {
   env_ = env;
 
   FILE* file=NULL;
-  if((file=fopen(filename.c_str(),"r")) == NULL)
+  if((file=fopen(action_file_.c_str(),"r")) == NULL)
   {
-    ROS_ERROR("Failed to open action set file.");
+    ROS_ERROR("Failed to open action set file. (file: '%s')", action_file_.c_str());
     return false;
   }
 

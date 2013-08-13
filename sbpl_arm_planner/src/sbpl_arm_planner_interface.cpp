@@ -77,7 +77,7 @@ bool SBPLArmPlannerInterface::initializePlannerAndEnvironment()
   if(!sbpl_arm_env_)
     return false;
 
-  if(!as_->init("/tmp/pr2.mprim", sbpl_arm_env_))
+  if(!as_->init(sbpl_arm_env_))
   {
     ROS_ERROR("Failed to initialize the action set.");
     return false;
@@ -121,6 +121,7 @@ bool SBPLArmPlannerInterface::solve(const arm_navigation_msgs::PlanningSceneCons
   clock_t t_preprocess = clock();
   cc_->setPlanningScene(*planning_scene); 
   prm_->planning_frame_ = planning_scene->collision_map.header.frame_id;
+  grid_->setReferenceFrame(prm_->planning_frame_);
   // TODO: set kinematics to planning frame
   double preprocess_time = (clock() - t_preprocess) / (double)CLOCKS_PER_SEC;
 
@@ -132,6 +133,7 @@ bool SBPLArmPlannerInterface::solve(const arm_navigation_msgs::PlanningSceneCons
     ROS_ERROR("Failed to plan.");
     return false;
   }
+
   res_ = res;
   double plan_time = (clock() - t_plan) / (double)CLOCKS_PER_SEC;
   ROS_INFO("t_plan: %0.3fsec  t_preprocess: %0.3fsec", plan_time, preprocess_time);
