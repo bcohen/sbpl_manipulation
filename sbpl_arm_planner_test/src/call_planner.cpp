@@ -193,7 +193,7 @@ int main(int argc, char **argv)
   ros::spinOnce();
   ros::Publisher ma_pub = nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 500);
   std::string group_name, kinematics_frame, planning_frame, planning_link, chain_tip_link;
-  std::string object_filename;
+  std::string object_filename, action_set_filename;
   std::vector<double> pose(6,0), goal(6,0);
   ph.param<std::string>("kinematics_frame", kinematics_frame, "");
   ph.param<std::string>("planning_frame", planning_frame, "");
@@ -201,6 +201,7 @@ int main(int argc, char **argv)
   ph.param<std::string>("chain_tip_link", chain_tip_link, "");
   ph.param<std::string>("group_name", group_name, "");
   ph.param<std::string>("object_filename", object_filename, "");
+  ph.param<std::string>("action_set_filename", action_set_filename, "");
   ph.param("goal/x", goal[0], 0.0);
   ph.param("goal/y", goal[1], 0.0);
   ph.param("goal/z", goal[2], 0.0);
@@ -230,7 +231,7 @@ int main(int argc, char **argv)
   nh.param<std::string>("robot_description", urdf, " ");
 
   // distance field
-  distance_field::PropagationDistanceField *df = new distance_field::PropagationDistanceField(3.0, 3.0, 3.0, 0.02, -0.75, -1.25, -1.0,0.40);
+  distance_field::PropagationDistanceField *df = new distance_field::PropagationDistanceField(3.0, 3.0, 3.0, 0.02, -0.75, -1.25, -1.0, 0.2);
   df->reset();
 
   // robot model
@@ -242,18 +243,18 @@ int main(int argc, char **argv)
   if(!rm->init(urdf, planning_joints))
     return false;
   rm->setPlanningLink(planning_link);
-  ROS_WARN("Robot Model Information");
-  rm->printRobotModelInformation();
+  //ROS_WARN("Robot Model Information");
+  //rm->printRobotModelInformation();
 
   KDL::Frame f;
   if(group_name.compare("right_arm") == 0)
   {
-    f.p.x(-0.05); f.p.y(0.0); f.p.z(0.803);
+    f.p.x(-0.05); f.p.y(1.0); f.p.z(0.803);
     f.M = KDL::Rotation::Quaternion(0,0,0,1);
     rm->setKinematicsToPlanningTransform(f, planning_frame);
   }
   // collision checker
-  sbpl_arm_planner::OccupancyGrid *grid = new sbpl_arm_planner::OccupancyGrid(3.0, 3.0, 3.0, 0.02, -0.75, -1.25, -1.0);
+  sbpl_arm_planner::OccupancyGrid *grid = new sbpl_arm_planner::OccupancyGrid(df);
   grid->setReferenceFrame(planning_frame);
   sbpl_arm_planner::CollisionChecker *cc;
   cc = new sbpl_arm_planner::SBPLCollisionSpace(grid);
@@ -264,7 +265,7 @@ int main(int argc, char **argv)
     return false;
 
   // action set
-  sbpl_arm_planner::ActionSet *as = new sbpl_arm_planner::ActionSet();
+  sbpl_arm_planner::ActionSet *as = new sbpl_arm_planner::ActionSet(action_set_filename);
 
   // planner interface
   sbpl_arm_planner::SBPLArmPlannerInterface *planner = new sbpl_arm_planner::SBPLArmPlannerInterface(rm, cc, as, df);
@@ -281,6 +282,24 @@ int main(int argc, char **argv)
   arm_navigation_msgs::GetMotionPlan::Request req;
   arm_navigation_msgs::GetMotionPlan::Response res;
   scene->collision_map.header.frame_id = planning_frame;
+
+  // add robot's pose in map
+  scene->robot_state.multi_dof_joint_state.frame_ids.resize(2);
+  scene->robot_state.multi_dof_joint_state.child_frame_ids.resize(2);
+  scene->robot_state.multi_dof_joint_state.poses.resize(2);
+  scene->robot_state.multi_dof_joint_state.frame_ids[0] = "base_footprint";
+  scene->robot_state.multi_dof_joint_state.child_frame_ids[0] = "map";
+  scene->robot_state.multi_dof_joint_state.poses[0].position.x = 0;
+  scene->robot_state.multi_dof_joint_state.poses[0].position.y = -1.0;
+  scene->robot_state.multi_dof_joint_state.poses[0].position.z = 0;
+  scene->robot_state.multi_dof_joint_state.poses[0].orientation.w = 1;
+  scene->robot_state.multi_dof_joint_state.frame_ids[1] = "map";
+  scene->robot_state.multi_dof_joint_state.child_frame_ids[1] = "torso_lift_link";
+  scene->robot_state.multi_dof_joint_state.poses[1].position.x = -0.05;
+  scene->robot_state.multi_dof_joint_state.poses[1].position.y = 1.0;
+  scene->robot_state.multi_dof_joint_state.poses[1].position.z = 0.803;
+  scene->robot_state.multi_dof_joint_state.poses[1].orientation.w = 1;
+ 
   fillConstraint(goal, planning_frame, req.motion_plan_request.goal_constraints);
   req.motion_plan_request.allowed_planning_time.fromSec(4.0);
   start_angles[1] = 0.02;
@@ -293,25 +312,24 @@ int main(int argc, char **argv)
   // visualizations
   ma_pub.publish(cc->getVisualization("bounds"));
   ma_pub.publish(cc->getVisualization("distance_field"));
-
-  
+  ma_pub.publish(cc->getVisualization("occupied_voxels"));
+ 
   ROS_INFO("Calling solve...");
   if(!planner->solve(scene, req, res))
   {
     ROS_ERROR("Failed to plan.");
-    //return 0;
   }
   else
     ma_pub.publish(planner->getCollisionModelTrajectoryMarker());
   
-  
-  ma_pub.publish(cc->getCollisionModelVisualization(start_angles));
-  ROS_INFO("done");
   ros::spinOnce();
+  ma_pub.publish(cc->getVisualization("distance_field"));
+  ma_pub.publish(planner->getVisualization("bfs_walls"));
+  //ma_pub.publish(planner->getVisualization("bfs_values"));
   ma_pub.publish(cc->getCollisionModelVisualization(start_angles));
   ma_pub.publish(planner->getVisualization("goal"));
   ma_pub.publish(planner->getVisualization("expansions"));
-  ma_pub.publish(cc->getVisualization("collision_objects"));
+  //ma_pub.publish(cc->getVisualization("collision_objects"));
   ma_pub.publish(cc->getVisualization("occupied_voxels"));
   
   ros::spinOnce();

@@ -10,14 +10,15 @@
 
     <param name="group_name" value="right_arm" />
     <param name="kinematics_frame" value="torso_lift_link" />
-    <param name="planning_frame" value="base_footprint" />
+    <param name="planning_frame" value="map" />
     <param name="planning_link" value="r_gripper_palm_link" />
     <param name="chain_tip_link" value="r_gripper_palm_link" />
     <param name="object_filename" value="$(find sbpl_arm_planner_test)/env/tabletop.env" />
+    <param name="action_set_filename" value="$(find sbpl_arm_planner)/config/pr2.mprim" />
 
-    <param name="goal/x" value="0.6" />
-    <param name="goal/y" value="-0.3" />
-    <param name="goal/z" value="0.48" />
+    <param name="goal/x" value="0.65" />
+    <param name="goal/y" value="0.7" />
+    <param name="goal/z" value="0.46" />
     <param name="goal/r" value="0" />
     <param name="goal/p" value="0" />
     <param name="goal/ya" value="0" />
