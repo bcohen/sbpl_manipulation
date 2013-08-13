@@ -1,0 +1,28 @@
+<launch>
+
+  <node pkg="sbpl_collision_checking" type="test_space" name="sbpl_collision_space_test" output="screen" respawn="false" >
+
+    <param name="group_name" value="left_arm" />
+
+    <param name="dims/x" value="2.0" />
+    <param name="dims/y" value="2.0" />
+    <param name="dims/z" value="2.0" />
+
+    <param name="origin/x" value="-0.75" />
+    <param name="origin/y" value="1.25" />
+    <param name="origin/z" value="-0.3" />
+
+    <param name="joint_0" value="l_shoulder_pan_joint" />
+    <param name="joint_1" value="l_shoulder_pitch_joint" />
+    <param name="joint_2" value="l_upper_arm_roll_joint" />
+    <param name="joint_3" value="l_elbow_flex_joint" />
+    <param name="joint_4" value="l_forearm_roll_joint" />
+    <param name="joint_5" value="l_wrist_flex_joint" />
+    <param name="joint_6" value="l_wrist_roll_joint" />
+
+    <rosparam command="load" file="$(find sbpl_collision_checking)/config/pr2_left_arm.yaml" />
+
+  </node>
+
+</launch>
+
