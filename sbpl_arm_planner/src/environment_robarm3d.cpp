@@ -830,7 +830,7 @@ visualization_msgs::MarkerArray EnvironmentROBARM3D::getVisualization(std::strin
             pnts.push_back(p);
           }
     if(!pnts.empty())
-      ma.markers.push_back(viz::getSpheresMarker(pnts, 0.02, 210, "map", "bfs_walls", 0));
+      ma.markers.push_back(viz::getSpheresMarker(pnts, 0.02, 210, grid_->getReferenceFrame(), "bfs_walls", 0));
   }
   else if(type.compare("bfs_values") == 0)
   {
@@ -847,7 +847,7 @@ visualization_msgs::MarkerArray EnvironmentROBARM3D::getVisualization(std::strin
           {
             grid_->gridToWorld(x, y, z, p.position.x, p.position.y, p.position.z);
             double hue = d/30.0 * 300;
-            ma.markers.push_back(viz::getTextMarker(p, boost::lexical_cast<std::string>(d), 0.009, hue, "map", "bfs_values", ma.markers.size()));
+            ma.markers.push_back(viz::getTextMarker(p, boost::lexical_cast<std::string>(d), 0.009, hue, grid_->getReferenceFrame(), "bfs_values", ma.markers.size()));
           }
         }
   }

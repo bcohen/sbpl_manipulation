@@ -251,12 +251,14 @@ bool SBPLCollisionSpace::updateVoxelGroup(Group *g)
     Link* l = &(g->links_[i]);
     pts.resize(l->voxels_.v.size());
 
+    ROS_INFO("Updating Voxel Group %s with %d voxels", g->getName().c_str(), int(l->voxels_.v.size())); 
     for(size_t j = 0; j < l->voxels_.v.size(); ++j)
     {
       v = frames[l->voxels_.kdl_chain][l->voxels_.kdl_segment] * l->voxels_.v[j];
       pts[j].x() = v.x();
       pts[j].y() = v.y();
       pts[j].z() = v.z();
+      ROS_DEBUG("[%s] [%d] xyz: %0.2f %0.2f %0.2f", g->getName().c_str(), int(j), pts[j].x(), pts[j].y(), pts[j].z());
     }
     //grid_->updatePointsInField(pts, false);
     grid_->addPointsToField(pts);
@@ -790,7 +792,7 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
   }
 
   // reset the distance field (TODO...shouldn't have to reset everytime)
-  grid_->reset();
+  //grid_->reset();
 
   // collision objects
   for(size_t i = 0; i < scene.collision_objects.size(); ++i)
@@ -821,7 +823,7 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
     else
       ROS_WARN("Received a collision object with an unknown operation");
   }
-  
+
   // collision map
   if(scene.collision_map.header.frame_id.compare(grid_->getReferenceFrame()) != 0)
     ROS_WARN_ONCE("collision_map_occ is in %s not in %s", scene.collision_map.header.frame_id.c_str(), grid_->getReferenceFrame().c_str());

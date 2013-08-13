@@ -5,10 +5,15 @@ collision_groups:
     root_name: base_link
     tip_name: link7
     collision_links:
-    - name: base
-      root: base_link  
-    - name: link2
-      root: link2
+    - name: wheel_front_left
+      root: wheel_front_left
+    - name: wheel_front_right
+      root: wheel_front_right
+    - name: wheel_rear_left
+      root: wheel_rear_left
+    - name: wheel_rear_right
+      root: wheel_rear_right
+
 
   - name: hdt_arm
     type: spheres
@@ -41,107 +46,108 @@ collision_groups:
       spheres: gb_0 gb_1 gb_2 gb_3 gb_4 gb_5 gb_6 gb_7 gb_8 gb_9 gb_10 gb_11 gb_12 gb_13 
 
 
+collision_spheres:
 # <cylinder length="0.1143" radius="0.0381"/>
 # <origin rpy="0 0 0" xyz="0.0 0.0 0.0762"/>
-l1_0: {x: 0.0, y: 0.0, z: 0.03, radius: 0.0381, priority: 5}
-l1_1: {x: 0.0, y: 0.0, z: 0.05, radius: 0.0381, priority: 5}
-l1_2: {x: 0.0, y: 0.0, z: 0.07, radius: 0.0381, priority: 5}
-l1_3: {x: 0.0, y: 0.0, z: 0.09, radius: 0.0381, priority: 5}
-l1_4: {x: 0.0, y: 0.0, z: 0.11, radius: 0.0381, priority: 5}
+  - {name: l1_0, x: 0.0, y: 0.0, z: 0.03, radius: 0.0381, priority: 5}
+  - {name: l1_1, x: 0.0, y: 0.0, z: 0.05, radius: 0.0381, priority: 5}
+  - {name: l1_2, x: 0.0, y: 0.0, z: 0.07, radius: 0.0381, priority: 5}
+  - {name: l1_3, x: 0.0, y: 0.0, z: 0.09, radius: 0.0381, priority: 5}
+  - {name: l1_4, x: 0.0, y: 0.0, z: 0.11, radius: 0.0381, priority: 5}
 
 # <cylinder length="0.0381" radius="0.0381"/>
 # <origin rpy="0 0 0" xyz="0.0 0 0"/>
-l2_0: {x: 0.0, y: 0.0, z: 0.0, radius: 0.0381, priority: 5}
+  - {name: l2_0, x: 0.0, y: 0.0, z: 0.0, radius: 0.0381, priority: 5}
 
 # <cylinder length="0.508" radius="0.0381"/>
 # <origin rpy="0 0 0" xyz="0.0 0.0 0.27305"/>
-l3_0: {x: 0.0, y: 0.0, z: 0.03, radius: 0.0381, priority: 5}
-l3_1: {x: 0.0, y: 0.0, z: 0.05, radius: 0.0381, priority: 5}
-l3_2: {x: 0.0, y: 0.0, z: 0.07, radius: 0.0381, priority: 5}
-l3_3: {x: 0.0, y: 0.0, z: 0.09, radius: 0.0381, priority: 5}
-l3_4: {x: 0.0, y: 0.0, z: 0.11, radius: 0.0381, priority: 5}
-l3_5: {x: 0.0, y: 0.0, z: 0.13, radius: 0.0381, priority: 5}
-l3_6: {x: 0.0, y: 0.0, z: 0.15, radius: 0.0381, priority: 5}
-l3_7: {x: 0.0, y: 0.0, z: 0.17, radius: 0.0381, priority: 5}
-l3_8: {x: 0.0, y: 0.0, z: 0.19, radius: 0.0381, priority: 5}
-l3_9: {x: 0.0, y: 0.0, z: 0.21, radius: 0.0381, priority: 5}
-l3_10: {x: 0.0, y: 0.0, z: 0.23, radius: 0.0381, priority: 5}
-l3_11: {x: 0.0, y: 0.0, z: 0.25, radius: 0.0381, priority: 5}
-l3_12: {x: 0.0, y: 0.0, z: 0.27, radius: 0.0381, priority: 5}
-l3_13: {x: 0.0, y: 0.0, z: 0.29, radius: 0.0381, priority: 5}
-l3_14: {x: 0.0, y: 0.0, z: 0.31, radius: 0.0381, priority: 5}
-l3_15: {x: 0.0, y: 0.0, z: 0.33, radius: 0.0381, priority: 5}
-l3_16: {x: 0.0, y: 0.0, z: 0.35, radius: 0.0381, priority: 5}
-l3_17: {x: 0.0, y: 0.0, z: 0.37, radius: 0.0381, priority: 5}
-l3_18: {x: 0.0, y: 0.0, z: 0.39, radius: 0.0381, priority: 5}
-l3_19: {x: 0.0, y: 0.0, z: 0.41, radius: 0.0381, priority: 5}
-l3_20: {x: 0.0, y: 0.0, z: 0.43, radius: 0.0381, priority: 5}
-l3_21: {x: 0.0, y: 0.0, z: 0.45, radius: 0.0381, priority: 5}
-l3_22: {x: 0.0, y: 0.0, z: 0.47, radius: 0.0381, priority: 5}
-l3_23: {x: 0.0, y: 0.0, z: 0.49, radius: 0.0381, priority: 5}
-l3_24: {x: 0.0, y: 0.0, z: 0.51, radius: 0.0381, priority: 5}
-l3_25: {x: 0.0, y: 0.0, z: 0.53, radius: 0.0381, priority: 5}
+  - {name: l3_0, x: 0.0, y: 0.0, z: 0.03, radius: 0.0381, priority: 5}
+  - {name: l3_1, x: 0.0, y: 0.0, z: 0.05, radius: 0.0381, priority: 5}
+  - {name: l3_2, x: 0.0, y: 0.0, z: 0.07, radius: 0.0381, priority: 5}
+  - {name: l3_3, x: 0.0, y: 0.0, z: 0.09, radius: 0.0381, priority: 5}
+  - {name: l3_4, x: 0.0, y: 0.0, z: 0.11, radius: 0.0381, priority: 5}
+  - {name: l3_5, x: 0.0, y: 0.0, z: 0.13, radius: 0.0381, priority: 5}
+  - {name: l3_6, x: 0.0, y: 0.0, z: 0.15, radius: 0.0381, priority: 5}
+  - {name: l3_7, x: 0.0, y: 0.0, z: 0.17, radius: 0.0381, priority: 5}
+  - {name: l3_8, x: 0.0, y: 0.0, z: 0.19, radius: 0.0381, priority: 5}
+  - {name: l3_9, x: 0.0, y: 0.0, z: 0.21, radius: 0.0381, priority: 5}
+  - {name: l3_10, x: 0.0, y: 0.0, z: 0.23, radius: 0.0381, priority: 5}
+  - {name: l3_11, x: 0.0, y: 0.0, z: 0.25, radius: 0.0381, priority: 5}
+  - {name: l3_12, x: 0.0, y: 0.0, z: 0.27, radius: 0.0381, priority: 5}
+  - {name: l3_13, x: 0.0, y: 0.0, z: 0.29, radius: 0.0381, priority: 5}
+  - {name: l3_14, x: 0.0, y: 0.0, z: 0.31, radius: 0.0381, priority: 5}
+  - {name: l3_15, x: 0.0, y: 0.0, z: 0.33, radius: 0.0381, priority: 5}
+  - {name: l3_16, x: 0.0, y: 0.0, z: 0.35, radius: 0.0381, priority: 5}
+  - {name: l3_17, x: 0.0, y: 0.0, z: 0.37, radius: 0.0381, priority: 5}
+  - {name: l3_18, x: 0.0, y: 0.0, z: 0.39, radius: 0.0381, priority: 5}
+  - {name: l3_19, x: 0.0, y: 0.0, z: 0.41, radius: 0.0381, priority: 5}
+  - {name: l3_20, x: 0.0, y: 0.0, z: 0.43, radius: 0.0381, priority: 5}
+  - {name: l3_21, x: 0.0, y: 0.0, z: 0.45, radius: 0.0381, priority: 5}
+  - {name: l3_22, x: 0.0, y: 0.0, z: 0.47, radius: 0.0381, priority: 5}
+  - {name: l3_23, x: 0.0, y: 0.0, z: 0.49, radius: 0.0381, priority: 5}
+  - {name: l3_24, x: 0.0, y: 0.0, z: 0.51, radius: 0.0381, priority: 5}
+  - {name: l3_25, x: 0.0, y: 0.0, z: 0.53, radius: 0.0381, priority: 5}
 
 # <cylinder length="0.06985" radius="0.0381"/>
 # <origin rpy="0 0 0" xyz="0.0 0.0 0.034925"/>
-l4_0: {x: 0.0, y: 0.0, z: 0.03, radius: 0.0381, priority: 5}
-l4_1: {x: 0.0, y: 0.0, z: 0.05, radius: 0.0381, priority: 5}
-l4_2: {x: 0.0, y: 0.0, z: 0.07, radius: 0.0381, priority: 5}
+  - {name: l4_0, x: 0.0, y: 0.0, z: 0.03, radius: 0.0381, priority: 5}
+  - {name: l4_1, x: 0.0, y: 0.0, z: 0.05, radius: 0.0381, priority: 5}
+  - {name: l4_2, x: 0.0, y: 0.0, z: 0.07, radius: 0.0381, priority: 5}
 
 # <cylinder length="0.5715" radius="0.0254"/>
 # <origin rpy="0 0 0" xyz="0.0 0.0 0.31115"/>
-l5_0: {x: 0.0, y: 0.0, z: 0.03, radius: 0.0254, priority: 5}
-l5_1: {x: 0.0, y: 0.0, z: 0.05, radius: 0.0254, priority: 5}
-l5_2: {x: 0.0, y: 0.0, z: 0.07, radius: 0.0254, priority: 5}
-l5_3: {x: 0.0, y: 0.0, z: 0.09, radius: 0.0254, priority: 5}
-l5_4: {x: 0.0, y: 0.0, z: 0.11, radius: 0.0254, priority: 5}
-l5_5: {x: 0.0, y: 0.0, z: 0.13, radius: 0.0254, priority: 5}
-l5_6: {x: 0.0, y: 0.0, z: 0.15, radius: 0.0254, priority: 5}
-l5_7: {x: 0.0, y: 0.0, z: 0.17, radius: 0.0254, priority: 5}
-l5_8: {x: 0.0, y: 0.0, z: 0.19, radius: 0.0254, priority: 5}
-l5_9: {x: 0.0, y: 0.0, z: 0.21, radius: 0.0254, priority: 5}
-l5_10: {x: 0.0, y: 0.0, z: 0.23, radius: 0.0254, priority: 5}
-l5_11: {x: 0.0, y: 0.0, z: 0.25, radius: 0.0254, priority: 5}
-l5_12: {x: 0.0, y: 0.0, z: 0.27, radius: 0.0254, priority: 5}
-l5_13: {x: 0.0, y: 0.0, z: 0.29, radius: 0.0254, priority: 5}
-l5_14: {x: 0.0, y: 0.0, z: 0.31, radius: 0.0254, priority: 5}
-l5_15: {x: 0.0, y: 0.0, z: 0.33, radius: 0.0254, priority: 5}
-l5_16: {x: 0.0, y: 0.0, z: 0.35, radius: 0.0254, priority: 5}
-l5_17: {x: 0.0, y: 0.0, z: 0.37, radius: 0.0254, priority: 5}
-l5_18: {x: 0.0, y: 0.0, z: 0.39, radius: 0.0254, priority: 5}
-l5_19: {x: 0.0, y: 0.0, z: 0.41, radius: 0.0254, priority: 5}
-l5_20: {x: 0.0, y: 0.0, z: 0.43, radius: 0.0254, priority: 5}
-l5_21: {x: 0.0, y: 0.0, z: 0.45, radius: 0.0254, priority: 5}
-l5_22: {x: 0.0, y: 0.0, z: 0.47, radius: 0.0254, priority: 5}
-l5_23: {x: 0.0, y: 0.0, z: 0.49, radius: 0.0254, priority: 5}
-l5_24: {x: 0.0, y: 0.0, z: 0.51, radius: 0.0254, priority: 5}
-l5_25: {x: 0.0, y: 0.0, z: 0.53, radius: 0.0254, priority: 5}
-l5_26: {x: 0.0, y: 0.0, z: 0.55, radius: 0.0254, priority: 5}
-l5_27: {x: 0.0, y: 0.0, z: 0.57, radius: 0.0254, priority: 5}
+  - {name: l5_0, x: 0.0, y: 0.0, z: 0.03, radius: 0.0254, priority: 5}
+  - {name: l5_1, x: 0.0, y: 0.0, z: 0.05, radius: 0.0254, priority: 5}
+  - {name: l5_2, x: 0.0, y: 0.0, z: 0.07, radius: 0.0254, priority: 5}
+  - {name: l5_3, x: 0.0, y: 0.0, z: 0.09, radius: 0.0254, priority: 5}
+  - {name: l5_4, x: 0.0, y: 0.0, z: 0.11, radius: 0.0254, priority: 5}
+  - {name: l5_5, x: 0.0, y: 0.0, z: 0.13, radius: 0.0254, priority: 5}
+  - {name: l5_6, x: 0.0, y: 0.0, z: 0.15, radius: 0.0254, priority: 5}
+  - {name: l5_7, x: 0.0, y: 0.0, z: 0.17, radius: 0.0254, priority: 5}
+  - {name: l5_8, x: 0.0, y: 0.0, z: 0.19, radius: 0.0254, priority: 5}
+  - {name: l5_9, x: 0.0, y: 0.0, z: 0.21, radius: 0.0254, priority: 5}
+  - {name: l5_10, x: 0.0, y: 0.0, z: 0.23, radius: 0.0254, priority: 5}
+  - {name: l5_11, x: 0.0, y: 0.0, z: 0.25, radius: 0.0254, priority: 5}
+  - {name: l5_12, x: 0.0, y: 0.0, z: 0.27, radius: 0.0254, priority: 5}
+  - {name: l5_13, x: 0.0, y: 0.0, z: 0.29, radius: 0.0254, priority: 5}
+  - {name: l5_14, x: 0.0, y: 0.0, z: 0.31, radius: 0.0254, priority: 5}
+  - {name: l5_15, x: 0.0, y: 0.0, z: 0.33, radius: 0.0254, priority: 5}
+  - {name: l5_16, x: 0.0, y: 0.0, z: 0.35, radius: 0.0254, priority: 5}
+  - {name: l5_17, x: 0.0, y: 0.0, z: 0.37, radius: 0.0254, priority: 5}
+  - {name: l5_18, x: 0.0, y: 0.0, z: 0.39, radius: 0.0254, priority: 5}
+  - {name: l5_19, x: 0.0, y: 0.0, z: 0.41, radius: 0.0254, priority: 5}
+  - {name: l5_20, x: 0.0, y: 0.0, z: 0.43, radius: 0.0254, priority: 5}
+  - {name: l5_21, x: 0.0, y: 0.0, z: 0.45, radius: 0.0254, priority: 5}
+  - {name: l5_22, x: 0.0, y: 0.0, z: 0.47, radius: 0.0254, priority: 5}
+  - {name: l5_23, x: 0.0, y: 0.0, z: 0.49, radius: 0.0254, priority: 5}
+  - {name: l5_24, x: 0.0, y: 0.0, z: 0.51, radius: 0.0254, priority: 5}
+  - {name: l5_25, x: 0.0, y: 0.0, z: 0.53, radius: 0.0254, priority: 5}
+  - {name: l5_26, x: 0.0, y: 0.0, z: 0.55, radius: 0.0254, priority: 5}
+  - {name: l5_27, x: 0.0, y: 0.0, z: 0.57, radius: 0.0254, priority: 5}
 
 # <cylinder length="0.03175" radius="0.0127"/>
 # <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
-l6_0: {x: 0.0, y: 0.0, z: -0.01, radius: 0.0127, priority: 5}
-l6_1: {x: 0.0, y: 0.0, z: 0.01, radius: 0.0127, priority: 5}
+  - {name: l6_0, x: 0.0, y: 0.0, z: -0.01, radius: 0.0127, priority: 5}
+  - {name: l6_1, x: 0.0, y: 0.0, z: 0.01, radius: 0.0127, priority: 5}
 
 # <cylinder length="0.01905" radius="0.0127"/>
 # <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
-l7_0: {x: 0.0, y: 0.0, z: 0.00, radius: 0.0127, priority: 5}
+  - {name: l7_0, x: 0.0, y: 0.0, z: 0.00, radius: 0.0127, priority: 5}
 
 # <box size="0.022 0.140 0.075"/>
 # <origin rpy="0 0 0" xyz="0.12405 0 0"/>
-gb_0: {x: 0.01, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_1: {x: 0.01, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_2: {x: 0.03, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_3: {x: 0.03, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_4: {x: 0.05, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_5: {x: 0.05, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_6: {x: 0.07, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_7: {x: 0.07, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_8: {x: 0.09, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_9: {x: 0.09, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_10: {x: 0.11, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_11: {x: 0.11, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_12: {x: 0.13, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
-gb_13: {x: 0.13, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_0, x: 0.01, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_1, x: 0.01, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_2, x: 0.03, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_3, x: 0.03, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_4, x: 0.05, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_5, x: 0.05, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_6, x: 0.07, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_7, x: 0.07, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_8, x: 0.09, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_9, x: 0.09, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_10, x: 0.11, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_11, x: 0.11, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_12, x: 0.13, y: -0.01, z: 0.00, radius: 0.015, priority: 1}
+  - {name: gb_13, x: 0.13, y:  0.01, z: 0.00, radius: 0.015, priority: 1}
 

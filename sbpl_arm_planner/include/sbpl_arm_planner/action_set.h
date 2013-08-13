@@ -26,11 +26,11 @@ enum MotionPrimitiveType {
 class ActionSet
 {
   public:
-    ActionSet();
+    ActionSet(std::string action_file);
 
     ~ActionSet(){};
 
-    bool init(std::string filename, EnvironmentROBARM3D *env);
+    bool init(EnvironmentROBARM3D *env);
 
     bool getActionSet(const RobotState &parent, std::vector<Action> &actions);
 
@@ -45,6 +45,8 @@ class ActionSet
     double short_dist_mprims_thresh_m_;
 
     double ik_amp_dist_thresh_m_;
+
+    std::string action_file_;
 
     EnvironmentROBARM3D *env_;
 

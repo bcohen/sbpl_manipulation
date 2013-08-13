@@ -526,9 +526,14 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
     ROS_ERROR("Failed to find geometry for link '%s' in URDF. (group: %s)", name.c_str(), link->collision->group_name.c_str());
     return false;
   }
-
   boost::shared_ptr<const urdf::Geometry> geom = link->collision->geometry;
-
+  
+  geometry_msgs::Pose p;
+  p.position.x = link->collision->origin.position.x;
+  p.position.y = link->collision->origin.position.y;
+  p.position.z = link->collision->origin.position.z;
+  link->collision->origin.rotation.getQuaternion(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
+  voxels.clear();
   if(geom->type == urdf::Geometry::MESH)
   {
     geometry_msgs::Vector3 scale;
@@ -557,8 +562,22 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
   {
     std::vector<std::vector<double> > v;
     urdf::Box* box = (urdf::Box*) geom.get();
-    sbpl::Voxelizer::voxelizeBox(box->dim.x, box->dim.y, box->dim.z, RESOLUTION, v, false); 
+    sbpl::Voxelizer::voxelizeBox(box->dim.x, box->dim.y, box->dim.z, p, RESOLUTION, v, false); 
     ROS_DEBUG("box: %s  voxels: %u", name.c_str(), int(v.size()));
+    voxels.resize(v.size());
+    for(size_t i = 0; i < v.size(); ++i)
+    {
+      voxels[i].x(v[i][0]); 
+      voxels[i].y(v[i][1]); 
+      voxels[i].z(v[i][2]); 
+    }
+  }
+  else if(geom->type == urdf::Geometry::CYLINDER)
+  {
+    std::vector<std::vector<double> > v;
+    urdf::Cylinder* cyl = (urdf::Cylinder*) geom.get();
+    sbpl::Voxelizer::voxelizeCylinder(cyl->radius, cyl->length, p, RESOLUTION, v, false); 
+    ROS_DEBUG("cylinder: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
     {
@@ -571,7 +590,7 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
   {
     std::vector<std::vector<double> > v;
     urdf::Sphere* sph = (urdf::Sphere*) geom.get();
-    sbpl::Voxelizer::voxelizeSphere(sph->radius, RESOLUTION, v, false); 
+    sbpl::Voxelizer::voxelizeSphere(sph->radius, p, RESOLUTION, v, false); 
     ROS_DEBUG("sphere: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
@@ -585,6 +604,11 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
   {
     ROS_ERROR("Failed to get voxels for link '%s'.", name.c_str());
     return false;
+  }
+
+  if(voxels.empty())
+  {
+    ROS_ERROR("Problem voxeling '%s' link. It resulted in 0 voxels.", name.c_str()); 
   }
 
   return true;
