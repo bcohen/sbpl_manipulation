@@ -29,7 +29,6 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(sbpl_collision_checking 
-                        src/bresenham.cpp
                         src/group.cpp 
                         src/sbpl_collision_model.cpp
                         src/sbpl_collision_space.cpp)
