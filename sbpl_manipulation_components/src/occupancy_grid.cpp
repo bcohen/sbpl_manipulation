@@ -163,6 +163,31 @@ void OccupancyGrid::getOccupiedVoxels(double x_center, double y_center, double z
   }
 }
 
+void OccupancyGrid::getOccupiedVoxels(std::vector<geometry_msgs::Point> &voxels)
+{
+  geometry_msgs::Point v;
+  std::vector<double> dim(3,0), origin(3,0);
+  getOrigin(origin[0], origin[1], origin[2]);
+  getWorldSize(dim[0], dim[1], dim[2]);
+  
+  for(double x=origin[0]; x<=origin[0]+dim[0]; x+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_X))
+  {
+    for(double y=origin[1]; y<=origin[1]+dim[1]; y+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_Y))
+    {
+      for(double z=origin[2]; z<=origin[2]+dim[2]; z+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_Z))
+      {
+        if(getDistanceFromPoint(x,y,z) == 0)
+        {
+          v.x = x;
+          v.y = y;
+          v.z = z;
+          voxels.push_back(v);
+        }
+      }
+    }
+  }
+}
+
 visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type)
 {
   visualization_msgs::MarkerArray ma;
@@ -193,6 +218,35 @@ visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type
     // grid_->getIsoSurfaceMarkers(0.01, 0.03, getReferenceFrame(), ros::Time::now(),  Eigen::Affine3d::Identity(), m);
     grid_->getIsoSurfaceMarkers(0.01, 0.08, getReferenceFrame(), ros::Time::now(), tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0)), m);
     ma.markers.push_back(m);
+  }
+  else if(type.compare("occupied_voxels") == 0)
+  {
+    visualization_msgs::Marker marker;
+    std::vector<geometry_msgs::Point> voxels;
+    getOccupiedVoxels(voxels);
+    marker.header.seq = 0;
+    marker.header.stamp = ros::Time::now();
+    marker.header.frame_id = getReferenceFrame();
+    marker.ns = "occupied_voxels";
+    marker.id = 1;
+    marker.type = visualization_msgs::Marker::POINTS;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.lifetime = ros::Duration(0.0);
+    marker.scale.x = grid_->getResolution(distance_field::PropagationDistanceField::DIM_X) / 2.0;
+    marker.scale.y = grid_->getResolution(distance_field::PropagationDistanceField::DIM_Y) / 2.0;
+    marker.scale.z = grid_->getResolution(distance_field::PropagationDistanceField::DIM_Z) / 2.0;
+    marker.color.r = 0.5;
+    marker.color.g = 1;
+    marker.color.b = 0;
+    marker.color.a = 1;
+    marker.points = voxels;
+    ma.markers.push_back(marker);
+  }
+  else if(type.compare("occupied_voxels2") == 0)
+  {
+    visualization_msgs::Marker marker;
+    grid_->getOccupiedVoxelMarkers(getReferenceFrame(), ros::Time::now(), tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0)), marker);
+    ma.markers.push_back(marker);
   }
   else
     ROS_ERROR("No visualization found of type '%s'.", type.c_str());

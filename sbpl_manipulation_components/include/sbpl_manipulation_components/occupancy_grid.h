@@ -83,6 +83,9 @@ class OccupancyGrid
     inline double getCell(int *xyz);
     
     inline double getDistance(int x, int y, int z);
+    
+    // TODO: Rename this function to match the distance_field API
+    inline double getDistanceFromPoint(double x, double y, double z);
 
     /** @brief check if {x,y,z} is in bounds of the grid */
     inline bool isInBounds(int x, int y, int z);
@@ -122,6 +125,8 @@ class OccupancyGrid
     void addPointsToField(const std::vector<Eigen::Vector3d> &points);
 
     void updatePointsInField(const std::vector<Eigen::Vector3d> &points, bool iterative=false);
+
+    void getOccupiedVoxels(std::vector<geometry_msgs::Point> &voxels);
 
     void getOccupiedVoxels(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<Eigen::Vector3d> &voxels);
 
@@ -167,6 +172,13 @@ inline void OccupancyGrid::worldToGrid(double wx, double wy, double wz, int &x, 
 inline double OccupancyGrid::getDistance(int x, int y, int z)
 {
   return grid_->getDistanceFromCell(x,y,z);
+}
+
+inline double OccupancyGrid::getDistanceFromPoint(double x, double y, double z)
+{
+  int gx, gy, gz;
+  worldToGrid(x, y, z, gx, gy, gz);
+  return grid_->getDistanceFromCell(gx, gy, gz);
 }
 
 inline unsigned char OccupancyGrid::getCell(int x, int y, int z)
