@@ -41,14 +41,9 @@ collision_groups:
       root: r_gripper_l_finger_tip_link
 
   - name: left_arm
-    joints:
-      l_shoulder_pan_joint
-      l_shoulder_lift_joint
-      l_upper_arm_roll_joint
-      l_elbow_flex_joint
-      l_forearm_roll_joint
-      l_wrist_flex_joint
-      l_wrist_roll_joint
+    type: spheres
+    root_name: torso_lift_link
+    tip_name: l_wrist_roll_link
     collision_links:
     - name: shoulder
       root: l_shoulder_pan_link
