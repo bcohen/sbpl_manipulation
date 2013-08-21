@@ -1,0 +1,106 @@
+collision_groups:
+
+  - name: pedestal
+    type: voxels
+    root_name: torso
+    tip_name: pedestal
+    collision_links:
+    - name: pedestal
+      root: pedestal
+
+  - name: body
+    type: voxels
+    root_name: torso
+    tip_name: sonar_ring
+    collision_links:
+    - name: torso
+      root: torso
+    - name: screen
+      root: screen
+    - name: sonar_ring
+      root: sonar_ring
+    - name: head
+      root: head
+
+  - name: right_arm
+    type: voxels
+    root_name: torso
+    tip_name: right_gripper
+    collision_links:
+    - name: right_upper_shoulder
+      root: right_upper_shoulder
+    - name: right_lower_shoulder
+      root: right_lower_shoulder
+    - name: right_upper_forearm
+      root: right_upper_forearm
+    - name: right_upper_elbow
+      root: right_upper_elbow
+    - name: right_lower_elbow
+      root: right_lower_elbow
+    - name: right_lower_forearm
+      root: right_lower_forearm
+    - name: right_wrist
+      root: right_wrist
+
+  - name: left_arm
+    type: spheres
+    root_name: torso
+    tip_name: left_gripper
+    collision_links:
+    - name: left_upper_shoulder
+      root: left_upper_shoulder
+      spheres: ush0 ush1 ush2 ush3
+    - name: left_lower_shoulder
+      root: left_lower_shoulder
+      spheres: lsh0 lsh1
+    - name: left_upper_elbow
+      root: left_upper_elbow
+      spheres: ue0 ue1 ue2 ue3 ue4
+    - name: left_lower_elbow
+      root: left_lower_elbow
+      spheres: le0 le1
+    - name: left_upper_forearm
+      root: left_upper_forearm
+      spheres: uf0 uf1 uf2 uf3
+    - name: left_lower_forearm
+      root: left_lower_forearm
+      spheres: lf0 lf1 lf2 lf3
+    - name: left_wrist
+      root: left_wrist
+      spheres: wr0 wr1 wr2 wr3
+
+collision_spheres:
+
+  - {name: ush0, x: 0.0, y: 0.0, z: 0.075, radius: 0.09, priority: 5}
+  - {name: ush1, x: -0.01, y: 0.0, z: 0.13, radius: 0.09, priority: 5}
+  - {name: ush2, x: -0.01, y: 0.0, z: 0.19, radius: 0.1, priority: 5}
+  - {name: ush3, x: -0.01, y: 0.0, z: 0.25, radius: 0.1, priority: 5}
+
+  - {name: lsh0, x: 0.02, y: 0.00, z: 0.00, radius: 0.14, priority: 4}
+  - {name: lsh1, x: 0.08, y: -0.01, z: 0.00, radius: 0.10, priority: 4}
+
+  - {name: ue0, x: -0.01, y: 0.00, z: 0.05, radius: 0.10, priority: 4}
+  - {name: ue1, x: -0.01, y: 0.00, z: 0.10, radius: 0.10, priority: 1}
+  - {name: ue2, x: -0.02, y: 0.00, z: 0.15, radius: 0.09, priority: 1}
+  - {name: ue3, x: -0.02, y: 0.00, z: 0.20, radius: 0.09, priority: 1}
+  - {name: ue4, x: -0.02, y: 0.00, z: 0.26, radius: 0.09, priority: 1}
+
+  - {name: le0, x: 0.00, y: -0.015, z: -0.055, radius: 0.09, priority: 2}
+  - {name: le1, x: 0.00, y: -0.015, z: 0.055, radius: 0.09, priority: 2}
+
+  - {name: uf0, x: 0.00, y: 0.00, z: 0.01, radius: 0.085, priority: 2}
+  - {name: uf1, x: 0.00, y: 0.00, z: 0.07, radius: 0.085, priority: 3}
+  - {name: uf2, x: 0.00, y: 0.00, z: 0.14, radius: 0.085, priority: 3}
+  - {name: uf3, x: 0.00, y: 0.00, z: 0.20, radius: 0.085, priority: 3}
+
+  - {name: lf0, x: 0.00, y: 0.00, z: -0.045, radius: 0.07, priority: 1}
+  - {name: lf1, x: 0.00, y: 0.00, z: 0.045, radius: 0.07, priority: 1}
+  - {name: lf2, x: 0.06, y: 0.00, z: -0.03, radius: 0.065, priority: 1}
+  - {name: lf3, x: 0.06, y: 0.00, z: 0.03, radius: 0.065, priority: 1}
+
+  - {name: wr0, x: 0.00, y: 0.00, z: 0.00, radius: 0.08, priority: 1}
+  - {name: wr1, x: 0.00, y: 0.00, z: 0.07, radius: 0.06, priority: 1}
+  - {name: wr2, x: 0.0375, y: -0.02, z: 0.125, radius: 0.03, priority: 1}
+  - {name: wr3, x: 0.0375, y: 0.02, z: 0.125, radius: 0.03, priority: 1}
+
+
