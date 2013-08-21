@@ -8,7 +8,6 @@
 #include <sbpl_manipulation_components_pr2/sbpl_math.h>
 #include <sbpl_manipulation_components_pr2/orientation_solver.h>
 
-#define DEBUG 0
 #define END_EFF "r_wrist_roll_link" //9
 #define FOREARM_ROLL "r_forearm_roll_link" //6
 #define NUM_JOINTS 7
