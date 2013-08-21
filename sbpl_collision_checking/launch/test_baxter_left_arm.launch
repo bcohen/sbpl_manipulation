@@ -1,0 +1,31 @@
+<launch>
+
+  <param name="robot_description" textfile="$(find baxter_description)/urdf/baxter.urdf"/>
+
+  <node  pkg="sbpl_collision_checking" type="test_space" name="sbpl_collision_space_test" output="screen" respawn="false" >
+
+    <param name="group_name" value="left_arm" />
+    <param name="world_frame" value="torso" />
+
+    <param name="dims/x" value="3.0" />
+    <param name="dims/y" value="4.0" />
+    <param name="dims/z" value="3.0" />
+
+    <param name="origin/x" value="-0.75" />
+    <param name="origin/y" value="-1.25" />
+    <param name="origin/z" value="-1.0" />
+
+    <param name="joint_0" value="left_s0" />
+    <param name="joint_1" value="left_s1" />
+    <param name="joint_2" value="left_e0" />
+    <param name="joint_3" value="left_e1" />
+    <param name="joint_4" value="left_w0" />
+    <param name="joint_5" value="left_w1" />
+    <param name="joint_6" value="left_w2" />
+
+    <rosparam command="load" file="$(find sbpl_collision_checking)/config/baxter_left_arm_model.yaml" />
+
+  </node>
+
+</launch>
+
