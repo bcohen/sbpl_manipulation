@@ -376,8 +376,6 @@ bool RPYSolver::isOrientationFeasible(const double* rpy, std::vector<double> &st
   std::vector<double>endeff_pose(6,0);
   std::vector<double>goal_joint_config(7,0);
 
-  //int link_num = 2; //added 6/15/11
-
   //get pose of forearm link
   if(!rm_->computeFK(start,FOREARM_ROLL,forerm_pose))
   {
@@ -392,28 +390,22 @@ bool RPYSolver::isOrientationFeasible(const double* rpy, std::vector<double> &st
     return false;
   }
 
-#if DEBUG
   ROS_DEBUG_NAMED("orientation_solver", "Joint Angles: %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f", start[0], start[1], start[2], start[3], start[4], start[5], start[6]);
   ROS_DEBUG_NAMED("orientation_solver", "FK:forearm: %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f",forerm_pose[0], forerm_pose[1], forerm_pose[2], forerm_pose[3], forerm_pose[4], forerm_pose[5], forerm_pose[6]);
   ROS_DEBUG_NAMED("orientation_solver", "FK:endeff:  %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f",endeff_pose[0], endeff_pose[1], endeff_pose[2], endeff_pose[3], endeff_pose[4], endeff_pose[5], endeff_pose[6]);
   ROS_DEBUG_NAMED("orientation_solver", "Start yaw: %0.4f, Start pitch: %0.4f, Start roll: %0.4f",endeff_pose[5], endeff_pose[4], endeff_pose[3]);
   ROS_DEBUG_NAMED("orientation_solver", "End yaw required: %0.4f, End pitch required: %0.4f, End roll required: %0.4f", rpy[2], rpy[1], rpy[0]);
-#endif
 
   // call orientation planner 
   orientationSolver(hand_rotations, forerm_pose[5],forerm_pose[4],forerm_pose[3], endeff_pose[5], endeff_pose[4], endeff_pose[3], rpy[2], rpy[1], rpy[0], 1); //1st attempt
 
   num_calls_++;
 
-#if DEBUG
-  ROS_DEBUG_NAMED("orientation_solver", "[isGoalPositionGokul] The rotations commanded in the first attempt are: %0.4f, %0.4f and %0.4f", hand_rotations[1], hand_rotations[2], hand_rotations[3]);
-#endif
+  ROS_DEBUG_NAMED("orientation_solver", "The rotations commanded in the first attempt are: %0.4f, %0.4f and %0.4f", hand_rotations[1], hand_rotations[2], hand_rotations[3]);
 
   if(hand_rotations[0]==0)
   {
-#if DEBUG
     ROS_DEBUG_NAMED("orientation_solver", "Orientation solver predicts that this movement is impossible with the given pitch limits.");
-#endif
     num_invalid_predictions_++;
     return false;
   }
@@ -432,7 +424,6 @@ SET_ANGLES_AGAIN: //GoTO label, temporary, do not continue use of this
 
     //check for collisions
     if(!cc_->isStateValid(goal_joint_config, verbose_, false, dist))
-    //if(!cc_->checkLinkForCollision(goal_joint_config, link_num, verbose_, dist))
     {
       num_invalid_solution_++;
       return false;
@@ -447,7 +438,6 @@ SET_ANGLES_AGAIN: //GoTO label, temporary, do not continue use of this
 
     //check for collisions along the path
     if(!cc_->isStateToStateValid(start, goal_joint_config, path_length, num_checks, dist))
-    //if(!cc_->checkLinkPathForCollision(start, goal_joint_config, link_num, verbose_, dist))
     {
       //try rotating in the opposite direction
       if(try_both_rotations)
@@ -464,7 +454,6 @@ SET_ANGLES_AGAIN: //GoTO label, temporary, do not continue use of this
 
   final = goal_joint_config;
 
-#if DEBUG
   ROS_DEBUG_NAMED("orientation_solver", "\n \n After:");
   rm_->computeFK(final,END_EFF,endeff_pose);
   ROS_DEBUG_NAMED("orientation_solver", "The perfect roll value from FK is: %0.4f.", rpy[0]-endeff_pose[3]);
@@ -476,9 +465,7 @@ SET_ANGLES_AGAIN: //GoTO label, temporary, do not continue use of this
   ROS_DEBUG_NAMED("orientation_solver", "FK:f_arm: %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f",forerm_pose[0], forerm_pose[1], forerm_pose[2], forerm_pose[3], forerm_pose[4], forerm_pose[5], forerm_pose[6]);
   rm_->computeFK(final,END_EFF,endeff_pose);
   ROS_DEBUG_NAMED("orientation_solver", "FK:endeff: %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f",endeff_pose[0], endeff_pose[1], endeff_pose[2], endeff_pose[3], endeff_pose[4], endeff_pose[5], endeff_pose[6]);
-
   ROS_DEBUG_NAMED("orientation_solver", "Succeeded.");
-#endif
 
   return true;
 }
