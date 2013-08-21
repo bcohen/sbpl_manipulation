@@ -13,7 +13,8 @@ collision_groups:
       root: wheel_rear_left
     - name: wheel_rear_right
       root: wheel_rear_right
-
+    - name: base
+      root: base_link
 
   - name: hdt_arm
     type: spheres
