@@ -32,6 +32,7 @@ rosbuild_add_library(sbpl_manipulation_components
         src/robot_model.cpp
         src/kdl_robot_model.cpp
         src/occupancy_grid.cpp
+        src/shared_occupancy_grid.cpp
         src/collision_checker.cpp
         src/post_processing.cpp)
 

@@ -71,39 +71,39 @@ class OccupancyGrid
     ~OccupancyGrid();
 
     /** @brief convert grid cell coords into world coords*/
-    inline void gridToWorld(int x, int y, int z, double &wx, double &wy, double &wz);
+    virtual inline void gridToWorld(int x, int y, int z, double &wx, double &wy, double &wz);
     
     /** @brief convert world coords into grid cell coords*/
-    inline void worldToGrid(double wx, double wy, double wz, int &x, int &y, int &z); 
+    virtual inline void worldToGrid(double wx, double wy, double wz, int &x, int &y, int &z); 
 
     /** @brief get the cell's distance to the nearest obstacle in cells*/
-    inline unsigned char getCell(int x, int y, int z);
+    virtual inline unsigned char getCell(int x, int y, int z);
 
     /** @brief get the cell's distance to the nearest obstacle in meters*/
-    inline double getCell(int *xyz);
+    virtual inline double getCell(int *xyz);
     
-    inline double getDistance(int x, int y, int z);
+    virtual inline double getDistance(int x, int y, int z);
 
     /** @brief check if {x,y,z} is in bounds of the grid */
-    inline bool isInBounds(int x, int y, int z);
+    virtual inline bool isInBounds(int x, int y, int z);
 
     /** @brief return a pointer to the distance field */
     inline distance_field::PropagationDistanceField* getDistanceFieldPtr();
     
     /** @brief get the dimensions of the grid */
-    void getGridSize(int &dim_x, int &dim_y, int &dim_z);
+    virtual void getGridSize(int &dim_x, int &dim_y, int &dim_z);
 
     /** @brief get the dimensions of the grid */
     void getGridSize(int *dims); //FILL IN THIS FUNCTION
 
     /** @brief get the dimensions of the world (meters)*/
-    void getWorldSize(double &dim_x, double &dim_y, double &dim_z);
+    virtual void getWorldSize(double &dim_x, double &dim_y, double &dim_z);
 
     /** @brief get the origin of the world (meters)*/
-    void getOrigin(double &wx, double &wy, double &wz);
+    virtual void getOrigin(double &wx, double &wy, double &wz);
 
     /** @brief get the resolution of the world (meters)*/
-    double getResolution();
+    virtual double getResolution();
 
     /** @brief update the distance field from the collision_map */
     void updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map);
@@ -135,7 +135,7 @@ class OccupancyGrid
 
     visualization_msgs::MarkerArray getVisualization(std::string type);
 
-  private:
+  protected:
 
     bool delete_grid_;
     std::string reference_frame_;
