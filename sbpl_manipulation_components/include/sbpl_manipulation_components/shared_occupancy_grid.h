@@ -33,10 +33,27 @@
 #define _SHARED_OCCUPANCY_GRID_
 
 #include <sbpl_manipulation_components/occupancy_grid.h>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/containers/vector.hpp>
+#include <boost/interprocess/allocators/allocator.hpp>
+#include <boost/interprocess/offset_ptr.hpp>
 
-typedef std::vector<std::vector<std::vector<double> > > SharedDistanceField;
+typedef boost::interprocess::allocator<double, boost::interprocess::managed_shared_memory::segment_manager> ShmemDoubleAllocator;
 
-typedef std::vector<std::vector<std::vector<double> > >* SharedDistanceFieldPtr;
+typedef boost::interprocess::vector<double, ShmemDoubleAllocator> ShmemDoubleVector;
+
+typedef boost::interprocess::allocator<ShmemDoubleVector, boost::interprocess::managed_shared_memory::segment_manager> ShmemVectorAllocator;
+
+typedef boost::interprocess::vector<ShmemDoubleVector, ShmemVectorAllocator> ShmemVectorVector;
+
+typedef boost::interprocess::allocator<ShmemVectorVector, boost::interprocess::managed_shared_memory::segment_manager> ShmemVectorVectorAllocator;
+
+typedef boost::interprocess::vector<ShmemVectorVector, ShmemVectorVectorAllocator> ShmemVectorVectorVector;
+
+typedef ShmemVectorVectorVector SharedDistanceField;
+
+//typedef ShmemVectorVectorVector* SharedDistanceFieldPtr;
+typedef boost::interprocess::offset_ptr<ShmemVectorVectorVector> SharedDistanceFieldPtr;
 
 namespace sbpl_arm_planner{
 
@@ -57,7 +74,7 @@ class SharedOccupancyGrid : public OccupancyGrid
     SharedOccupancyGrid(double dim_x, double dim_y, double dim_z, double resolution, double origin_x, double origin_y, double origin_z);
 
     /** @brief destructor */
-    ~SharedOccupancyGrid(){};
+    ~SharedOccupancyGrid();
 
     /** @brief convert grid cell coords into world coords*/
     inline void gridToWorld(int x, int y, int z, double &wx, double &wy, double &wz);
@@ -88,16 +105,19 @@ class SharedOccupancyGrid : public OccupancyGrid
     /** @brief get the resolution of the world (meters)*/
     double getResolution();
 
-    bool initSharedDistanceField();
+    /** 
+      * @brief initialize the distance field from data in shared memory, where the key 
+      *        specifies which distance field data we are using.
+      */
+    bool initSharedDistanceField(bool is_core, const std::string &key);
 
     SharedDistanceFieldPtr getSharedDistanceFieldPtr();
     
-    void copyDistanceField(std::vector<std::vector<std::vector<double> > > &df);
-
   private:
 
     bool use_shared_grid_;
-    SharedDistanceField shared_grid_;
+    SharedDistanceFieldPtr shared_grid_;
+    boost::interprocess::managed_shared_memory *segment_;
 
     double resolution_[3];
     double size_[3];
@@ -200,7 +220,13 @@ inline void SharedOccupancyGrid::worldToGridShared(double wx, double wy, double 
 
 inline double SharedOccupancyGrid::getDistanceShared(int x, int y, int z)
 {
-  return shared_grid_[x][y][z];
+  if(shared_grid_ == 0)
+  {
+    ROS_ERROR("shared_grid_ == NULL!");
+    return 0.0;
+  }
+
+  return (*shared_grid_)[x][y][z];
 }
 
 inline unsigned char SharedOccupancyGrid::getCellShared(int x, int y, int z)
