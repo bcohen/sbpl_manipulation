@@ -7,7 +7,7 @@ This repository contains a set of motion planners for robotic arms that use the 
 
 	git clone https://github.com/bcohen/sbpl_manipulation
 
-	git clone https://github.com/bcohen/leatherman
+	git clone -b groovy https://github.com/bcohen/leatherman
 
 	git clone https://github.com/sbpl/sbpl_geometry_utils
 
