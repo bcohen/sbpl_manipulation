@@ -62,9 +62,19 @@ void RobotModel::setPlanningLink(std::string name)
   planning_link_ = name;
 }
 
+std::string RobotModel::getPlanningLink()
+{
+  return planning_link_;
+}
+
 void RobotModel::setPlanningFrame(std::string name)
 {
   planning_frame_ = name;
+}
+
+std::string RobotModel::getPlanningFrame()
+{
+  return planning_frame_;
 }
 
 void RobotModel::getKinematicsFrame(std::string &name)
@@ -90,7 +100,7 @@ bool RobotModel::computePlanningLinkFK(const std::vector<double> &angles, std::v
   return false;
 }
 
-bool RobotModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
+bool RobotModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option)
 {
   ROS_ERROR("Function not filled in."); 
   return false;

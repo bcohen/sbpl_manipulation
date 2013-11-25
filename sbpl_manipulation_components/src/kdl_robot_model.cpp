@@ -32,6 +32,7 @@
 #include <ros/ros.h>
 #include <leatherman/print.h>
 #include <leatherman/utils.h>
+#include <sbpl_geometry_utils/utils.h>
 #include <kdl/tree.hpp>
 
 using namespace std;
@@ -219,15 +220,13 @@ bool KDLRobotModel::getJointLimits(std::string joint_name, double &min_limit, do
 
 bool KDLRobotModel::checkJointLimits(const std::vector<double> &angles)
 {
-  ROS_DEBUG("Not filled in yet...(checkJointLimits())");
-/*
   std::vector<double> a = angles;
-  if(!sbpl::interp::NormalizeAnglesIntoRange(a, min_limits_, max_limits_))
+  if(!sbpl::utils::NormalizeAnglesIntoRange(a, min_limits_, max_limits_))
   {
-    ROS_ERROR("Joint angles are out of bounds.");  
+    ROS_DEBUG("Joint angles are out of bounds.");  
     return false;
   }
-*/
+
   return true;
 }
 
@@ -299,10 +298,12 @@ bool KDLRobotModel::computePlanningLinkFK(const std::vector<double> &angles, std
   return true;
 }
 
-bool KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
+bool KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option)
 {
+  if(option == sbpl_arm_planner::ik_option::RESTRICT_XYZ_JOINTS)
+    return false;
+
   return computeIKSearch(pose, start, solution, 0.005);
-  //return computeFastIK(pose, start, solution);
 }
 
 bool KDLRobotModel::computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)

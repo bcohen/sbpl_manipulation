@@ -7,15 +7,17 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-set(ROS_BUILD_TYPE Debug)
-
-# Add a ROS C++ macro to tell SBPL to use ROS print statements
-add_definitions(-DROS)
+set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
 
-rosbuild_find_ros_package(sbpl_geometry_utils)
-include_directories(include ${sbpl_geometry_utils_PACKAGE_PATH}/include)
+#rosbuild_find_ros_package(sbpl_geometry_utils)
+#include_directories(include ${sbpl_geometry_utils_PACKAGE_PATH}/include)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(sbpl_geometry_utils REQUIRED sbpl_geometry_utils)
+include_directories(${sbpl_geometry_utils_INCLUDE_DIRS})
+link_directories(${sbpl_geometry_utils_LIBRARY_DIRS})
 
 rosbuild_add_boost_directories()
 
@@ -38,7 +40,9 @@ rosbuild_add_library(sbpl_manipulation_components
         src/collision_checker.cpp
         src/post_processing.cpp)
 
-target_link_libraries(sbpl_manipulation_components ${sbpl_geometry_utils_LIBRARIES})
+target_link_libraries(sbpl_manipulation_components 
+                      sbpl_geometry_utils #  ${sbpl_geometry_utils_LIBRARIES}
+                      moveit_distance_field)
 
 rosbuild_add_executable(test_kdl src/test_kdl_robot_model.cpp)
 target_link_libraries(test_kdl sbpl_manipulation_components)

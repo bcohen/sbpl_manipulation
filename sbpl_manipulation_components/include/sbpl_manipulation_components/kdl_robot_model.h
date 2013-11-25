@@ -61,7 +61,7 @@ class KDLRobotModel : public RobotModel {
     /* Initialization */
     virtual bool init(std::string robot_description, std::vector<std::string> &planning_joints);
 
-    bool getJointLimits();
+    //bool getJointLimits();
 
     /* Joint Limits */
     virtual bool checkJointLimits(const std::vector<double> &angles);
@@ -74,7 +74,7 @@ class KDLRobotModel : public RobotModel {
     virtual bool computePlanningLinkFK(const std::vector<double> &angles, std::vector<double> &pose);
 
     /* Inverse Kinematics */
-    virtual bool computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution);
+    virtual bool computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option=0);
 
     virtual bool computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution);
 

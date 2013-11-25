@@ -59,16 +59,16 @@ OccupancyGrid::~OccupancyGrid()
 
 void OccupancyGrid::getGridSize(int &dim_x, int &dim_y, int &dim_z)
 {
-  dim_x = grid_->getSize(distance_field::PropagationDistanceField::DIM_X) / grid_->getResolution(distance_field::PropagationDistanceField::DIM_X);
-  dim_y = grid_->getSize(distance_field::PropagationDistanceField::DIM_Y) / grid_->getResolution(distance_field::PropagationDistanceField::DIM_Y);
-  dim_z = grid_->getSize(distance_field::PropagationDistanceField::DIM_Z) / grid_->getResolution(distance_field::PropagationDistanceField::DIM_Z);
+  dim_x = grid_->getSizeX() / grid_->getResolution();
+  dim_y = grid_->getSizeY() / grid_->getResolution();
+  dim_z = grid_->getSizeZ() / grid_->getResolution();
 }
 
 void OccupancyGrid::getWorldSize(double &dim_x, double &dim_y, double &dim_z)
 {
-  dim_x = grid_->getSize(distance_field::PropagationDistanceField::DIM_X);
-  dim_y = grid_->getSize(distance_field::PropagationDistanceField::DIM_Y);
-  dim_z = grid_->getSize(distance_field::PropagationDistanceField::DIM_Z);
+  dim_x = grid_->getSizeX();
+  dim_y = grid_->getSizeY();
+  dim_z = grid_->getSizeZ();
 }
 
 void OccupancyGrid::reset()
@@ -83,7 +83,7 @@ void OccupancyGrid::getOrigin(double &wx, double &wy, double &wz)
 
 double OccupancyGrid::getResolution()
 {
-  return grid_->getResolution(distance_field::PropagationDistanceField::DIM_X);
+  return grid_->getResolution();
 }
 
 void OccupancyGrid::updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map)
@@ -94,7 +94,7 @@ void OccupancyGrid::updateFromCollisionMap(const arm_navigation_msgs::CollisionM
     return;
   }
   reference_frame_ = collision_map.header.frame_id;
-  grid_->addCollisionMapToField(collision_map);
+  //grid_->addCollisionMapToField(collision_map);
 }
 
 void OccupancyGrid::addCube(double origin_x, double origin_y, double origin_z, double size_x, double size_y, double size_z)
@@ -102,11 +102,11 @@ void OccupancyGrid::addCube(double origin_x, double origin_y, double origin_z, d
   int num_points=0;
   std::vector<tf::Vector3> pts;
 
-  for (double x=origin_x-size_x/2.0; x<=origin_x+size_x/2.0; x+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_X))
+  for (double x=origin_x-size_x/2.0; x<=origin_x+size_x/2.0; x+=grid_->getResolution())
   {
-    for (double y=origin_y-size_y/2.0; y<=origin_y+size_y/2.0; y+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_Y))
+    for (double y=origin_y-size_y/2.0; y<=origin_y+size_y/2.0; y+=grid_->getResolution())
     {
-      for (double z=origin_z-size_z/2.0; z<=origin_z+size_z/2.0; z+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_Z))
+      for (double z=origin_z-size_z/2.0; z<=origin_z+size_z/2.0; z+=grid_->getResolution())
       {
         pts.push_back(tf::Vector3(x,y,z));
         ++num_points;
@@ -114,7 +114,7 @@ void OccupancyGrid::addCube(double origin_x, double origin_y, double origin_z, d
     }
   }
 
-  grid_->addPointsToField(pts);
+  //grid_->addPointsToField(pts);
 }
 
 void OccupancyGrid::getOccupiedVoxels(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<Eigen::Vector3d> &voxels)
@@ -122,11 +122,11 @@ void OccupancyGrid::getOccupiedVoxels(const geometry_msgs::Pose &pose, const std
   Eigen::Vector3d vin, vout, v(pose.position.x, pose.position.y, pose.position.z);
   Eigen::Matrix3d m(Eigen::Quaterniond(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z));
 
-  for (double x=0-dim[0]/2.0; x<=dim[0]/2.0; x+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_X))
+  for (double x=0-dim[0]/2.0; x<=dim[0]/2.0; x+=grid_->getResolution())
   {
-    for (double y=0-dim[1]/2.0; y<=dim[1]/2.0; y+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_Y))
+    for (double y=0-dim[1]/2.0; y<=dim[1]/2.0; y+=grid_->getResolution())
     {
-      for (double z=0-dim[2]/2.0; z<=dim[2]/2.0; z+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_Z))
+      for (double z=0-dim[2]/2.0; z<=dim[2]/2.0; z+=grid_->getResolution())
       {
         vin(0) = (x);
         vin(1) = (y);
@@ -170,11 +170,11 @@ void OccupancyGrid::getOccupiedVoxels(std::vector<geometry_msgs::Point> &voxels)
   getOrigin(origin[0], origin[1], origin[2]);
   getWorldSize(dim[0], dim[1], dim[2]);
   
-  for(double x=origin[0]; x<=origin[0]+dim[0]; x+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_X))
+  for(double x=origin[0]; x<=origin[0]+dim[0]; x+=grid_->getResolution())
   {
-    for(double y=origin[1]; y<=origin[1]+dim[1]; y+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_Y))
+    for(double y=origin[1]; y<=origin[1]+dim[1]; y+=grid_->getResolution())
     {
-      for(double z=origin[2]; z<=origin[2]+dim[2]; z+=grid_->getResolution(distance_field::PropagationDistanceField::DIM_Z))
+      for(double z=origin[2]; z<=origin[2]+dim[2]; z+=grid_->getResolution())
       {
         if(getDistanceFromPoint(x,y,z) == 0)
         {
@@ -216,7 +216,9 @@ visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type
   {
     visualization_msgs::Marker m;
     // grid_->getIsoSurfaceMarkers(0.01, 0.03, getReferenceFrame(), ros::Time::now(),  Eigen::Affine3d::Identity(), m);
-    grid_->getIsoSurfaceMarkers(0.01, 0.08, getReferenceFrame(), ros::Time::now(), tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0)), m);
+    //grid_->getIsoSurfaceMarkers(0.01, 0.08, getReferenceFrame(), ros::Time::now(), tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0)), m);
+    grid_->getIsoSurfaceMarkers(0.01, 0.02, getReferenceFrame(), ros::Time::now(), m);
+    m.color.a +=0.2;
     ma.markers.push_back(m);
   }
   else if(type.compare("occupied_voxels") == 0)
@@ -232,20 +234,14 @@ visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type
     marker.type = visualization_msgs::Marker::POINTS;
     marker.action = visualization_msgs::Marker::ADD;
     marker.lifetime = ros::Duration(0.0);
-    marker.scale.x = grid_->getResolution(distance_field::PropagationDistanceField::DIM_X) / 2.0;
-    marker.scale.y = grid_->getResolution(distance_field::PropagationDistanceField::DIM_Y) / 2.0;
-    marker.scale.z = grid_->getResolution(distance_field::PropagationDistanceField::DIM_Z) / 2.0;
-    marker.color.r = 0.5;
-    marker.color.g = 1;
-    marker.color.b = 0;
+    marker.scale.x = grid_->getResolution() / 2.0;
+    marker.scale.y = grid_->getResolution() / 2.0;
+    marker.scale.z = grid_->getResolution() / 2.0;
+    marker.color.r = 0.8;
+    marker.color.g = 0.3;
+    marker.color.b = 0.5;
     marker.color.a = 1;
     marker.points = voxels;
-    ma.markers.push_back(marker);
-  }
-  else if(type.compare("occupied_voxels2") == 0)
-  {
-    visualization_msgs::Marker marker;
-    grid_->getOccupiedVoxelMarkers(getReferenceFrame(), ros::Time::now(), tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0)), marker);
     ma.markers.push_back(marker);
   }
   else

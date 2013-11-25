@@ -40,6 +40,14 @@ using namespace std;
 
 namespace sbpl_arm_planner {
 
+namespace ik_option {
+  enum
+  {
+    UNRESTRICTED,
+    RESTRICT_XYZ_JOINTS
+  };
+}
+
 class RobotModel {
 
   public:
@@ -55,7 +63,11 @@ class RobotModel {
 
     void setPlanningLink(std::string name);
 
+    std::string getPlanningLink();
+
     void setPlanningFrame(std::string name);
+
+    std::string getPlanningFrame();
 
     void getKinematicsFrame(std::string &name);
 
@@ -74,7 +86,7 @@ class RobotModel {
     virtual bool computePlanningLinkFK(const std::vector<double> &angles, std::vector<double> &pose);
 
     /* Inverse Kinematics */
-    virtual bool computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution);
+    virtual bool computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option=0);
 
     virtual bool computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution);
 
