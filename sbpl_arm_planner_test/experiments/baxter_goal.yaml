@@ -1,0 +1,35 @@
+group_name: left_arm 
+kinematics_frame: torso
+planning_frame: torso
+planning_link: left_wrist
+chain_tip_link: left_wrist
+  
+initial_configuration:
+
+  joint_state:
+    - name: right_s0
+      position: -1.0
+    - name: right_e1
+      position: -1.0
+
+#  multi_dof_joint_state:
+#    - frame_id:
+#      child_frame_id:
+#      x: 0.0
+#      y: 0.0
+#      z: 0.0
+#      roll: 0.0
+#      pitch: 0.0
+#      yaw: 0.0
+
+goal:
+  x: 0.74
+  y: 0.0
+  z: 0.25
+  roll: 0.0
+  pitch: 0.5
+  yaw: 0.0
+
+
+
+

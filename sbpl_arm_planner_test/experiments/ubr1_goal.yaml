@@ -1,0 +1,63 @@
+group_name: arm 
+kinematics_frame: torso_lift_link
+planning_frame: map
+planning_link: gripper_link
+chain_tip_link: right_gripper_finger_link
+  
+initial_configuration:
+
+  joint_state:
+    - name: shoulder_pan_joint
+      position: 0
+    - name: shoulder_lift_joint
+      position: 0.0
+    - name: upperarm_roll_joint
+      position: 0.0
+    - name: elbow_flex_joint
+      position: -0.2
+    - name: forearm_roll_joint
+      position: 0.0
+    - name: wrist_flex_joint
+      position: -0.2
+    - name: wrist_roll_joint
+      position: 0.0
+    - name: torso_lift_joint
+      position: 0.0
+
+  multi_dof_joint_state:
+    - frame_id: map
+      child_frame_id: base_link
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      roll: 0.0
+      pitch: 0.0
+      yaw: 0.0
+    - frame_id: map
+      child_frame_id: torso_lift_link
+      x: -0.05
+      y: 0.0
+      z: 0.264
+      roll: 0.0
+      pitch: 0.0
+      yaw: 0.0
+    - frame_id: base_link
+      child_frame_id: torso_lift_link
+      x: -0.05
+      y: 0.0
+      z: 0.264
+      roll: 0.0
+      pitch: 0.0
+      yaw: 0.0
+
+goal:
+  x: 0.66
+  y: -0.1
+  z: 0.46
+  roll: 0.0
+  pitch: 1.0
+  yaw: 0.0
+
+
+
+
