@@ -38,7 +38,7 @@ using namespace std;
 
 namespace sbpl_arm_planner {
 
-PR2KDLRobotModel::PR2KDLRobotModel(std::string robot) : pr2_ik_solver_(NULL), rpy_solver_(NULL)
+PR2KDLRobotModel::PR2KDLRobotModel() : pr2_ik_solver_(NULL), rpy_solver_(NULL)
 {
   chain_root_name_ = "torso_lift_link";
   chain_tip_name_ = "r_gripper_palm_link";

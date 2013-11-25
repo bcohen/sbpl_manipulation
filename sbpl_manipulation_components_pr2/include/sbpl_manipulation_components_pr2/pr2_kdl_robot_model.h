@@ -44,6 +44,7 @@
 #include <kdl/chainiksolvervel_pinv.hpp>
 #include <sbpl_geometry_utils/interpolation.h>
 #include <sbpl_manipulation_components/kdl_robot_model.h>
+#include <sbpl_manipulation_components_pr2/orientation_solver.h>
 #include <pr2_arm_kinematics/pr2_arm_ik_solver.h>
 
 
@@ -63,7 +64,7 @@ class PR2KDLRobotModel : public KDLRobotModel {
     virtual bool init(std::string robot_description, std::vector<std::string> &planning_joints);
 
     /* Inverse Kinematics */
-    virtual bool computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution);
+    virtual bool computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option=0);
     
     virtual bool computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution);
 
@@ -73,6 +74,12 @@ class PR2KDLRobotModel : public KDLRobotModel {
   private:
 
     pr2_arm_kinematics::PR2ArmIKSolver* pr2_ik_solver_;
+    
+    sbpl_arm_planner::RPYSolver* rpy_solver_;
+
+    std::string forearm_roll_link_name_;
+    std::string wrist_pitch_joint_name_;
+    std::string end_effector_link_name_;
 };
 
 }
