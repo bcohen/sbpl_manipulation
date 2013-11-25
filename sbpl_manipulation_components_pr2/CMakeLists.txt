@@ -7,10 +7,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-set(ROS_BUILD_TYPE Debug)
-
-# Add a ROS C++ macro to tell SBPL to use ROS print statements
-add_definitions(-DROS)
+set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
 
@@ -32,9 +29,10 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(sbpl_manipulation_components_pr2
-        src/sbpl_math.cpp
-        src/orientation_solver.cpp 
-        src/pr2_kdl_robot_model.cpp)
+                    src/sbpl_math.cpp
+                    src/orientation_solver.cpp 
+                    src/pr2_kdl_robot_model.cpp
+                    src/ubr1_kdl_robot_model.cpp)
 
 target_link_libraries(sbpl_manipulation_components_pr2 sbpl_manipulation_components)
 
