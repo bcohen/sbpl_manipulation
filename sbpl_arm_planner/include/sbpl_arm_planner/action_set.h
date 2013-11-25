@@ -15,13 +15,15 @@ namespace sbpl_arm_planner {
 
 class EnvironmentROBARM3D;
 
-enum MotionPrimitiveType {
+namespace MotionPrimitiveType {
+enum {
   LONG_DISTANCE,
   SHORT_DISTANCE,
   SNAP_TO_RPY,
   SNAP_TO_XYZ_RPY,
   NUMBER_OF_MPRIM_TYPES
 };
+}
 
 class ActionSet
 {

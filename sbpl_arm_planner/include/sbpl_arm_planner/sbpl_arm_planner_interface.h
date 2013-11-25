@@ -44,7 +44,7 @@
 #include <sbpl/planners/araplanner.h>
 #include <sbpl_arm_planner/environment_robarm3d.h>
 #include <sbpl_manipulation_components/post_processing.h>
-#include <distance_field/propagation_distance_field.h>
+#include <moveit/distance_field/propagation_distance_field.h>
 #include <geometry_msgs/Pose.h>
 #include <arm_navigation_msgs/GetMotionPlan.h>
 #include <arm_navigation_msgs/PlanningScene.h>

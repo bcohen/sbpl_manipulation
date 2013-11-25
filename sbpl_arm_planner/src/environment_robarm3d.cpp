@@ -200,7 +200,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
         valid = -1;
 
       //check for collisions
-      if(!cc_->isStateValid(actions[i][j], prm_->verbose_, false, dist))
+      if(!cc_->isStateValid(actions[i][j], prm_->verbose_collisions_, false, dist))
       {
         ROS_DEBUG_NAMED(prm_->expands_log_, " succ: %2d  dist: %0.3f is in collision.", i, dist);
         valid = -2;
@@ -553,7 +553,7 @@ bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles
     ROS_WARN("Starting configuration violates the joint limits. Attempting to plan anyway.");
 
   //check if the start configuration is in collision but plan anyway
-  if(!cc_->isStateValid(angles, prm_->verbose_, false, dist))
+  if(!cc_->isStateValid(angles, true, false, dist))
   {
     ROS_WARN("[env] The starting configuration is in collision. Attempting to plan anyway. (distance to nearest obstacle %0.2fm)", double(dist)*grid_->getResolution());
   }
@@ -696,6 +696,7 @@ void EnvironmentROBARM3D::getExpandedStates(std::vector<std::vector<double> >* s
     rmodel_->computePlanningLinkFK(angles,state);
     state[6] = pdata_.StateID2CoordTable[pdata_.expanded_states[i]]->heur;
     states->push_back(state);
+    ROS_DEBUG("[%d] id: %d  xyz: %0.2f %0.2f %0.2f", int(i), pdata_.expanded_states[i], state[0], state[1], state[2]);
   }
 }
 

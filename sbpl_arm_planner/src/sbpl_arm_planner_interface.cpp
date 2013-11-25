@@ -129,10 +129,7 @@ bool SBPLArmPlannerInterface::solve(const arm_navigation_msgs::PlanningSceneCons
   clock_t t_plan = clock();
   res.robot_state = planning_scene->robot_state;
   if(!planToPosition(req,res))
-  {
-    ROS_ERROR("Failed to plan.");
     return false;
-  }
 
   res_ = res;
   double plan_time = (clock() - t_plan) / (double)CLOCKS_PER_SEC;
@@ -474,6 +471,7 @@ visualization_msgs::MarkerArray SBPLArmPlannerInterface::getVisualization(std::s
       colors[0][3] = 1;
       colors[1][1] = 1;
       colors[1][3] = 1;
+      ROS_ERROR("Expansions visualization %d expands, %s frame", int(expanded_states.size()), prm_->planning_frame_.c_str());
       ma = viz::getCubesMarkerArray(expanded_states, 0.01, colors, prm_->planning_frame_, "expansions", 0);
     }
   }

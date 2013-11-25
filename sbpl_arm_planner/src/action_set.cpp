@@ -30,7 +30,9 @@
 
 #include <sbpl_arm_planner/action_set.h>
 #include <sbpl_arm_planner/environment_robarm3d.h>
- 
+
+#define VERIFY_KINEMATICS false
+
 namespace sbpl_arm_planner {
 
 ActionSet::ActionSet(std::string action_file)
@@ -140,9 +142,17 @@ bool ActionSet::getMotionPrimitivesFromFile(FILE* fCfg)
       addMotionPrim(mprim,true,true);
   }
 
-  // add amp
+  // add amps (will be added to MP file format)
   MotionPrimitive m;
-  m.type = SNAP_TO_XYZ_RPY;
+  /*
+  m.type = sbpl_arm_planner::MotionPrimitiveType::SNAP_TO_XYZ_RPY;
+  m.group = 2;
+  m.id =  mp_.size();
+  m.action.push_back(mprim);
+  mp_.push_back(m);
+  */
+
+  m.type = sbpl_arm_planner::MotionPrimitiveType::SNAP_TO_RPY;
   m.group = 2;
   m.id =  mp_.size();
   m.action.push_back(mprim);
@@ -157,12 +167,12 @@ void ActionSet::addMotionPrim(const std::vector<double> &mprim, bool add_convers
 
   if(short_dist_mprim)
   {
-    m.type = SHORT_DISTANCE;
+    m.type = sbpl_arm_planner::MotionPrimitiveType::SHORT_DISTANCE;
     m.group = 1;
   }
   else
   {
-    m.type = LONG_DISTANCE;
+    m.type = sbpl_arm_planner::MotionPrimitiveType::LONG_DISTANCE;
     m.group = 0;
   }
 
@@ -216,48 +226,66 @@ bool ActionSet::getActionSet(const RobotState &parent, std::vector<Action> &acti
 
 bool ActionSet::getAction(const RobotState &parent, double dist_to_goal, MotionPrimitive &mp, Action &action)
 {
-  if(mp.type == LONG_DISTANCE)
+  std::vector<double> goal = env_->getGoal();
+
+  if(mp.type == sbpl_arm_planner::MotionPrimitiveType::LONG_DISTANCE)
   {
     if(dist_to_goal <= short_dist_mprims_thresh_m_ && use_multires_mprims_)
       return false;
 
     return applyMotionPrimitive(parent, mp, action);
   }
-  else if(mp.type == SHORT_DISTANCE)
+  else if(mp.type == sbpl_arm_planner::MotionPrimitiveType::SHORT_DISTANCE)
   {
     if(dist_to_goal > short_dist_mprims_thresh_m_ && use_multires_mprims_)
       return false;
     
     return applyMotionPrimitive(parent, mp, action);
   }
-  else if(mp.type == SNAP_TO_XYZ_RPY)
+  else if(mp.type == sbpl_arm_planner::MotionPrimitiveType::SNAP_TO_XYZ_RPY)
   {
-    if(dist_to_goal > ik_amp_dist_thresh_m_)
-    {
-      ROS_DEBUG("dist_to_goal: %0.3f", dist_to_goal);
+    if(dist_to_goal > 0.0) //ik_amp_dist_thresh_m_)
       return false;
-    }
+    
     action.resize(1);
-    std::vector<double> goal = env_->getGoal();
     if(!env_->getRobotModel()->computeIK(goal, parent, action[0]))
     {
-      ROS_ERROR("IK Failed. (dist_to_goal: %0.3f)  (goal:   xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
+      ROS_DEBUG("IK failed. (dist_to_goal: %0.3f)  (goal: xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
       return false;
     }
-
-    /*
-    std::vector<double> p(6,0);
-    env_->getRobotModel()->computeFK(action[0], "name", p);
-    ROS_WARN("[ik] goal:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
-    ROS_WARN("[ik]   fk:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", p[0], p[1], p[2], p[3], p[4], p[5]);
-    ROS_WARN("[ik] diff:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", fabs(goal[0]-p[0]), fabs(goal[1]-p[1]), fabs(goal[2]-p[2]), fabs(goal[3]-p[3]), fabs(goal[4]-p[4]), fabs(goal[5]-p[5]));
-    */
+  }
+  else if(mp.type == sbpl_arm_planner::MotionPrimitiveType::SNAP_TO_RPY)
+  {
+    if(dist_to_goal > 0.02)
+      return false;
+    
+    action.resize(1);
+    if(!env_->getRobotModel()->computeIK(goal, parent, action[0], sbpl_arm_planner::ik_option::RESTRICT_XYZ_JOINTS))
+    {
+      ROS_INFO("RPY-solver failed. (dist_to_goal: %0.3f)  (goal: xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
+      return false;
+    }
   }
   else
   {
     ROS_ERROR("Motion Primitives of type '%d' are not supported.", mp.type);
     return false; 
   }
+
+#if VERIFY_KINEMATICS
+  std::vector<double> p(6,0);
+  env_->getRobotModel()->computeFK(action[0], env_->getRobotModel()->getPlanningLink(), p);
+  for(size_t i = 0; i < p.size(); ++i)
+  {
+    if(fabs(goal[i]-p[i]) > 0.0001)
+    {
+      ROS_WARN("[ik] Found a potential problem with the kinematics.");
+      ROS_WARN("[ik] goal:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
+      ROS_WARN("[ik]   fk:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", p[0], p[1], p[2], p[3], p[4], p[5]);
+      ROS_WARN("[ik] diff:  xyz: % 0.3f % 0.3f % 0.3f rpy: % 0.3f % 0.3f % 0.3f", fabs(goal[0]-p[0]), fabs(goal[1]-p[1]), fabs(goal[2]-p[2]), fabs(goal[3]-p[3]), fabs(goal[4]-p[4]), fabs(goal[5]-p[5]));
+    }
+  }
+#endif
 
   return true;
 }
@@ -269,10 +297,7 @@ bool ActionSet::applyMotionPrimitive(const RobotState &state, MotionPrimitive &m
   {
     if(action[i].size() != state.size())
       return false;
-    /*
-    ROS_INFO("[action_set] state: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", state[0], state[1], state[2], state[3], state[4], state[5], state[6]);
-    mp.print();
-    */
+
     for(size_t j = 0; j < action[i].size(); ++j)
       action[i][j] =  angles::normalize_angle(action[i][j] + state[j]);
   }
