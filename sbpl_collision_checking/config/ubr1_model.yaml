@@ -1,0 +1,92 @@
+collision_groups:
+
+  - name: body
+    type: voxels
+    root_name: base_link
+    tip_name: head_pan_link
+    collision_links:
+    - name: camera
+      root: head_camera_link
+    - name: head_tilt
+      root: head_tilt_link
+    - name: head_pan
+      root: head_pan_link
+    - name: torso
+      root: torso_lift_link
+    - name: base
+      root: base_link
+
+  - name: arm
+    type: spheres
+    root_name: torso_lift_link
+    tip_name: wrist_roll_link
+    collision_links:
+    - name: shoulder
+      root: shoulder_pan_link
+      spheres: sh0 sh1 sh2
+    - name: upperarm
+      root: upperarm_roll_link
+      spheres: ua0 ua1 ua2 ua3 ua4 ua5 ua6 ua7 ua8 ua9 ua10 ua11
+    - name: forearm
+      root: forearm_roll_link
+      spheres: fa1 fa2 fa3 fa4 fa5 fa6 fa7 fa8 fa9 fa10
+    - name: gripper
+      root: wrist_roll_link
+      spheres: gr0 gr1 gr2 gr3 gr4
+    - name: left_finger
+      root: left_gripper_finger_link
+      spheres: lf0 lf1 lf2 lf3 lf4
+    - name: right_finger
+      root: right_gripper_finger_link
+      spheres: rf0 rf1 rf2 rf3 rf4
+
+collision_spheres:
+
+  - {name: sh0, x: 0.14, y: -0.06, z: -0.01, radius: 0.095, priority: 5}
+  - {name: sh1, x: 0.14, y: 0.06, z: -0.01, radius: 0.095, priority: 5}
+  - {name: sh2, x: 0.14, y: 0.00, z: -0.01, radius: 0.095, priority: 5}
+
+  - {name: ua0, x: 0.02, y: 0.0, z: 0.0, radius: 0.09, priority: 4}
+  - {name: ua1, x: 0.06, y: 0.03, z: -0.0225, radius: 0.06, priority: 4}
+  - {name: ua2, x: 0.06, y: -0.03, z: -0.0225, radius: 0.06, priority: 4}
+  - {name: ua9, x: 0.06, y: -0.0, z: -0.0225, radius: 0.06, priority: 4}
+
+  - {name: ua7, x: 0.11, y: -0.04, z: -0.035, radius: 0.05, priority: 4}
+  - {name: ua8, x: 0.11, y: 0.04, z: -0.035, radius: 0.05, priority: 4}
+  - {name: ua10, x: 0.11, y: 0.0, z: -0.035, radius: 0.05, priority: 4}
+
+  - {name: ua3, x: 0.16, y: 0.03, z: -0.025, radius: 0.06, priority: 4}
+  - {name: ua4, x: 0.16, y: -0.03, z: -0.025, radius: 0.06, priority: 4}
+  - {name: ua11, x: 0.16, y: -0.0, z: -0.025, radius: 0.06, priority: 4}
+
+  - {name: ua5, x: 0.21, y: 0.035, z: 0.0, radius: 0.06, priority: 4}
+  - {name: ua6, x: 0.21, y: -0.035, z: 0.0, radius: 0.06, priority: 4}
+
+  - {name: fa1, x: 0.05, y: 0.025, z: -0.005, radius: 0.065, priority: 3}
+  - {name: fa2, x: 0.05, y: -0.025, z: -0.005, radius: 0.065, priority: 3}
+  - {name: fa3, x: 0.10, y: 0.0275, z: -0.005, radius: 0.065, priority: 3}
+  - {name: fa4, x: 0.10, y: -0.0275, z: -0.005, radius: 0.065, priority: 3}
+  - {name: fa5, x: 0.15, y: 0.0225, z: -0.015, radius: 0.05, priority: 3}
+  - {name: fa6, x: 0.15, y: -0.0225, z: -0.015, radius: 0.05, priority: 3}
+  - {name: fa7, x: 0.19, y: 0.03, z: -0.015, radius: 0.05, priority: 3}
+  - {name: fa8, x: 0.19, y: -0.03, z: -0.015, radius: 0.05, priority: 3}
+  - {name: fa9, x: 0.24, y: 0.03, z: 0.00, radius: 0.05, priority: 3}
+  - {name: fa10, x: 0.24, y: -0.03, z: 0.0, radius: 0.05, priority: 3}
+
+  - {name: gr0, x: 0.055, y: -0.03, z: 0.00, radius: 0.04, priority: 2}
+  - {name: gr1, x: 0.055, y: 0.0, z: 0.00, radius: 0.04, priority: 2}
+  - {name: gr2, x: 0.055, y: 0.03, z: 0.00, radius: 0.04, priority: 2}
+  - {name: gr3, x: 0.025, y: 0.02, z: 0.00, radius: 0.04, priority: 2}
+  - {name: gr4, x: 0.025, y: -0.02, z: 0.00, radius: 0.04, priority: 2}
+
+  - {name: lf0, x: -0.02, y: 0.005, z: 0.00, radius: 0.015, priority: 1}
+  - {name: lf1, x: -0.01, y: 0.005, z: 0.00, radius: 0.015, priority: 1}
+  - {name: lf2, x: 0.00, y: 0.005, z: 0.00, radius: 0.015, priority: 1}
+  - {name: lf3, x: 0.01, y: 0.005, z: 0.00, radius: 0.015, priority: 1}
+  - {name: lf4, x: 0.02, y: 0.005, z: 0.00, radius: 0.015, priority: 1}
+
+  - {name: rf0, x: -0.02, y: -0.005, z: 0.00, radius: 0.015, priority: 1}
+  - {name: rf1, x: -0.01,   y: -0.005, z: 0.00, radius: 0.015, priority: 1}
+  - {name: rf2, x: 0.0, y: -0.005, z: 0.00, radius: 0.015, priority: 1}
+  - {name: rf3, x: 0.01, y: -0.005, z: 0.00, radius: 0.015, priority: 1}
+  - {name: rf4, x: 0.02, y: -0.005, z: 0.00, radius: 0.015, priority: 1}
