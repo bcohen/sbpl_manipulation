@@ -7,17 +7,16 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-set(ROS_BUILD_TYPE Debug)
-
-# Add a ROS C++ macro to tell SBPL to use ROS print statements
-add_definitions(-DROS)
+set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
 
 rosbuild_add_boost_directories()
 
-rosbuild_find_ros_package(sbpl_geometry_utils)
-include_directories(include ${sbpl_geometry_utils_PACKAGE_PATH}/include)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(sbpl_geometry_utils REQUIRED sbpl_geometry_utils)
+include_directories(${sbpl_geometry_utils_INCLUDE_DIRS})
+link_directories(${sbpl_geometry_utils_LIBRARY_DIRS})
 
 find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
@@ -37,7 +36,7 @@ rosbuild_add_library(sbpl_collision_checking
                         src/sbpl_collision_space.cpp)
 
 target_link_libraries(sbpl_collision_checking 
-                        ${sbpl_geometry_utils_PACKAGE_PATH}/devel/lib/libsbpl_geometry_utils.so
+                        sbpl_geometry_utils
                         sbpl_manipulation_components
                         leatherman)
 
