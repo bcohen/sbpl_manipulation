@@ -1,0 +1,20 @@
+<launch>
+
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find ubr1_description)/robots/ubr1_robot.urdf'" />
+
+  <node   pkg="sbpl_arm_planner_test" type="callPlanner" name="call_planner" output="screen" respawn="false" >
+
+    <rosparam command="load" file="$(find sbpl_arm_planner)/config/ubr1.yaml" />
+    
+    <rosparam command="load" file="$(find sbpl_collision_checking)/config/ubr1_model.yaml" />
+
+    <param name="object_filename" value="$(find sbpl_arm_planner_test)/env/tabletop_ubr1.env" />
+
+    <param name="action_set_filename" value="$(find sbpl_arm_planner)/config/pr2.mprim" />
+
+    <rosparam command="load" file="$(find sbpl_arm_planner_test)/experiments/ubr1_goal.yaml" />
+
+  </node>
+
+</launch>
+
