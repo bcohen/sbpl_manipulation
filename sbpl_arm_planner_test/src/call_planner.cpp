@@ -36,6 +36,7 @@
 
 #include <ros/ros.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <leatherman/utils.h>
 #include <leatherman/print.h>
 #include <arm_navigation_msgs/PlanningScene.h>
@@ -43,22 +44,10 @@
 #include <sbpl_arm_planner/sbpl_arm_planner_interface.h>
 #include <sbpl_manipulation_components/kdl_robot_model.h>
 #include <sbpl_manipulation_components_pr2/pr2_kdl_robot_model.h>
+#include <sbpl_manipulation_components_pr2/ubr1_kdl_robot_model.h>
 #include <sbpl_collision_checking/sbpl_collision_space.h>
 
 using namespace sbpl_arm_planner;
-
-void fillJointState(const std::vector<double> &angles, const std::vector<std::string> &joint_names, std::string frame_id, sensor_msgs::JointState &state)
-{
-  if(angles.size() != joint_names.size())
-  {
-    ROS_ERROR("Failed to fill out JointState.");
-    return;
-  }
-  state.header.frame_id = frame_id;
-  state.name = joint_names;
-  state.position = angles;
-  ROS_INFO("Done filling the joint state message.");
-}
 
 void fillConstraint(const std::vector<double> &pose, std::string frame_id, arm_navigation_msgs::Constraints &goals)
 {
@@ -79,7 +68,7 @@ void fillConstraint(const std::vector<double> &pose, std::string frame_id, arm_n
   p.orientation = goals.orientation_constraints[0].orientation;
   leatherman::printPoseMsg(p, "Goal");
 
-  goals.position_constraints[0].constraint_region_shape.dimensions.resize(3, 0.01);
+  goals.position_constraints[0].constraint_region_shape.dimensions.resize(3, 0.015);
   goals.orientation_constraints[0].absolute_roll_tolerance = 0.05;
   goals.orientation_constraints[0].absolute_pitch_tolerance = 0.05;
   goals.orientation_constraints[0].absolute_yaw_tolerance = 0.05;
@@ -185,9 +174,73 @@ std::vector<arm_navigation_msgs::CollisionObject> getCollisionObjects(std::strin
   return getCollisionCubes(objects, object_ids, frame_id);
 }
 
+bool getInitialConfiguration(ros::NodeHandle &nh, arm_navigation_msgs::RobotState &state)
+{
+  XmlRpc::XmlRpcValue xlist;
+
+  //joint_state
+  if(nh.hasParam("initial_configuration/joint_state"))
+  {
+    nh.getParam("initial_configuration/joint_state", xlist);
+
+    if(xlist.getType() != XmlRpc::XmlRpcValue::TypeArray)
+      ROS_WARN("initial_configuration/joint_state is not an array.");
+
+    if(xlist.size() == 0)
+      return false;
+    std::cout<<xlist <<endl;
+    for(int i = 0; i < xlist.size(); ++i)
+    {
+      state.joint_state.name.push_back(std::string(xlist[i]["name"]));
+
+      if(xlist[i]["position"].getType() == XmlRpc::XmlRpcValue::TypeDouble)
+        state.joint_state.position.push_back(double(xlist[i]["position"]));
+      else
+      {
+        ROS_DEBUG("Doubles in the yaml file have to contain decimal points. (Convert '0' to '0.0')");
+        if(xlist[i]["position"].getType() == XmlRpc::XmlRpcValue::TypeInt)
+        {
+          int pos = xlist[i]["position"];
+          state.joint_state.position.push_back(double(pos));
+        }
+      }
+    }
+  }
+  else
+  {
+    ROS_ERROR("initial_configuration/joint_state is not on the param server.");
+    return false;
+  }
+  
+  //multi_dof_joint_state
+  if(nh.hasParam("initial_configuration/multi_dof_joint_state"))
+  {
+    nh.getParam("initial_configuration/multi_dof_joint_state", xlist);
+
+    if(xlist.getType() != XmlRpc::XmlRpcValue::TypeArray)
+      ROS_WARN("initial_configuration/multi_dof_joint_state is not an array.");
+
+    if(xlist.size() != 0)
+    {
+      geometry_msgs::Pose pose;
+      for(int i = 0; i < xlist.size(); ++i)
+      {
+        state.multi_dof_joint_state.frame_ids.push_back(xlist[i]["frame_id"]);
+        state.multi_dof_joint_state.child_frame_ids.push_back(xlist[i]["child_frame_id"]);
+        pose.position.x = xlist[i]["x"];
+        pose.position.y = xlist[i]["y"];
+        pose.position.z = xlist[i]["z"];
+        leatherman::rpyToQuatMsg(xlist[i]["roll"], xlist[i]["pitch"], xlist[i]["yaw"], pose.orientation);
+        state.multi_dof_joint_state.poses.push_back(pose);
+      }
+    }
+  }
+  return true;
+}
+
 int main(int argc, char **argv)
 {
-  ros::init (argc, argv, "sbpl_arm_planner");
+  ros::init (argc, argv, "sbpl_arm_planner_test");
   ros::NodeHandle nh, ph("~");
   sleep(1);
   ros::spinOnce();
@@ -205,9 +258,9 @@ int main(int argc, char **argv)
   ph.param("goal/x", goal[0], 0.0);
   ph.param("goal/y", goal[1], 0.0);
   ph.param("goal/z", goal[2], 0.0);
-  ph.param("goal/r", goal[3], 0.0);
-  ph.param("goal/p", goal[4], 0.0);
-  ph.param("goal/ya", goal[5], 0.0);
+  ph.param("goal/roll", goal[3], 0.0);
+  ph.param("goal/pitch", goal[4], 0.0);
+  ph.param("goal/yaw", goal[5], 0.0);
 
   // planning joints
   std::vector<std::string> planning_joints;
@@ -225,7 +278,8 @@ int main(int argc, char **argv)
   }
   std::vector<double> start_angles(planning_joints.size(),0);
   if(planning_joints.size() < 7)
-    ROS_ERROR("ONLY FOUND %d planning joints.", int(planning_joints.size()));
+    ROS_ERROR("Found %d planning joints on the param server. I usually expect at least 7 joints...", int(planning_joints.size()));
+
   // robot description
   std::string urdf;
   nh.param<std::string>("robot_description", urdf, " ");
@@ -237,22 +291,36 @@ int main(int argc, char **argv)
   // robot model
   RobotModel *rm;
   if(group_name.compare("right_arm") == 0)
-    rm  = new sbpl_arm_planner::PR2KDLRobotModel();
+    rm = new sbpl_arm_planner::PR2KDLRobotModel("pr2");
+  else if(group_name.compare("arm") == 0)
+    rm = new sbpl_arm_planner::UBR1KDLRobotModel();
   else
     rm  = new sbpl_arm_planner::KDLRobotModel(kinematics_frame, chain_tip_link);
   if(!rm->init(urdf, planning_joints))
+  {
+    ROS_ERROR("Failed to initialize robot model.");
     return false;
+  }
   rm->setPlanningLink(planning_link);
   //ROS_WARN("Robot Model Information");
   //rm->printRobotModelInformation();
+  //ROS_WARN(" ");
 
+  // configure this so that it works for all robots
   KDL::Frame f;
-  if(group_name.compare("right_arm") == 0)
+  if(group_name.compare("right_arm") == 0) //pr2
   {
-    f.p.x(-0.05); f.p.y(1.0); f.p.z(0.803);
+    f.p.x(-0.05); f.p.y(1.0); f.p.z(0.789675);
     f.M = KDL::Rotation::Quaternion(0,0,0,1);
     rm->setKinematicsToPlanningTransform(f, planning_frame);
   }
+  else if(group_name.compare("right_arm") == 0) //ubr1
+  {
+    f.p.x(-0.05); f.p.y(0.0); f.p.z(0.26);
+    f.M = KDL::Rotation::Quaternion(0,0,0,1);
+    rm->setKinematicsToPlanningTransform(f, planning_frame);
+  }
+
   // collision checker
   sbpl_arm_planner::OccupancyGrid *grid = new sbpl_arm_planner::OccupancyGrid(df);
   grid->setReferenceFrame(planning_frame);
@@ -272,7 +340,7 @@ int main(int argc, char **argv)
 
   if(!planner->init())
     return false;
-
+  
   // collision objects
   arm_navigation_msgs::PlanningScenePtr scene(new arm_navigation_msgs::PlanningScene);
   if(!object_filename.empty())
@@ -283,37 +351,23 @@ int main(int argc, char **argv)
   arm_navigation_msgs::GetMotionPlan::Response res;
   scene->collision_map.header.frame_id = planning_frame;
 
-  // add robot's pose in map
-  scene->robot_state.multi_dof_joint_state.frame_ids.resize(2);
-  scene->robot_state.multi_dof_joint_state.child_frame_ids.resize(2);
-  scene->robot_state.multi_dof_joint_state.poses.resize(2);
-  scene->robot_state.multi_dof_joint_state.frame_ids[0] = "base_footprint";
-  scene->robot_state.multi_dof_joint_state.child_frame_ids[0] = "map";
-  scene->robot_state.multi_dof_joint_state.poses[0].position.x = 0;
-  scene->robot_state.multi_dof_joint_state.poses[0].position.y = -1.0;
-  scene->robot_state.multi_dof_joint_state.poses[0].position.z = 0;
-  scene->robot_state.multi_dof_joint_state.poses[0].orientation.w = 1;
-  scene->robot_state.multi_dof_joint_state.frame_ids[1] = "map";
-  scene->robot_state.multi_dof_joint_state.child_frame_ids[1] = "torso_lift_link";
-  scene->robot_state.multi_dof_joint_state.poses[1].position.x = -0.05;
-  scene->robot_state.multi_dof_joint_state.poses[1].position.y = 1.0;
-  scene->robot_state.multi_dof_joint_state.poses[1].position.z = 0.803;
-  scene->robot_state.multi_dof_joint_state.poses[1].orientation.w = 1;
- 
+  // fill goal state
   fillConstraint(goal, planning_frame, req.motion_plan_request.goal_constraints);
-  req.motion_plan_request.allowed_planning_time.fromSec(4.0);
-  start_angles[1] = 0.02;
-  start_angles[2] = -0.003;
-  start_angles[3] = -0.42;
-  start_angles[5] = -0.73;
-  fillJointState(start_angles, planning_joints, planning_frame, req.motion_plan_request.start_state.joint_state);
-  req.motion_plan_request.start_state.joint_state.header.frame_id = planning_frame;
+  req.motion_plan_request.allowed_planning_time.fromSec(5.0);
 
-  // visualizations
-  ma_pub.publish(cc->getVisualization("bounds"));
-  ma_pub.publish(cc->getVisualization("distance_field"));
-  ma_pub.publish(cc->getVisualization("occupied_voxels"));
+  // fill start state 
+  if(!getInitialConfiguration(ph, scene->robot_state))
+  {
+    ROS_ERROR("Failed to get initial configuration.");
+    return 0;
+  }
+  scene->robot_state.joint_state.header.frame_id = planning_frame;  
+  req.motion_plan_request.start_state = scene->robot_state;
+
+  // set planning scene
+  //cc->setPlanningScene(*scene);
  
+  // plan
   ROS_INFO("Calling solve...");
   if(!planner->solve(scene, req, res))
   {
@@ -321,19 +375,21 @@ int main(int argc, char **argv)
   }
   else
     ma_pub.publish(planner->getCollisionModelTrajectoryMarker());
-  
+
+  // visualizations
   ros::spinOnce();
+  ma_pub.publish(cc->getVisualization("bounds"));
   ma_pub.publish(cc->getVisualization("distance_field"));
-  ma_pub.publish(planner->getVisualization("bfs_walls"));
-  //ma_pub.publish(planner->getVisualization("bfs_values"));
-  ma_pub.publish(cc->getCollisionModelVisualization(start_angles));
   ma_pub.publish(planner->getVisualization("goal"));
   ma_pub.publish(planner->getVisualization("expansions"));
-  //ma_pub.publish(cc->getVisualization("collision_objects"));
-  ma_pub.publish(cc->getVisualization("occupied_voxels"));
-  
+  ma_pub.publish(cc->getVisualization("collision_objects"));
+  //ma_pub.publish(grid->getVisualization("occupied_voxels"));
+  ma_pub.publish(cc->getCollisionModelVisualization(start_angles));
+
   ros::spinOnce();
+
   sleep(1);
+  ROS_INFO("Done");
   return 0;
 }
 

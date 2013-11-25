@@ -28,4 +28,4 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_executable(callPlanner src/call_planner.cpp)
-target_link_libraries(callPlanner sbpl_arm_planner sbpl_collision_checking)
+target_link_libraries(callPlanner sbpl_arm_planner sbpl_collision_checking moveit_distance_field)
