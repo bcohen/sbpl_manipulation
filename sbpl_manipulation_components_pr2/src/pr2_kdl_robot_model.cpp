@@ -38,17 +38,22 @@ using namespace std;
 
 namespace sbpl_arm_planner {
 
-PR2KDLRobotModel::PR2KDLRobotModel() : pr2_ik_solver_(NULL)
+PR2KDLRobotModel::PR2KDLRobotModel(std::string robot) : pr2_ik_solver_(NULL), rpy_solver_(NULL)
 {
   chain_root_name_ = "torso_lift_link";
   chain_tip_name_ = "r_gripper_palm_link";
+  forearm_roll_link_name_ = "r_forearm_roll_link";
+  wrist_pitch_joint_name_ = "r_wrist_flex_joint";
+  end_effector_link_name_ = "r_gripper_palm_link";
 }
-
 
 PR2KDLRobotModel::~PR2KDLRobotModel()
 {
   if(pr2_ik_solver_)
     delete pr2_ik_solver_;
+
+  if(rpy_solver_)
+    delete rpy_solver_;
 }
 
 bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::string> &planning_joints)
@@ -142,11 +147,18 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
   for(size_t i = 0; i < kchain_.getNrOfSegments(); ++i)
     link_map_[kchain_.getSegment(i).getName()] = i;
 
+  // initialize rpy solver
+  double wrist_min_limit, wrist_max_limit;
+  bool wrist_continuous;
+  if(!getJointLimits(wrist_pitch_joint_name_, wrist_min_limit, wrist_max_limit, wrist_continuous))
+    return false;
+  rpy_solver_ = new sbpl_arm_planner::RPYSolver(wrist_min_limit, wrist_max_limit);
+
   initialized_ = true;
   return true;
 }
 
-bool PR2KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
+bool PR2KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option)
 {
   //pose: {x,y,z,r,p,y} or {x,y,z,qx,qy,qz,qw}
   KDL::Frame frame_des;
@@ -168,12 +180,39 @@ bool PR2KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vec
   for(size_t i = 0; i < start.size(); i++)
     jnt_pos_in_(i) = angles::normalize_angle(start[i]); // must be normalized for CartToJntSearch
 
-  if(pr2_ik_solver_->CartToJntSearch(jnt_pos_in_, frame_des, jnt_pos_out_, 0.2) < 0)
-    return false;
-
   solution.resize(start.size());
-  for(size_t i = 0; i < solution.size(); ++i)
-    solution[i] = jnt_pos_out_(i);
+
+  // choose solver
+  if(option == sbpl_arm_planner::ik_option::RESTRICT_XYZ_JOINTS)
+  {
+    std::vector<double> rpy(3,0), fpose(6,0), epose(6,0);
+    frame_des.M.GetRPY(rpy[0], rpy[1], rpy[2]);
+    std::vector<double> const rpy2(rpy);
+
+    // get pose of forearm link
+    if(!computeFK(start, forearm_roll_link_name_, fpose))
+    {
+      ROS_ERROR("[rm] computeFK failed on forearm pose.");
+      return false;
+    }
+
+    // get pose of end-effector link
+    if(!computeFK(start, end_effector_link_name_, epose))
+    {
+      ROS_ERROR("[rm] computeFK failed on end_eff pose.");
+      return false;
+    }
+
+    return rpy_solver_->computeRPYOnly(rpy2, start, fpose, epose, 1, solution);
+  }
+  else
+  {
+    if(pr2_ik_solver_->CartToJntSearch(jnt_pos_in_, frame_des, jnt_pos_out_, 0.2) < 0)
+      return false;
+    
+    for(size_t i = 0; i < solution.size(); ++i)
+      solution[i] = jnt_pos_out_(i);
+  }
 
   return true;
 }
