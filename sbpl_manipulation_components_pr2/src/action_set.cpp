@@ -147,6 +147,14 @@ bool ActionSet::getMotionPrimitivesFromFile(FILE* fCfg)
   m.action.push_back(mprim);
   mp_.push_back(m);
 
+  // add amp (orientation_solver)
+  MotionPrimitive m;
+  m.type = SNAP_TO_RPY;
+  m.group = 2;
+  m.id =  mp_.size();
+  m.action.push_back(mprim);
+  mp_.push_back(m);
+
   return true;
 }
 
