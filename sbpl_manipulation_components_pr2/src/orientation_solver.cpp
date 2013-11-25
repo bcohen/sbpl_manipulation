@@ -8,28 +8,41 @@
 #include <sbpl_manipulation_components_pr2/sbpl_math.h>
 #include <sbpl_manipulation_components_pr2/orientation_solver.h>
 
-#define END_EFF "r_wrist_roll_link" //9
-#define FOREARM_ROLL "r_forearm_roll_link" //6
-#define NUM_JOINTS 7
-
 namespace sbpl_arm_planner
 {
 
-/*Both these pitch limits are on the upper side (i.e. if forearm is aligned along x-axis with forerm_roll=0, then the end effector cannot pitch upward more than WRIST_PITCH_LIMIT_MAX and cannot come below a pitch of WRIST_PITCH_LIMIT_MIN on the upper side. */
-#define WRIST_PITCH_LIMIT_MAX   114   //These values are in degrees (for ease of understanding).
-#define WRIST_PITCH_LIMIT_MIN   0     //The corresponding radian values are approximately 2 and 0.1.
+/*Both these pitch limits are on the upper side (i.e. if forearm is aligned along x-axis with forearm_roll_link_roll=0, then the end effector cannot pitch upward more than WRIST_PITCH_LIMIT_MAX and cannot come below a pitch of WRIST_PITCH_LIMIT_MIN on the upper side. */
 
-RPYSolver::RPYSolver(RobotModel* rm, CollisionChecker* cc)
+RPYSolver::RPYSolver(double wrist_pitch_min_limit, double wrist_pitch_max_limit)
 {
-  rm_ = rm;
-  cc_ = cc;
+  // absolute value (see note above)
+  if(wrist_pitch_min_limit > wrist_pitch_max_limit)
+  {
+    wrist_pitch_min_limit_ = fabs(wrist_pitch_max_limit);
+    wrist_pitch_max_limit_ = fabs(wrist_pitch_min_limit);
+  }
+  else
+  {
+    wrist_pitch_min_limit_ = fabs(wrist_pitch_min_limit);
+    wrist_pitch_max_limit_ = fabs(wrist_pitch_max_limit);
+  }
+  //printf("[rpy-solver] wrist_pitch_limits: {min: %0.3f  max: %0.3f}\n", wrist_pitch_min_limit, wrist_pitch_max_limit);
+}
 
-  verbose_ = false;
-  try_both_directions_ = false;
-  num_calls_ = 0;
-  num_invalid_predictions_ = 0;
-  num_invalid_solution_ = 0;
-  num_invalid_path_to_solution_ = 0;
+bool RPYSolver::computeRPYOnly(const std::vector<double> &rpy, const std::vector<double> &start, const std::vector<double> &forearm_roll_link_pose, const std::vector<double> &endeff_link_pose, int solution_num, std::vector<double> &solution)
+{
+  double hand_rotations[4];
+
+  orientationSolver(hand_rotations, forearm_roll_link_pose[5], forearm_roll_link_pose[4], forearm_roll_link_pose[3], endeff_link_pose[5], endeff_link_pose[4], endeff_link_pose[3], rpy[2], rpy[1], rpy[0], solution_num);
+
+  if(hand_rotations[0] == 0)
+    return false;
+
+  solution = start;
+  solution[4] += hand_rotations[1];
+  solution[5] += hand_rotations[2];
+  solution[6] += hand_rotations[3];
+  return true;
 }
 
 void RPYSolver::orientationSolver(double* output, double phi, double theta, double psi, double yaw1, double pitch1, double roll1, double yaw2, double pitch2, double roll2, int attempt) 
@@ -40,8 +53,8 @@ void RPYSolver::orientationSolver(double* output, double phi, double theta, doub
   double wrist_pitch_limit_max;         //Used to express the wrist pitch limit in radians
   double wrist_pitch_limit_min;         //Used to express the wrist pitch limit in radians
   //The wrist pitch limit in radians
-  wrist_pitch_limit_max=(M_PI/180.0)*WRIST_PITCH_LIMIT_MAX;
-  wrist_pitch_limit_min=(M_PI/180.0)*WRIST_PITCH_LIMIT_MIN;
+  wrist_pitch_limit_max=wrist_pitch_min_limit_; //(M_PI/180.0)*WRIST_PITCH_LIMIT_MAX;
+  wrist_pitch_limit_min=wrist_pitch_max_limit_; //(M_PI/180.0)*WRIST_PITCH_LIMIT_MIN;
 
   //The PR2 FK is defined such that pitch is negative upward. Hence, the input pitch values are negated, because the following portion of the code was written assuming that pitch is positive upward.
   theta=-theta;
@@ -363,117 +376,4 @@ void RPYSolver::orientationSolver(double* output, double phi, double theta, doub
   output[3]=wrist_roll;
 }
 
-bool RPYSolver::isOrientationFeasible(const double* rpy, std::vector<double> &start, std::vector<double> &prefinal, std::vector<double> &final)
-{
-  bool try_both_rotations = try_both_directions_;
-  unsigned int i=0;
-  unsigned int my_count=0;
-  int num_checks=0, path_length=0;
-  double hand_rotations[4];
-  double dist=0;
-  std::vector<double>forerm_pose(6,0);
-  std::vector<double>endeff_pose(6,0);
-  std::vector<double>goal_joint_config(7,0);
-
-  //get pose of forearm link
-  if(!rm_->computeFK(start,FOREARM_ROLL,forerm_pose))
-  {
-    ROS_DEBUG("computeFK failed on forearm pose.\n");
-    return false;
-  }
-
-  //get pose of end effector link
-  if(!rm_->computeFK(start,END_EFF,endeff_pose))
-  {
-    ROS_DEBUG("computeFK failed on end_eff pose.\n");
-    return false;
-  }
-
-  ROS_DEBUG_NAMED("orientation_solver", "Joint Angles: %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f", start[0], start[1], start[2], start[3], start[4], start[5], start[6]);
-  ROS_DEBUG_NAMED("orientation_solver", "FK:forearm: %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f",forerm_pose[0], forerm_pose[1], forerm_pose[2], forerm_pose[3], forerm_pose[4], forerm_pose[5], forerm_pose[6]);
-  ROS_DEBUG_NAMED("orientation_solver", "FK:endeff:  %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f",endeff_pose[0], endeff_pose[1], endeff_pose[2], endeff_pose[3], endeff_pose[4], endeff_pose[5], endeff_pose[6]);
-  ROS_DEBUG_NAMED("orientation_solver", "Start yaw: %0.4f, Start pitch: %0.4f, Start roll: %0.4f",endeff_pose[5], endeff_pose[4], endeff_pose[3]);
-  ROS_DEBUG_NAMED("orientation_solver", "End yaw required: %0.4f, End pitch required: %0.4f, End roll required: %0.4f", rpy[2], rpy[1], rpy[0]);
-
-  // call orientation planner 
-  orientationSolver(hand_rotations, forerm_pose[5],forerm_pose[4],forerm_pose[3], endeff_pose[5], endeff_pose[4], endeff_pose[3], rpy[2], rpy[1], rpy[0], 1); //1st attempt
-
-  num_calls_++;
-
-  ROS_DEBUG_NAMED("orientation_solver", "The rotations commanded in the first attempt are: %0.4f, %0.4f and %0.4f", hand_rotations[1], hand_rotations[2], hand_rotations[3]);
-
-  if(hand_rotations[0]==0)
-  {
-    ROS_DEBUG_NAMED("orientation_solver", "Orientation solver predicts that this movement is impossible with the given pitch limits.");
-    num_invalid_predictions_++;
-    return false;
-  }
-
-SET_ANGLES_AGAIN: //GoTO label, temporary, do not continue use of this
-
-  for(my_count=0; my_count<start.size(); my_count++)
-  {
-    goal_joint_config[my_count]=start[my_count];
-    prefinal[my_count]=start[my_count];
-  }
-
-  for(my_count=0; my_count<3; my_count++)
-  {
-    goal_joint_config[4+my_count]+=hand_rotations[1+my_count];
-
-    //check for collisions
-    if(!cc_->isStateValid(goal_joint_config, verbose_, false, dist))
-    {
-      num_invalid_solution_++;
-      return false;
-    }
-    std::vector<std::vector<double> > path(2, std::vector<double>(NUM_JOINTS,0));
-
-    for(i = 0; i < path[0].size(); i++)
-    {
-      path[0][i] = start[i];
-      path[1][i] = goal_joint_config[i];
-    }
-
-    //check for collisions along the path
-    if(!cc_->isStateToStateValid(start, goal_joint_config, path_length, num_checks, dist))
-    {
-      //try rotating in the opposite direction
-      if(try_both_rotations)
-      {
-        orientationSolver(hand_rotations, forerm_pose[5],forerm_pose[4],forerm_pose[3], endeff_pose[5], endeff_pose[4], endeff_pose[3], rpy[2], rpy[1], rpy[0], 2);
-        try_both_rotations = 0;
-        goto SET_ANGLES_AGAIN;
-      }
-
-      num_invalid_path_to_solution_++;
-      return false;
-    }
-  }
-
-  final = goal_joint_config;
-
-  ROS_DEBUG_NAMED("orientation_solver", "\n \n After:");
-  rm_->computeFK(final,END_EFF,endeff_pose);
-  ROS_DEBUG_NAMED("orientation_solver", "The perfect roll value from FK is: %0.4f.", rpy[0]-endeff_pose[3]);
-
-  ROS_DEBUG_NAMED("orientation_solver", "Joint angles:%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f", final[0], final[1], final[2], final[3], final[4], final[5], final[6]);
-
-  ROS_DEBUG_NAMED("orientation_solver", "Forward kinematics on final arm position.");
-  rm_->computeFK(final,FOREARM_ROLL,forerm_pose);
-  ROS_DEBUG_NAMED("orientation_solver", "FK:f_arm: %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f",forerm_pose[0], forerm_pose[1], forerm_pose[2], forerm_pose[3], forerm_pose[4], forerm_pose[5], forerm_pose[6]);
-  rm_->computeFK(final,END_EFF,endeff_pose);
-  ROS_DEBUG_NAMED("orientation_solver", "FK:endeff: %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f",endeff_pose[0], endeff_pose[1], endeff_pose[2], endeff_pose[3], endeff_pose[4], endeff_pose[5], endeff_pose[6]);
-  ROS_DEBUG_NAMED("orientation_solver", "Succeeded.");
-
-  return true;
 }
-
-
-void RPYSolver::printStats()
-{
-  ROS_INFO("Calls to OS: %d   Predicts Impossible: %d   Invalid Solutions: %d   Invalid Paths: %d", num_calls_, num_invalid_predictions_, num_invalid_solution_, num_invalid_path_to_solution_); 
-}
-
-}
-

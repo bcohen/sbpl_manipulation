@@ -13,11 +13,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <sbpl_manipulation_components/robot_model.h>
-#include <sbpl_manipulation_components/collision_checker.h>
 
 using namespace std;
-
 
 namespace sbpl_arm_planner
 {
@@ -26,9 +23,16 @@ class RPYSolver
 {
   public:
 
-    RPYSolver(RobotModel *rm, CollisionChecker *cc);
-    
+    RPYSolver(double wrist_pitch_min_limit, double wrist_pitch_max_limit);
+
     ~RPYSolver(){};
+
+    bool computeRPYOnly(const std::vector<double> &rpy, const std::vector<double> &start, const std::vector<double> &forearm_roll_link_pose, const std::vector<double> &endeff_link_pose, int solution_num, std::vector<double> &solution);
+
+  private:
+
+    double wrist_pitch_min_limit_;
+    double wrist_pitch_max_limit_;
 
     /** \brief Function calculates the forearm roll, wrist pitch and wrist roll for 
     * the PR2 robot hand which is required to attain a certain yaw, pitch
@@ -38,33 +42,6 @@ class RPYSolver
     * are the same.
     */
     void orientationSolver(double*, double, double, double, double, double, double, double, double, double, int);
-
-    /** \brief check if a certain end effector orientation is feasible */
-    bool isOrientationFeasible(const double* rpy, std::vector<double> &start, std::vector<double> &prefinal, std::vector<double> &final);
-
-    /** \brief print stats to stdout */
-    void printStats();
-
-    /** \brief get a list of stats (number of calls etc.) */
-    void getStats(std::vector<double> &stats);
-
-  private:
-
-    RobotModel *rm_;
-
-    CollisionChecker *cc_;
-
-    bool verbose_;
-
-    bool try_both_directions_;
-
-    int num_calls_;
-
-    int num_invalid_predictions_;
-
-    int num_invalid_solution_;
-
-    int num_invalid_path_to_solution_;
 };
 
 }
