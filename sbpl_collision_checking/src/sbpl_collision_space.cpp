@@ -98,7 +98,11 @@ bool SBPLCollisionSpace::init(std::string group_name)
   } 
  
   // choose the group we are planning for
-  model_.setDefaultGroup(group_name_);
+  if(!model_.setDefaultGroup(group_name_))
+  {
+    ROS_ERROR("Failed to set the default group to '%s'.", group_name_.c_str());
+    return false;
+  }
 
   // get the collision spheres for the robot
   model_.getDefaultGroupSpheres(spheres_);
@@ -249,9 +253,11 @@ bool SBPLCollisionSpace::updateVoxelGroup(Group *g)
   for(size_t i = 0; i < g->links_.size(); ++i)
   {
     Link* l = &(g->links_[i]);
+    pts.clear();
     pts.resize(l->voxels_.v.size());
 
     ROS_INFO("Updating Voxel Group %s with %d voxels", g->getName().c_str(), int(l->voxels_.v.size())); 
+    //leatherman::printKDLFrame(frames[l->voxels_.kdl_chain][l->voxels_.kdl_segment], l->name_);
     for(size_t j = 0; j < l->voxels_.v.size(); ++j)
     {
       v = frames[l->voxels_.kdl_chain][l->voxels_.kdl_segment] * l->voxels_.v[j];
@@ -286,12 +292,10 @@ bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start,
   {
     path_length = 0;
     ROS_ERROR_ONCE("[cspace] Failed to interpolate the path. It's probably infeasible due to joint limits.");
-    /*
     ROS_ERROR("[interpolate]  start: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", start_norm[0], start_norm[1], start_norm[2], start_norm[3], start_norm[4], start_norm[5], start_norm[6]);
     ROS_ERROR("[interpolate]    end: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", end_norm[0], end_norm[1], end_norm[2], end_norm[3], end_norm[4], end_norm[5], end_norm[6]);
     ROS_ERROR("[interpolate]    min: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", min_limits_[0], min_limits_[1], min_limits_[2], min_limits_[3], min_limits_[4], min_limits_[5], min_limits_[6]);
     ROS_ERROR("[interpolate]    max: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", max_limits_[0], max_limits_[1], max_limits_[2], max_limits_[3], max_limits_[4], max_limits_[5], max_limits_[6]);
-    */
     return false;
   }
 
@@ -792,7 +796,7 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
   }
 
   // reset the distance field (TODO...shouldn't have to reset everytime)
-  //grid_->reset();
+  grid_->reset();
 
   // collision objects
   for(size_t i = 0; i < scene.collision_objects.size(); ++i)
@@ -881,11 +885,7 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
 {
   visualization_msgs::MarkerArray ma;
 
-  if(type.compare("bounds") == 0)
-    ma = grid_->getVisualization(type);
-  else if(type.compare("distance_field") == 0)
-    ma = grid_->getVisualization(type);
-  else if(type.compare("collision_objects") == 0)
+  if(type.compare("collision_objects") == 0)
   {
     visualization_msgs::MarkerArray ma1;
     for(size_t i = 0; i < known_objects_.size(); ++i)
@@ -911,7 +911,7 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
     } 
     ma = viz::getSpheresMarkerArray(sph, rad, 10, grid_->getReferenceFrame(), "collision_spheres", 0);
   }
-  else if(type.compare("occupied_voxels") == 0)
+  else if(type.compare("collision_object_voxels") == 0)
   {
     visualization_msgs::Marker marker;
     std::vector<std::vector<double> > points(1,std::vector<double>(3,0));
@@ -945,7 +945,7 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
     ma.markers.push_back(marker);
   }
   else
-    ROS_ERROR("No visualization found of type '%s'.", type.c_str());
+    ma = grid_->getVisualization(type);
 
   return ma;
 }
@@ -966,6 +966,52 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getCollisionModelVisualizati
     rad[i] = sph[i][3];
 
   ma = viz::getSpheresMarkerArray(sph, rad, 90, grid_->getReferenceFrame(), "collision_model", 0); 
+
+  // debugging
+  //visualization_msgs::MarkerArray ma2 = getMeshModelVisualization("arm", angles);
+  //ma.markers.insert(ma.markers.end(), ma2.markers.begin(), ma2.markers.end());
+
+  return ma;
+}
+
+visualization_msgs::MarkerArray SBPLCollisionSpace::getMeshModelVisualization(const std::string group_name, const std::vector<double> &angles)
+{
+  visualization_msgs::MarkerArray ma;
+  geometry_msgs::Pose fpose;
+  geometry_msgs::PoseStamped lpose, mpose;
+  std::string robot_description, mesh_resource;
+  Group* g = model_.getGroup(group_name);
+
+  ros::NodeHandle nh;
+  if (!nh.getParam("robot_description", robot_description))
+  {
+    ROS_ERROR("Failed to get robot_description from param server.");
+    return ma;
+  }
+
+  // compute foward kinematics
+  if(!model_.computeGroupFK(angles, g, frames_))
+  {
+    ROS_ERROR("[cspace] Failed to compute foward kinematics.");
+    return ma;
+  }
+
+  // get link mesh_resources
+  for(size_t i = 0; i < g->links_.size(); ++i)
+  {
+    if(!leatherman::getLinkMesh(robot_description, g->links_[i].root_name_, false, mesh_resource, lpose))
+    {
+      ROS_ERROR("Failed to get mesh for '%s'.", g->links_[i].root_name_.c_str());
+      continue;
+    }
+
+    ROS_INFO("Got the mesh! (%s)", mesh_resource.c_str());
+    // TODO: Has to be a spheres group
+    leatherman::msgFromPose(frames_[g->links_[i].spheres_[0].kdl_chain][g->links_[i].spheres_[0].kdl_segment], fpose);
+    leatherman::multiply(fpose, lpose.pose, mpose.pose);
+    mpose.header.frame_id = "base_link"; //getReferenceFrame();
+    ma.markers.push_back(viz::getMeshMarker(mpose, mesh_resource, 180, "robot_model", i));
+  }
   return ma;
 }
 

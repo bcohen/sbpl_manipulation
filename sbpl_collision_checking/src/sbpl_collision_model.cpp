@@ -121,9 +121,13 @@ void SBPLCollisionModel::getGroupNames(std::vector<std::string> &names)
     names.push_back(iter->first);
 }
 
-void SBPLCollisionModel::setDefaultGroup(std::string group_name)
+bool SBPLCollisionModel::setDefaultGroup(std::string group_name)
 {
+  if(group_config_map_.find(group_name) == group_config_map_.end())
+    return false;
+
   dgroup_ = group_config_map_[group_name];
+  return true;
 }
 
 void SBPLCollisionModel::printGroups()
@@ -250,7 +254,10 @@ bool SBPLCollisionModel::setModelToWorldTransform(const arm_navigation_msgs::Mul
         return false;
       }
       else
+      {
         iter->second->setGroupToWorldTransform(f);
+        leatherman::printKDLFrame(f, "group-world");
+      }
     }
     else
     {

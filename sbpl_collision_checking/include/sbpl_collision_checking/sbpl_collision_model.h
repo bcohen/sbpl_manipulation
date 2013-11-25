@@ -59,7 +59,7 @@ class SBPLCollisionModel
 
     bool getJointLimits(std::string group_name, std::string joint_name, double &min_limit, double &max_limit, bool &continuous);
 
-    void setDefaultGroup(std::string group_name);
+    bool setDefaultGroup(std::string group_name);
 
     void getDefaultGroupSpheres(std::vector<Sphere*> &spheres);
 

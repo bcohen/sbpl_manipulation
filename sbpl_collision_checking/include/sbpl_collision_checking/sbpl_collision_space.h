@@ -106,6 +106,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     /** --------------- Debugging ---------------- */
     visualization_msgs::MarkerArray getVisualization(std::string type);
     visualization_msgs::MarkerArray getCollisionModelVisualization(const std::vector<double> &angles);
+    visualization_msgs::MarkerArray getMeshModelVisualization(const std::string group_name, const std::vector<double> &angles);
 
     /** ------------- Self Collision ----------- */
     bool updateVoxelGroups();

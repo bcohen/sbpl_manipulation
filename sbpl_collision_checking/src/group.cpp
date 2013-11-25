@@ -60,6 +60,9 @@ bool Group::initKinematics()
   // loop until all links are included in a single kdl chain
   while(unincluded_links && cnt < 100)
   {
+    ROS_INFO("--------------------------------------");
+    ROS_INFO("-------- %s:  %d ------------------", name_.c_str(), cnt);
+    ROS_INFO("--------------------------------------");
     cnt++;
     std::vector<int> num_links_per_tip(links_.size(),0);
 
@@ -70,10 +73,17 @@ bool Group::initKinematics()
       if(link_included[i] > -1)
         continue;
 
+      // link i is same as root link, set as identity
+      if(root_name_.compare(links_[i].root_name_) == 0)
+      {
+        ROS_ERROR("The group root matches the link root. Creating an empty chain. {root: %s, tip: %s}", root_name_.c_str(), links_[i].root_name_.c_str());
+        num_links_per_tip[i]++;
+      }
+
       // create chain with link i as the tip
       if (!tree.getChain(root_name_, links_[i].root_name_, chain))
       {
-        ROS_ERROR("Error: could not fetch the KDL chain for the desired manipulator. Exiting. (root: %s, tip: %s)", root_name_.c_str(), links_[i].root_name_.c_str());
+        ROS_ERROR("Error: Failed to fetch the KDL chain. Exiting. (root: %s, tip: %s)", root_name_.c_str(), links_[i].root_name_.c_str());
         continue;
       }
 
@@ -95,11 +105,11 @@ bool Group::initKinematics()
     int i_max = 0;
     for(size_t i = 0; i < num_links_per_tip.size(); ++i)
     {
-      ROS_DEBUG("chain_tip: %25s  included_links %d", links_[i].root_name_.c_str(), num_links_per_tip[i]);
+      ROS_INFO("[%d]  chain_tip: %25s  included_links %d", int(i), links_[i].root_name_.c_str(), num_links_per_tip[i]);
       if(num_links_per_tip[i] > num_links_per_tip[i_max])
         i_max = i;
     }
-    ROS_INFO("Creating a chain for %s group with %s as the tip.", name_.c_str(), links_[i_max].root_name_.c_str());
+    ROS_INFO("[cnt %d] Creating a chain for %s group with %s as the tip.", cnt, name_.c_str(), links_[i_max].root_name_.c_str());
 
     // create chain with link i_max as the tip
     if (!tree.getChain(root_name_, links_[i_max].root_name_, chain))
@@ -120,6 +130,16 @@ bool Group::initKinematics()
       {
         included_links++;
         continue;
+      }
+
+
+      if(root_name_.compare(links_[i].root_name_) == 0)
+      {
+        ROS_ERROR("Checking which links are included in the single link chain.");
+        link_included[i] = chains_.size()-1;
+        links_[i].i_chain_ = chains_.size()-1;
+        included_links++;
+        ROS_INFO("[one_link-chain: %s] [%d] includes: %s", links_[i_max].root_name_.c_str(), included_links, links_[i].root_name_.c_str());
       }
 
       // check if link i is included in this chain
@@ -283,13 +303,13 @@ bool Group::initSpheres()
   // assign the kdl segment numbers to each sphere
   for(size_t i = 0; i < links_.size(); ++i)
   {
-    int seg;
+    int seg = 0;
     if(!leatherman::getSegmentIndex(chains_[links_[i].i_chain_], links_[i].root_name_, seg))
       return false;
 
     for(size_t j = 0; j < links_[i].spheres_.size(); ++j)
     {
-      links_[i].spheres_[j].kdl_segment = seg;
+      links_[i].spheres_[j].kdl_segment = seg + 1;
       links_[i].spheres_[j].kdl_chain = links_[i].i_chain_;
     }
   }
@@ -358,11 +378,15 @@ bool Group::initVoxels()
       return false;
     }
     ROS_DEBUG("Retrieved %d voxels for link '%s'", int(links_[i].voxels_.v.size()), links_[i].root_name_.c_str());
-    int seg;
+    int seg = 0;
     if(!leatherman::getSegmentIndex(chains_[links_[i].i_chain_], links_[i].root_name_, seg))
-      return false;
+    {
+      ROS_ERROR("When retrieving group voxels, getSegmentIndex() failed. The group root must be the same as the link root. {root: %s, tips: %s}", root_name_.c_str(),  links_[i].root_name_.c_str());
+      seg = -1;
+      //return false;
+    }
 
-    links_[i].voxels_.kdl_segment = seg;
+    links_[i].voxels_.kdl_segment = seg+1;
     links_[i].voxels_.kdl_chain = links_[i].i_chain_;
   }
 
@@ -409,33 +433,43 @@ bool Group::initVoxels()
 
 bool Group::computeFK(const std::vector<double> &angles, int chain, int segment, KDL::Frame &frame)
 {
-  // sort elements of input angles into proper positions in the JntArray
-  for(size_t i = 0; i < angles.size(); ++i)
+  if(segment == 0)
   {
-    if(angles_to_jntarray_[chain][i] == -1)
-      continue;
-    joint_positions_[chain](angles_to_jntarray_[chain][i]) = angles[i];
+    ROS_ERROR("segment is 0!");
+    frame = KDL::Frame::Identity();
+  }
+  else
+  {
+    // sort elements of input angles into proper positions in the JntArray
+    for(size_t i = 0; i < angles.size(); ++i)
+    {
+      if(angles_to_jntarray_[chain][i] == -1)
+        continue;
+      joint_positions_[chain](angles_to_jntarray_[chain][i]) = angles[i];
+    }
+
+    if(solvers_[chain]->JntToCart(joint_positions_[chain], frame, segment) < 0)
+    {
+      ROS_ERROR("JntToCart returned < 0. Exiting.");
+      return false;
+    }
   }
 
-  if(solvers_[chain]->JntToCart(joint_positions_[chain], frame, segment) < 0)
-  {
-    ROS_ERROR("JntToCart returned < 0. Exiting.");
-    return false;
-  }
   frame = T_root_to_world_ * frame;
   return true;
 }
 
 bool Group::computeFK(const std::vector<double> &angles, std::vector<std::vector<KDL::Frame> > &frames)
 {
+  //ROS_ERROR("Chains_ size: %d  frames_.size(): %d", chains_.size(), frames_.size()); fflush(stdout);
   frames.resize(chains_.size());
   for(int i = 0; i < int(frames_.size()); ++i)
   {
-    frames[i].resize(chains_[i].getNrOfSegments());
+    frames[i].resize(chains_[i].getNrOfSegments()+1);
     for(size_t j = 0; j < frames_[i].size(); ++j)
     {
       ROS_DEBUG("chain: %d   frame_index: %d  frame: %d  size_of_frames_vector: %d", i, int(j), int(frames_[i][j]), int(frames[i].size()));
-      if(!computeFK(angles, i, frames_[i][j]+1, frames[i][frames_[i][j]]))
+      if(!computeFK(angles, i, frames_[i][j]/*+1*/, frames[i][frames_[i][j]]))
         return false;
     }
   }
@@ -526,13 +560,28 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
     ROS_ERROR("Failed to find geometry for link '%s' in URDF. (group: %s)", name.c_str(), link->collision->group_name.c_str());
     return false;
   }
-  boost::shared_ptr<const urdf::Geometry> geom = link->collision->geometry;
-  
+
+  //TODO: Add way to choose collision geometry or visual geometry
+    
   geometry_msgs::Pose p;
+  
+   
+  boost::shared_ptr<const urdf::Geometry> geom = link->visual->geometry;
+  p.position.x = link->visual->origin.position.x;
+  p.position.y = link->visual->origin.position.y;
+  p.position.z = link->visual->origin.position.z;
+  link->visual->origin.rotation.getQuaternion(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
+  
+ 
+  /*  
+  boost::shared_ptr<const urdf::Geometry> geom = link->collision->geometry;
   p.position.x = link->collision->origin.position.x;
   p.position.y = link->collision->origin.position.y;
   p.position.z = link->collision->origin.position.z;
   link->collision->origin.rotation.getQuaternion(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
+  */
+  
+  //leatherman::printPoseMsg(p, name + "_POSE");
   voxels.clear();
   if(geom->type == urdf::Geometry::MESH)
   {
@@ -548,7 +597,7 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
       return false;
     }
     ROS_DEBUG("mesh: %s  triangles: %u  vertices: %u", name.c_str(), int(triangles.size()), int(vertices.size()));
-    sbpl::VoxelizeMesh(vertices, triangles, RESOLUTION, v); 
+    sbpl::Voxelizer::voxelizeMesh(vertices, triangles, p, RESOLUTION, v, false);
     ROS_DEBUG("mesh: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
@@ -563,7 +612,7 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
     std::vector<std::vector<double> > v;
     urdf::Box* box = (urdf::Box*) geom.get();
     sbpl::Voxelizer::voxelizeBox(box->dim.x, box->dim.y, box->dim.z, p, RESOLUTION, v, false); 
-    ROS_DEBUG("box: %s  voxels: %u", name.c_str(), int(v.size()));
+    ROS_INFO("box: %s  voxels: %u   {dims: %0.2f %0.2f %0.2f}", name.c_str(), int(v.size()), box->dim.x, box->dim.y, box->dim.z);
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
     {
@@ -576,8 +625,8 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
   {
     std::vector<std::vector<double> > v;
     urdf::Cylinder* cyl = (urdf::Cylinder*) geom.get();
-    sbpl::Voxelizer::voxelizeCylinder(cyl->radius, cyl->length, p, RESOLUTION, v, false); 
-    ROS_DEBUG("cylinder: %s  voxels: %u", name.c_str(), int(v.size()));
+    sbpl::Voxelizer::voxelizeCylinder(cyl->radius, cyl->length, p, RESOLUTION, v, true); 
+    ROS_INFO("cylinder: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
     {
@@ -590,8 +639,8 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
   {
     std::vector<std::vector<double> > v;
     urdf::Sphere* sph = (urdf::Sphere*) geom.get();
-    sbpl::Voxelizer::voxelizeSphere(sph->radius, p, RESOLUTION, v, false); 
-    ROS_DEBUG("sphere: %s  voxels: %u", name.c_str(), int(v.size()));
+    sbpl::Voxelizer::voxelizeSphere(sph->radius, p, RESOLUTION, v, true); 
+    ROS_INFO("sphere: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
     {
@@ -646,17 +695,18 @@ void Group::print()
   ROS_INFO("collision links: ");
   for(std::size_t i = 0; i < links_.size(); ++i)
   {
-    ROS_INFO(" name: %s", links_[i].name_.c_str());
-    ROS_INFO(" root: %s", links_[i].root_name_.c_str());
+    ROS_INFO("  name: %s", links_[i].name_.c_str());
+    ROS_INFO("  root: %s", links_[i].root_name_.c_str());
+    ROS_INFO(" chain: %d", links_[i].i_chain_);
     if(type_ == sbpl_arm_planner::Group::SPHERES)
     {
       ROS_INFO(" spheres: %d", int(links_[i].spheres_.size()));
       for(std::size_t j = 0; j < links_[i].spheres_.size(); ++j)
-        ROS_INFO("  [%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d", links_[i].spheres_[j].name.c_str(), links_[i].spheres_[j].v.x(), links_[i].spheres_[j].v.y(), links_[i].spheres_[j].v.z(), links_[i].spheres_[j].radius, links_[i].spheres_[j].priority);
+        ROS_INFO("  [%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d chain: %d segment: %d", links_[i].spheres_[j].name.c_str(), links_[i].spheres_[j].v.x(), links_[i].spheres_[j].v.y(), links_[i].spheres_[j].v.z(), links_[i].spheres_[j].radius, links_[i].spheres_[j].priority, links_[i].spheres_[j].kdl_chain, links_[i].spheres_[j].kdl_segment);
     }
     else if(type_ == sbpl_arm_planner::Group::VOXELS)
     {
-      ROS_INFO(" voxels: %d", int(links_[i].voxels_.v.size()));
+      ROS_INFO(" voxels: %d chain: %d segment: %d", int(links_[i].voxels_.v.size()), links_[i].voxels_.kdl_chain, links_[i].voxels_.kdl_segment);
       for(std::size_t j = 0; j < links_[i].voxels_.v.size(); ++j)
         ROS_DEBUG("  [%d] x: %0.3f y: %0.3f z: %0.3f", int(j), links_[i].voxels_.v[j].x(), links_[i].voxels_.v[j].y(), links_[i].voxels_.v[j].z());
     }
