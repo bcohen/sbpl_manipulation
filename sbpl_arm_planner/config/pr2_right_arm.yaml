@@ -20,11 +20,11 @@ debug:
   print_out_path: false
   logging:
     expands: info
-    expands2: debug
-    ik: debug
-    robot_model: debug
-    collisions: debug
-    solution: debug
+    expands2: info
+    ik: info
+    robot_model: info
+    collisions: info
+    solution: info
 
 visualizations:
   heuristic: false
@@ -32,7 +32,7 @@ visualizations:
   expanded_states: true
   trajectory: false
   collision_model_trajectory: false
-  trajectory_throttle: 1
+  trajectory_throttle: 30
 
 #  occupancy_grid:
 #    origin_x: -0.75

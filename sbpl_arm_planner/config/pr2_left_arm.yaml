@@ -7,9 +7,9 @@ planning:
   use_bfs_heuristic: true
   group_name: left_arm
   planning_joints:
-    l_shouldel_pan_joint
-    l_shouldel_lift_joint
-    l_uppel_arm_roll_joint
+    l_shoulder_pan_joint
+    l_shoulder_lift_joint
+    l_upper_arm_roll_joint
     l_elbow_flex_joint
     l_forearm_roll_joint
     l_wrist_flex_joint

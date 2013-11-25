@@ -71,10 +71,10 @@ collision_groups:
 
 collision_spheres:
 
-  - {name: ush0, x: 0.0, y: 0.0, z: 0.075, radius: 0.09, priority: 5}
-  - {name: ush1, x: -0.01, y: 0.0, z: 0.13, radius: 0.09, priority: 5}
-  - {name: ush2, x: -0.01, y: 0.0, z: 0.19, radius: 0.1, priority: 5}
-  - {name: ush3, x: -0.01, y: 0.0, z: 0.25, radius: 0.1, priority: 5}
+  - {name: ush0, x: -0.01, y: 0.02, z: 0.15, radius: 0.09, priority: 5}  # Same as ush1....fix them both.
+  - {name: ush1, x: -0.01, y: 0.02, z: 0.15, radius: 0.09, priority: 5}
+  - {name: ush2, x: -0.01, y: 0.02, z: 0.19, radius: 0.1, priority: 5}
+  - {name: ush3, x: -0.01, y: 0.02, z: 0.25, radius: 0.1, priority: 5}
 
   - {name: lsh0, x: 0.02, y: 0.00, z: 0.00, radius: 0.14, priority: 4}
   - {name: lsh1, x: 0.08, y: -0.01, z: 0.00, radius: 0.10, priority: 4}

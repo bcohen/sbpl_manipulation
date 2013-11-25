@@ -9,8 +9,8 @@ collision_groups:
       root: head_tilt_link
     - name: head_pan
       root: head_pan_link
-    - name: head_mount
-      root: head_mount_link
+#    - name: head_mount
+#      root: head_mount_link
     - name: laser_mount
       root: laser_tilt_mount_link
     - name: torso
