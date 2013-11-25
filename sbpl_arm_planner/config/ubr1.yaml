@@ -1,0 +1,44 @@
+planning:
+  epsilon: 100
+  verbose: false
+  verbose_collisions: false
+  shortcut_path: false
+  interpolate_path: false
+  use_bfs_heuristic: true
+  group_name: arm
+  planning_joints:
+    shoulder_pan_joint
+    shoulder_lift_joint
+    upperarm_roll_joint
+    elbow_flex_joint
+    forearm_roll_joint
+    wrist_flex_joint
+    wrist_roll_joint
+  discretization: 360 360 360 360 360 360 360
+
+debug:
+  print_out_path: false
+  logging:
+    expands: info
+    expands2: info
+    ik: info
+    robot_model: info
+    collisions: info
+    solution: info
+
+visualizations:
+  heuristic: false
+  goal: true
+  expanded_states: true
+  trajectory: false
+  collision_model_trajectory: false
+  trajectory_throttle: 25
+
+#  occupancy_grid:
+#    origin_x: -0.75
+#    origin_y: -1.25
+#    origin_z: -0.05
+#    size_x: 2.0
+#    size_y: 2.0
+#    size_z: 2.0
+
