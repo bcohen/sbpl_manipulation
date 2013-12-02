@@ -256,7 +256,7 @@ bool SBPLCollisionSpace::updateVoxelGroup(Group *g)
     pts.clear();
     pts.resize(l->voxels_.v.size());
 
-    ROS_INFO("Updating Voxel Group %s with %d voxels", g->getName().c_str(), int(l->voxels_.v.size())); 
+    ROS_DEBUG("Updating Voxel Group %s with %d voxels", g->getName().c_str(), int(l->voxels_.v.size())); 
     //leatherman::printKDLFrame(frames[l->voxels_.kdl_chain][l->voxels_.kdl_segment], l->name_);
     for(size_t j = 0; j < l->voxels_.v.size(); ++j)
     {
