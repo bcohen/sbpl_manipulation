@@ -81,6 +81,15 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
     }
   }
 
+  // TODO: Take in as params instead.
+  if(planning_joints[0].substr(0,1).compare("l") == 0)
+  {
+    chain_tip_name_.replace(0,1,"l");
+    forearm_roll_link_name_.replace(0,1,"l");
+    wrist_pitch_joint_name_.replace(0,1,"l");
+    end_effector_link_name_.replace(0,1,"l");
+  }
+
   if(!ktree_.getChain(chain_root_name_, chain_tip_name_, kchain_))
   {
     ROS_ERROR("Failed to fetch the KDL chain for the robot. (root: %s, tip: %s)", chain_root_name_.c_str(), chain_tip_name_.c_str());
