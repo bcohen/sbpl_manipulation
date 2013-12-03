@@ -19,12 +19,14 @@ SBPLCollisionModel::~SBPLCollisionModel()
   }
 }
 
-bool SBPLCollisionModel::init()
+bool SBPLCollisionModel::init(std::string ns)
 {
   if(!getRobotModel())
     return false;
 
-  return readGroups();
+  if(ns.empty())
+    ns = "~";
+  return readGroups(ns);
 }
 
 bool SBPLCollisionModel::getRobotModel()
@@ -48,18 +50,19 @@ bool SBPLCollisionModel::getRobotModel()
   return true;
 }
 
-bool SBPLCollisionModel::readGroups()
+bool SBPLCollisionModel::readGroups(std::string ns)
 {
   XmlRpc::XmlRpcValue all_groups, all_spheres;
+  ros::NodeHandle nh(ns);
 
   // collision spheres
   std::string spheres_name = "collision_spheres";
-  if(!ph_.hasParam(spheres_name)) 
+  if(!nh.hasParam(spheres_name)) 
   {
     ROS_WARN_STREAM("No groups for planning specified in " << spheres_name);
     return false;
   }
-  ph_.getParam(spheres_name, all_spheres);
+  nh.getParam(spheres_name, all_spheres);
 
   if(all_spheres.getType() != XmlRpc::XmlRpcValue::TypeArray) 
     ROS_WARN("Spheres is not an array.");
@@ -72,12 +75,12 @@ bool SBPLCollisionModel::readGroups()
 
   // collision groups
   std::string group_name = "collision_groups";
-  if(!ph_.hasParam(group_name)) 
+  if(!nh.hasParam(group_name)) 
   {
     ROS_WARN_STREAM("No groups for planning specified in " << group_name);
     return false;
   }
-  ph_.getParam(group_name, all_groups);
+  nh.getParam(group_name, all_groups);
 
   if(all_groups.getType() != XmlRpc::XmlRpcValue::TypeArray) 
     ROS_WARN("Groups is not an array.");

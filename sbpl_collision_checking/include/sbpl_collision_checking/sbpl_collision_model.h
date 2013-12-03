@@ -51,7 +51,7 @@ class SBPLCollisionModel
 
     ~SBPLCollisionModel();
 
-    bool init();
+    bool init(std::string ns="");
 
     bool initAllGroups();
 
@@ -99,7 +99,7 @@ class SBPLCollisionModel
 
     bool getRobotModel();
 
-    bool readGroups();
+    bool readGroups(std::string ns="");
    
     bool computeFK(const std::vector<double> &angles, Group* group, int chain, int segment, KDL::Frame &frame);
 };
