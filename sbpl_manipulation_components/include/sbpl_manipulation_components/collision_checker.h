@@ -21,7 +21,7 @@ class CollisionChecker
     ~CollisionChecker(){};
 
     /* Initialization */
-    virtual bool init(std::string group_name);
+    virtual bool init(std::string group_name, std::string ns="");
 
     virtual bool setPlanningJoints(const std::vector<std::string> &planning_joints);
 

@@ -6,7 +6,7 @@ CollisionChecker::CollisionChecker()
 {
 }
 
-bool CollisionChecker::init(std::string name)
+bool CollisionChecker::init(std::string name, std::string ns)
 {
   group_name_ = name;
   return true;
