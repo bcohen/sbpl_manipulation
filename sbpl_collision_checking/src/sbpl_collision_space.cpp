@@ -80,12 +80,12 @@ bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint
   return true;
 }
 
-bool SBPLCollisionSpace::init(std::string group_name)
+bool SBPLCollisionSpace::init(std::string group_name, std::string ns)
 {
   group_name_ = group_name;
 
   // initialize the collision model
-  if(!model_.init())
+  if(!model_.init(ns))
   {
     ROS_ERROR("[cspace] The robot's collision model failed to initialize.");
     return false;
@@ -243,7 +243,7 @@ bool SBPLCollisionSpace::updateVoxelGroup(Group *g)
   std::vector<double> angles;
   std::vector<std::vector<KDL::Frame> > frames;
   std::vector<Eigen::Vector3d> pts;
-
+  ROS_DEBUG("Updating voxel group: %s", g->getName().c_str());
   if(!model_.computeGroupFK(angles, g, frames))
   {
     ROS_ERROR("[cspace] Failed to compute foward kinematics for group '%s'.", g->getName().c_str());
@@ -943,6 +943,21 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
       marker.points[i].z = vposes[i].position.z;
     }
     ma.markers.push_back(marker);
+  }
+  else if(type.compare("collision_model") == 0)
+  {
+    std::vector<double> angles, rad;
+    std::vector<std::vector<double> > sph;
+    getCollisionSpheres(angles, sph);
+
+    if(sph.empty() || sph[0].size() < 4)
+      return ma;
+
+    rad.resize(sph.size());
+    for(size_t i = 0; i < sph.size(); ++i)
+      rad[i] = sph[i][3];
+
+    ma = viz::getSpheresMarkerArray(sph, rad, 90, grid_->getReferenceFrame(), "collision_model", 0); 
   }
   else
     ma = grid_->getVisualization(type);

@@ -60,7 +60,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     ~SBPLCollisionSpace(){};
 
-    bool init(std::string group_name);
+    bool init(std::string group_name, std::string ns="");
 
     void setPadding(double padding);
    
