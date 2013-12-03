@@ -50,7 +50,7 @@ class PlanningParams
     PlanningParams();
     ~PlanningParams(){};
 
-    bool init();
+    bool init(std::string ns="~");
 
     void printParams(std::string stream);
 

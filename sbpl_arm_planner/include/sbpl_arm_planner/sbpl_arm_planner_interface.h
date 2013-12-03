@@ -60,7 +60,7 @@ class SBPLArmPlannerInterface
 
     ~SBPLArmPlannerInterface();
 
-    bool init();
+    bool init(std::string ns="~");
 
     bool getParams();
 
@@ -101,7 +101,7 @@ class SBPLArmPlannerInterface
     arm_navigation_msgs::PlanningScene pscene_;
 
     /** \brief Initialize the SBPL planner and the sbpl_arm_planner environment */
-    bool initializePlannerAndEnvironment();
+    bool initializePlannerAndEnvironment(std::string ns="~");
 
     /** \brief Set start configuration */
     bool setStart(const sensor_msgs::JointState &state);

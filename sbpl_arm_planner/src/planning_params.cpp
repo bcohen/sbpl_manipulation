@@ -67,9 +67,9 @@ PlanningParams::PlanningParams()
   solution_log_level_ = "info";
 }
 
-bool PlanningParams::init()
+bool PlanningParams::init(std::string ns)
 {
-  ros::NodeHandle nh("~");
+  ros::NodeHandle nh(ns);
 
   /* planning */
   nh.param("planning/epsilon", epsilon_, 10.0);

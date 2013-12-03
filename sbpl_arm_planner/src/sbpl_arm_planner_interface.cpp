@@ -55,9 +55,9 @@ SBPLArmPlannerInterface::~SBPLArmPlannerInterface()
     delete prm_;
 }
 
-bool SBPLArmPlannerInterface::init()
+bool SBPLArmPlannerInterface::init(std::string ns)
 {
-  if(!initializePlannerAndEnvironment())
+  if(!initializePlannerAndEnvironment(ns))
     return false;
 
   planner_initialized_ = true;
@@ -65,10 +65,10 @@ bool SBPLArmPlannerInterface::init()
   return true;
 }
 
-bool SBPLArmPlannerInterface::initializePlannerAndEnvironment()
+bool SBPLArmPlannerInterface::initializePlannerAndEnvironment(std::string ns)
 {
   prm_ = new sbpl_arm_planner::PlanningParams();
-  if(!prm_->init())
+  if(!prm_->init(ns))
     return false;
 
   grid_ = new sbpl_arm_planner::OccupancyGrid(df_);
@@ -471,7 +471,6 @@ visualization_msgs::MarkerArray SBPLArmPlannerInterface::getVisualization(std::s
       colors[0][3] = 1;
       colors[1][1] = 1;
       colors[1][3] = 1;
-      ROS_ERROR("Expansions visualization %d expands, %s frame", int(expanded_states.size()), prm_->planning_frame_.c_str());
       ma = viz::getCubesMarkerArray(expanded_states, 0.01, colors, prm_->planning_frame_, "expansions", 0);
     }
   }
