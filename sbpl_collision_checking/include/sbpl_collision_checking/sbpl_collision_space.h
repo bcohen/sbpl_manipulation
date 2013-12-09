@@ -66,6 +66,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
    
     bool setPlanningScene(const arm_navigation_msgs::PlanningScene &scene);
 
+    void setRobotState(const arm_navigation_msgs::RobotState &state);
+
     /** --------------- Collision Checking ----------- */
     bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
     bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist);

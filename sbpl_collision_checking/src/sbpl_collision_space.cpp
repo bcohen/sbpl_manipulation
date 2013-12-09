@@ -41,6 +41,7 @@ SBPLCollisionSpace::SBPLCollisionSpace(sbpl_arm_planner::OccupancyGrid* grid)
   group_name_ = "";
   object_attached_ = false;
   padding_ = 0.01;
+  object_enclosing_sphere_radius_ = 0.03;
 }
 
 void SBPLCollisionSpace::setPadding(double padding)
@@ -409,6 +410,7 @@ bool SBPLCollisionSpace::getCollisionSpheres(const std::vector<double> &angles, 
     xyzr[1] = v.y();
     xyzr[2] = v.z();
     xyzr[3] = spheres_[i]->radius;
+    ROS_DEBUG("[%d] [robot] xyz: %0.3f %0.3f %0.3f  radius: %0.3f", int(i), xyzr[0], xyzr[1], xyzr[2], xyzr[3]); 
     spheres.push_back(xyzr);
   }
 
@@ -421,7 +423,8 @@ bool SBPLCollisionSpace::getCollisionSpheres(const std::vector<double> &angles, 
       xyzr[0] = object[i][0];
       xyzr[1] = object[i][1];
       xyzr[2] = object[i][2];
-      xyzr[3] = double(object[i][3]) * grid_->getResolution();
+      xyzr[3] = object[i][3];
+      ROS_DEBUG("[%d] [attached] xyz: %0.3f %0.3f %0.3f  radius: %0.3f", int(i), xyzr[0], xyzr[1], xyzr[2], xyzr[3]); 
       spheres.push_back(xyzr);
     }
   }
@@ -500,14 +503,19 @@ void SBPLCollisionSpace::attachCube(std::string name, std::string link, geometry
   if(spheres.size() <= 3)
     ROS_WARN("[cspace] Attached cube is represented by %d collision spheres. Consider lowering the radius of the spheres used to populate the attached cube. (radius = %0.3fm)", int(spheres.size()), object_enclosing_sphere_radius_);
 
+  // transform spheres
+  KDL::Frame center;
+  tf::PoseMsgToKDL(pose, center);
   object_spheres_.resize(spheres.size());
   for(size_t i = 0; i < spheres.size(); ++i)
   {
-    object_spheres_[i].name = name + "_" + boost::lexical_cast<std::string>(i);
     object_spheres_[i].v.x(spheres[i][0]);
     object_spheres_[i].v.y(spheres[i][1]);
     object_spheres_[i].v.z(spheres[i][2]);
-    object_spheres_[i].radius = spheres[i][3];
+    object_spheres_[i].v = center * object_spheres_[i].v;
+
+    object_spheres_[i].name = name + "_" + boost::lexical_cast<std::string>(i);
+    object_spheres_[i].radius = object_enclosing_sphere_radius_;
     object_spheres_[i].kdl_chain = attached_object_chain_num_;
     object_spheres_[i].kdl_segment = attached_object_segment_num_;
   }
@@ -550,7 +558,7 @@ bool SBPLCollisionSpace::getAttachedObject(const std::vector<double> &angles, st
   if(!object_attached_)
     return false;
 
-  // compute foward kinematics
+  // compute forward kinematics
   if(!model_.computeDefaultGroupFK(angles, frames_))
   {
     ROS_ERROR("[cspace] Failed to compute foward kinematics.");
@@ -692,11 +700,11 @@ void SBPLCollisionSpace::removeAllCollisionObjects()
 
 void SBPLCollisionSpace::putCollisionObjectsInGrid()
 {
-  ROS_WARN("[cspace] Putting %d known objects in grid.", int(known_objects_.size()));
+  ROS_DEBUG("[cspace] Putting %d known objects in grid.", int(known_objects_.size()));
   for(size_t i = 0; i < known_objects_.size(); ++i)
   {
     grid_->addPointsToField(object_voxel_map_[known_objects_[i]]);
-    ROS_INFO("[cspace] [%d] Added %s to grid with %d voxels.", int(i), known_objects_[i].c_str(), int(object_voxel_map_[known_objects_[i]].size()));
+    ROS_DEBUG("[cspace] [%d] Added %s to grid with %d voxels.", int(i), known_objects_[i].c_str(), int(object_voxel_map_[known_objects_[i]].size()));
   }
 }
 
@@ -780,6 +788,19 @@ bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0,
   return checkPathForCollision(angles0, angles1, false, path_length, num_checks, dist);
 }
 
+void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &state)
+{
+  if(state.joint_state.name.size() != state.joint_state.position.size())
+    return;
+
+  for(size_t i = 0; i < state.joint_state.name.size(); ++i)
+    model_.setJointPosition(state.joint_state.name[i], state.joint_state.position[i]);
+
+  grid_->reset();
+  putCollisionObjectsInGrid();
+  updateVoxelGroups();
+}
+
 bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)
 {
   // robot state
@@ -842,20 +863,21 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
 
 void SBPLCollisionSpace::attachObject(const arm_navigation_msgs::AttachedCollisionObject &obj)
 {
-  geometry_msgs::PoseStamped pose_in, pose_out;
   std::string link_name = obj.link_name;
   arm_navigation_msgs::CollisionObject object(obj.object);
   ROS_INFO("Received a collision object message with %d shapes.", int(object.shapes.size()));
 
   for(size_t i = 0; i < object.shapes.size(); i++)
   {
+    /*
+    geometry_msgs::PoseStamped pose_in, pose_out;
     pose_in.header = object.header;
     pose_in.header.stamp = ros::Time();
     pose_in.pose = object.poses[i];
-    //sbpl_arm_planner::transformPose(pscene_, pose_in.pose, pose_out.pose, object.header.frame_id, attached_object_frame_);
+    sbpl_arm_planner::transformPose(pscene_, pose_in.pose, pose_out.pose, object.header.frame_id, attached_object_frame_);
     object.poses[i] = pose_out.pose;
     ROS_WARN("[cspace] [attach_object] Converted shape from %s (%0.2f %0.2f %0.2f) to %s (%0.3f %0.3f %0.3f)", pose_in.header.frame_id.c_str(), pose_in.pose.position.x, pose_in.pose.position.y, pose_in.pose.position.z, attached_object_frame_.c_str(), pose_out.pose.position.x, pose_out.pose.position.y, pose_out.pose.position.z);
-
+    */
     if(object.shapes[i].type == arm_navigation_msgs::Shape::SPHERE)
     {
       ROS_INFO("[cspace] Attaching a '%s' sphere with radius: %0.3fm", object.id.c_str(), object.shapes[i].dimensions[0]);
@@ -958,6 +980,22 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
       rad[i] = sph[i][3];
 
     ma = viz::getSpheresMarkerArray(sph, rad, 90, grid_->getReferenceFrame(), "collision_model", 0); 
+  }
+  else if(type.compare("attached_object") == 0)
+  {
+    std::vector<double> angles, rad;
+    std::vector<std::vector<double> > sph;
+    if(object_attached_)
+      getAttachedObject(angles, sph);
+
+    if(sph.empty() || sph[0].size() < 4)
+      return ma;
+
+    rad.resize(sph.size());
+    for(size_t i = 0; i < sph.size(); ++i)
+      rad[i] = sph[i][3];
+
+    ma = viz::getSpheresMarkerArray(sph, rad, 200, grid_->getReferenceFrame(), "attached_object", 0); 
   }
   else
     ma = grid_->getVisualization(type);
