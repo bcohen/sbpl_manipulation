@@ -102,6 +102,7 @@ bool SBPLArmPlannerInterface::initializePlannerAndEnvironment(std::string ns)
   }
 
   //set epsilon
+  //TODO: get from params
   planner_->set_initialsolution_eps(100.0);
 
   //set search mode (true - settle with first solution)
@@ -283,16 +284,18 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
   if(!canServiceRequest(req))
     return false;
 
-  //transform goal pose into reference_frame
+  //TODO: transform goal pose into reference_frame
   arm_navigation_msgs::Constraints goal_constraints = req.motion_plan_request.goal_constraints;
+  /*
   geometry_msgs::Pose gpose, gpose_out;
   gpose.position = req.motion_plan_request.goal_constraints.position_constraints[0].position;
   gpose.orientation = req.motion_plan_request.goal_constraints.orientation_constraints[0].orientation;
-  //sbpl_arm_planner::transformPose(pscene_, gpose, gpose_out, req.motion_plan_request.goal_constraints[0].position_constraints[0].header.frame_id, prm_->planning_frame);
+  sbpl_arm_planner::transformPose(pscene_, gpose, gpose_out, req.motion_plan_request.goal_constraints[0].position_constraints[0].header.frame_id, prm_->planning_frame);
   goal_constraints.orientation_constraints[0].orientation = gpose_out.orientation;
+  */
 
   // set start
-  ROS_INFO("Setting start.");
+  ROS_DEBUG("Setting start.");
   if(!setStart(req.motion_plan_request.start_state.joint_state))
   {
     status = -1;
@@ -300,7 +303,7 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
   }
 
   // set goal
-  ROS_INFO("Setting goal.");
+  ROS_DEBUG("Setting goal.");
   if(!setGoalPosition(goal_constraints) && status == 0)
   {
     status = -2;
@@ -308,7 +311,7 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
   }
   
   // plan 
-  ROS_INFO("Calling planner"); 
+  ROS_DEBUG("Calling planner"); 
   if(status == 0 && plan(res.trajectory.joint_trajectory))
   {
     res.trajectory.joint_trajectory.header.seq = req.motion_plan_request.goal_constraints.position_constraints[0].header.seq; 
