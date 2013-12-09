@@ -44,7 +44,7 @@ PlanningParams::PlanningParams()
   verbose_heuristics_ = false;
   verbose_collisions_ = false;
 
-  planning_link_sphere_radius_ = 0.12;
+  planning_link_sphere_radius_ = 0.08;
 
   cost_multiplier_ = 1000;
   cost_per_cell_ = 1;
@@ -70,7 +70,7 @@ PlanningParams::PlanningParams()
 bool PlanningParams::init(std::string ns)
 {
   ros::NodeHandle nh(ns);
-
+  ROS_ERROR("Getting params from namespace: %s", nh.getNamespace().c_str());
   /* planning */
   nh.param("planning/epsilon", epsilon_, 10.0);
   nh.param("planning/use_bfs_heuristic", use_bfs_heuristic_,true);
@@ -89,7 +89,7 @@ bool PlanningParams::init(std::string ns)
   nh.param<std::string>("debug/logging/expands2", expands2_log_level_, "info");
   nh.param<std::string>("debug/logging/ik", ik_log_level_, "info");
   nh.param<std::string>("debug/logging/robot_model", rmodel_log_level_, "info");
-  nh.param<std::string>("debug/logging/collisions", cspace_log_level_, "info");
+  nh.param<std::string>("/debug/logging/collisions", cspace_log_level_, "info");
   nh.param<std::string>("debug/logging/solution", solution_log_level_, "info");
 
   /* planning joints */
@@ -133,7 +133,7 @@ bool PlanningParams::init(std::string ns)
   leatherman::setLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + rmodel_log_, rmodel_log_level_);
   leatherman::setLoggerLevel(ROSCONSOLE_DEFAULT_NAME + std::string(".") + cspace_log_, cspace_log_level_);
 
-  printParams("prms");
+  //printParams("prms");
   return true;
 }
 
