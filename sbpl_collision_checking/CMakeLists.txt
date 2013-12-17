@@ -33,7 +33,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_library(sbpl_collision_checking 
                         src/group.cpp 
                         src/sbpl_collision_model.cpp
-                        src/sbpl_collision_space.cpp)
+                        src/sbpl_collision_space.cpp
+                        src/sbpl_collision_space_objects.cpp
+                        src/sbpl_collision_space_visualizations.cpp)
 
 target_link_libraries(sbpl_collision_checking 
                         sbpl_geometry_utils
