@@ -144,13 +144,11 @@ bool ActionSet::getMotionPrimitivesFromFile(FILE* fCfg)
 
   // add amps (will be added to MP file format)
   MotionPrimitive m;
-  /*
   m.type = sbpl_arm_planner::MotionPrimitiveType::SNAP_TO_XYZ_RPY;
   m.group = 2;
   m.id =  mp_.size();
   m.action.push_back(mprim);
   mp_.push_back(m);
-  */
 
   m.type = sbpl_arm_planner::MotionPrimitiveType::SNAP_TO_RPY;
   m.group = 2;
@@ -244,7 +242,7 @@ bool ActionSet::getAction(const RobotState &parent, double dist_to_goal, MotionP
   }
   else if(mp.type == sbpl_arm_planner::MotionPrimitiveType::SNAP_TO_XYZ_RPY)
   {
-    if(dist_to_goal > 0.0) //ik_amp_dist_thresh_m_)
+    if(dist_to_goal > ik_amp_dist_thresh_m_)
       return false;
     
     action.resize(1);
