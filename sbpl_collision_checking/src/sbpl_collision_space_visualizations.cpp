@@ -61,7 +61,8 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
       sph[i][0] = collision_spheres_[i].v.x();
       sph[i][1] = collision_spheres_[i].v.y();
       sph[i][2] = collision_spheres_[i].v.z();
-      rad[i] = spheres_[i]->radius;
+      rad[i] = collision_spheres_[i].radius + padding_;
+      ROS_DEBUG("[col-sph %d] name: %s  xyz: %0.3f %0.3f %0.3f  radius: %0.3f", int(i), collision_spheres_[i].name.c_str(), sph[i][0], sph[i][1], sph[i][2], rad[i]);
     } 
     ma = viz::getSpheresMarkerArray(sph, rad, 10, grid_->getReferenceFrame(), "collision_spheres", 0);
   }
