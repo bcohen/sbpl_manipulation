@@ -70,7 +70,7 @@ PlanningParams::PlanningParams()
 bool PlanningParams::init(std::string ns)
 {
   ros::NodeHandle nh(ns);
-  ROS_ERROR("Getting params from namespace: %s", nh.getNamespace().c_str());
+  
   /* planning */
   nh.param("planning/epsilon", epsilon_, 10.0);
   nh.param("planning/use_bfs_heuristic", use_bfs_heuristic_,true);

@@ -538,7 +538,7 @@ bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles
 
   if(int(angles.size()) < prm_->num_joints_)
   {
-    ROS_ERROR("Start state does not contain enough enough joint positions.");
+    ROS_ERROR("Start state does not contain enough joint positions.");
     return false;
   }
 
