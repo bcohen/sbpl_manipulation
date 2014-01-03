@@ -77,6 +77,11 @@ std::string RobotModel::getPlanningFrame()
   return planning_frame_;
 }
 
+std::vector<std::string> RobotModel::getPlanningJoints()
+{
+  return planning_joints_;
+}
+
 void RobotModel::getKinematicsFrame(std::string &name)
 {
   name = kinematics_frame_;

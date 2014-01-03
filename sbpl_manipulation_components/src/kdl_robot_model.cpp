@@ -232,6 +232,8 @@ bool KDLRobotModel::checkJointLimits(const std::vector<double> &angles)
 
 bool KDLRobotModel::computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f)
 {
+  //TODO: This should NOT loop to angles.size() but rather until the number
+  //of joints that are expected or else EIGEN blows up
   for(size_t i = 0; i < angles.size(); ++i)
     jnt_pos_in_(i) = angles::normalize_angle(angles[i]);
 

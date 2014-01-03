@@ -69,6 +69,8 @@ class RobotModel {
 
     std::string getPlanningFrame();
 
+    std::vector<std::string> getPlanningJoints();
+
     void getKinematicsFrame(std::string &name);
 
     /* Joint Limits */
