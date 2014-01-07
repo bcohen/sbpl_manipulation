@@ -18,7 +18,7 @@
 namespace sbpl_arm_planner
 {
 
-struct Sphere
+typedef struct Sphere
 {
   std::string name;
   KDL::Vector v;
@@ -26,7 +26,12 @@ struct Sphere
   int priority;
   int kdl_chain;
   int kdl_segment;
-};
+
+  void print()
+  {
+    ROS_INFO("[%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d chain: %d segment: %d", name.c_str(), v.x(), v.y(), v.z(), radius, priority, kdl_chain, kdl_segment);
+  }
+} Sphere;
 
 struct Voxels
 {
@@ -43,6 +48,7 @@ struct Link
   std::string name_;
   std::string root_name_;
   std::vector<Sphere> spheres_;
+  std::vector<Sphere> low_res_spheres_;
 };
 
 class Group
@@ -63,7 +69,7 @@ class Group
 
     std::string getReferenceFrame();
 
-    void getSpheres(std::vector<Sphere*> &spheres);
+    void getSpheres(std::vector<Sphere*> &spheres, bool low_res=false);
     
     bool computeFK(const std::vector<double> &angles, int chain, int segment, KDL::Frame &frame);
 
@@ -105,6 +111,7 @@ class Group
     std::vector<std::string> joint_names_;
     std::vector<std::string> order_of_input_angles_;
     std::vector<Sphere*> spheres_;
+    std::vector<Sphere*> low_res_spheres_;
 
     bool initSpheres();
 

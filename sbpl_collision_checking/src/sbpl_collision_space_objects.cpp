@@ -101,7 +101,15 @@ void SBPLCollisionSpace::attachCube(std::string name, std::string link, geometry
   attached_object_frame_  = link;
   model_.getFrameInfo(attached_object_frame_, group_name_, attached_object_chain_num_, attached_object_segment_num_);
 
-  sbpl::SphereEncloser::encloseBox(x_dim, y_dim, z_dim, object_enclosing_sphere_radius_, spheres);
+  if(object_spheres_map_.find(name) == object_spheres_map_.end())
+  {
+    ros::WallTime start = ros::WallTime::now();
+    sbpl::SphereEncloser::encloseBox(x_dim, y_dim, z_dim, object_enclosing_sphere_radius_, spheres);
+    ROS_WARN("[cspace] It took %0.3fsec to enclose %s with %d spheres.", (ros::WallTime::now() - start).toSec(), name.c_str(), int(spheres.size()));
+    object_spheres_map_[name] = spheres;
+  }
+  else
+    spheres = object_spheres_map_[name];
 
   if(spheres.size() <= 3)
     ROS_WARN("[cspace] Attached cube is represented by %d collision spheres. Consider lowering the radius of the spheres used to populate the attached cube. (radius = %0.3fm)", int(spheres.size()), object_enclosing_sphere_radius_);
@@ -110,6 +118,7 @@ void SBPLCollisionSpace::attachCube(std::string name, std::string link, geometry
   KDL::Frame center;
   tf::PoseMsgToKDL(pose, center);
   object_spheres_.resize(spheres.size());
+  object_spheres_p_.resize(spheres.size());
   for(size_t i = 0; i < spheres.size(); ++i)
   {
     object_spheres_[i].v.x(spheres[i][0]);
@@ -121,8 +130,11 @@ void SBPLCollisionSpace::attachCube(std::string name, std::string link, geometry
     object_spheres_[i].radius = object_enclosing_sphere_radius_;
     object_spheres_[i].kdl_chain = attached_object_chain_num_;
     object_spheres_[i].kdl_segment = attached_object_segment_num_;
+
+    object_spheres_p_[i] = &(object_spheres_[i]);
   }
   ROS_INFO("[cspace] Attaching '%s' represented by %d spheres with dimensions: %0.3f %0.3f %0.3f", name.c_str(), int(spheres.size()), x_dim, y_dim, z_dim);
+  ROS_INFO("[cspace] ['%s' pose] xyz: %0.3f %0.3f %0.3f  quat: %0.3f %0.3f %0.3f %0.3f", name.c_str(), pose.position.x,pose.position.y,pose.position.z, pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w); 
 }
 
 void SBPLCollisionSpace::attachMesh(std::string name, std::string link, geometry_msgs::Pose pose, const std::vector<geometry_msgs::Point> &vertices, const std::vector<int> &triangles)
@@ -332,7 +344,6 @@ void SBPLCollisionSpace::attachObject(const arm_navigation_msgs::AttachedCollisi
 {
   std::string link_name = obj.link_name;
   arm_navigation_msgs::CollisionObject object(obj.object);
-  ROS_INFO("Received a collision object message with %d shapes.", int(object.shapes.size()));
 
   for(size_t i = 0; i < object.shapes.size(); i++)
   {
@@ -347,28 +358,55 @@ void SBPLCollisionSpace::attachObject(const arm_navigation_msgs::AttachedCollisi
     */
     if(object.shapes[i].type == arm_navigation_msgs::Shape::SPHERE)
     {
-      ROS_INFO("[cspace] Attaching a '%s' sphere with radius: %0.3fm", object.id.c_str(), object.shapes[i].dimensions[0]);
+      ROS_DEBUG("[cspace] Attaching a '%s' sphere with radius: %0.3fm", object.id.c_str(), object.shapes[i].dimensions[0]);
       attachSphere(object.id, link_name, object.poses[i], object.shapes[i].dimensions[0]);
     }
     else if(object.shapes[i].type == arm_navigation_msgs::Shape::CYLINDER)
     {
-      ROS_INFO("[cspace] Attaching a '%s' cylinder with radius: %0.3fm & length %0.3fm", object.id.c_str(), object.shapes[i].dimensions[0], object.shapes[i].dimensions[1]);
+      ROS_DEBUG("[cspace] Attaching a '%s' cylinder with radius: %0.3fm & length %0.3fm", object.id.c_str(), object.shapes[i].dimensions[0], object.shapes[i].dimensions[1]);
       attachCylinder(link_name, object.poses[i], object.shapes[i].dimensions[0], object.shapes[i].dimensions[1]);
     }
     else if(object.shapes[i].type == arm_navigation_msgs::Shape::MESH)
     {
-      ROS_INFO("[cspace] Attaching a '%s' mesh with %d triangles & %d vertices is NOT supported right now...", object.id.c_str(), int(object.shapes[i].triangles.size()/3), int(object.shapes[i].vertices.size()));
+      ROS_DEBUG("[cspace] Attaching a '%s' mesh with %d triangles & %d vertices is NOT supported right now...", object.id.c_str(), int(object.shapes[i].triangles.size()/3), int(object.shapes[i].vertices.size()));
       attachMesh(object.id, link_name, object.poses[i], object.shapes[i].vertices, object.shapes[i].triangles);
     }
     else if(object.shapes[i].type == arm_navigation_msgs::Shape::BOX)
     {
-      ROS_INFO("[cspace] Attaching a '%s' cube with dimensions {%0.3fm x %0.3fm x %0.3fm}.", object.id.c_str(), object.shapes[i].dimensions[0], object.shapes[i].dimensions[1], object.shapes[i].dimensions[2]);
+      ROS_DEBUG("[cspace] Attaching a '%s' cube with dimensions {%0.3fm x %0.3fm x %0.3fm}.", object.id.c_str(), object.shapes[i].dimensions[0], object.shapes[i].dimensions[1], object.shapes[i].dimensions[2]);
       attachCube(object.id, link_name, object.poses[i], object.shapes[i].dimensions[0], object.shapes[i].dimensions[1], object.shapes[i].dimensions[2]);
     }
     else
       ROS_WARN("[cspace] Currently attaching objects of type '%d' aren't supported.", object.shapes[i].type);
   }
 }
+
+bool SBPLCollisionSpace::setAttachedObjects(const std::vector<arm_navigation_msgs::AttachedCollisionObject> &objects)
+{
+  for(size_t i = 0; i < objects.size(); ++i)
+  {
+    if(!model_.doesLinkExist(objects[i].link_name, group_name_))
+    {
+      ROS_WARN("[cspace] This attached object is not intended for the planning joints of the robot.");
+    }
+    // add object
+    else if(objects[i].object.operation.operation == arm_navigation_msgs::CollisionObjectOperation::ADD)
+    {
+      ROS_DEBUG("[cspace] Received a message to ADD an object (%s) with %d shapes.", objects[i].object.id.c_str(), int(objects[i].object.shapes.size()));
+      attachObject(objects[i]);
+    }
+    // remove object
+    else if(objects[i].object.operation.operation == arm_navigation_msgs::CollisionObjectOperation::REMOVE)
+    {
+      ROS_DEBUG("[cspace] Removing object (%s) from gripper.", objects[i].object.id.c_str());
+      removeAttachedObject();
+    }
+    else
+      ROS_WARN("Received a collision object with an unknown operation");
+  }
+  return true;
+}
+
 
 }
 

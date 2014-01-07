@@ -195,9 +195,9 @@ void SBPLCollisionModel::printDebugInfo(std::string group_name)
   group->printDebugInfo();
 }
 
-void SBPLCollisionModel::getDefaultGroupSpheres(std::vector<Sphere *> &spheres)
+void SBPLCollisionModel::getDefaultGroupSpheres(std::vector<Sphere *> &spheres, bool low_res)
 {
-  dgroup_->getSpheres(spheres);
+  dgroup_->getSpheres(spheres, low_res);
 }
 
 bool SBPLCollisionModel::getJointLimits(std::string group_name, std::string joint_name, double &min_limit, double &max_limit, bool &continuous)
@@ -207,7 +207,7 @@ bool SBPLCollisionModel::getJointLimits(std::string group_name, std::string join
   if(!group_config_map_[group_name]->init_)
     return false;
 
-  return leatherman::getJointLimits(urdf_.get(), group_config_map_[group_name]->getReferenceFrame(), group_config_map_[group_name]->tip_name_, joint_name, min_limit, max_limit, continuous);
+  return leatherman::getJointLimits(urdf_.get(), group_config_map_[group_name]->getReferenceFrame(), group_config_map_[group_name]->tip_name_, joint_name, min_limit, max_limit, continuous, false);
 }
 
 std::string SBPLCollisionModel::getReferenceFrame(std::string group_name)
@@ -233,6 +233,16 @@ void SBPLCollisionModel::getVoxelGroups(std::vector<Group*> &vg)
   for(std::map<std::string, Group*>::const_iterator iter = group_config_map_.begin(); iter != group_config_map_.end(); ++iter)
   {
     if(iter->second->type_ == sbpl_arm_planner::Group::VOXELS)
+      vg.push_back(iter->second);
+  }
+}
+
+void SBPLCollisionModel::getSphereGroups(std::vector<Group*> &vg)
+{
+  vg.clear();
+  for(std::map<std::string, Group*>::const_iterator iter = group_config_map_.begin(); iter != group_config_map_.end(); ++iter)
+  {
+    if(iter->second->type_ == sbpl_arm_planner::Group::SPHERES)
       vg.push_back(iter->second);
   }
 }

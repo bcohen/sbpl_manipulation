@@ -61,7 +61,7 @@ bool Group::initKinematics()
   while(unincluded_links && cnt < 100)
   {
     ROS_INFO("--------------------------------------");
-    ROS_INFO("-------- %s:  %d ------------------", name_.c_str(), cnt);
+    ROS_INFO("         %s:  %d ", name_.c_str(), cnt);
     ROS_INFO("--------------------------------------");
     cnt++;
     std::vector<int> num_links_per_tip(links_.size(),0);
@@ -236,6 +236,7 @@ bool Group::getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres)
     for(int j = 0; j < all_links.size(); j++) 
     {
       link.spheres_.clear();
+      link.low_res_spheres_.clear();
       if(all_links[j].hasMember("name"))
         link.name_ = std::string(all_links[j]["name"]);
       if(all_links[j].hasMember("root"))
@@ -268,6 +269,39 @@ bool Group::getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres)
           if(i == spheres.size())
           {
             ROS_ERROR("Failed to find sphere %s in the sphere list.", sphere_name.c_str());
+            return false;
+          }
+        }
+      }
+
+      // low-res spheres
+      if(type_ == sbpl_arm_planner::Group::SPHERES)
+      {
+        ROS_ERROR("link: %s", link.name_.c_str());
+        std::stringstream ss(all_links[j]["low_res_spheres"]);
+        Sphere sphere;
+        std::string sphere_name;
+        while(ss >> sphere_name)
+        {
+          int i;
+          for(i = 0; i < spheres.size(); ++i)
+          {
+            if(std::string(spheres[i]["name"]).compare(sphere_name) == 0)
+            {
+              sphere.name = std::string(spheres[i]["name"]);
+              sphere.v.x(spheres[i]["x"]);
+              sphere.v.y(spheres[i]["y"]);
+              sphere.v.z(spheres[i]["z"]);
+              sphere.priority = spheres[i]["priority"];
+              sphere.radius = spheres[i]["radius"];
+              link.low_res_spheres_.push_back(sphere);
+              ROS_ERROR("sphere: %s", sphere_name.c_str());
+              break;
+            }
+          }
+          if(i == spheres.size())
+          {
+            ROS_ERROR("Failed to find sphere %s in the low_res_sphere list.", sphere_name.c_str());
             return false;
           }
         }
@@ -312,6 +346,12 @@ bool Group::initSpheres()
       links_[i].spheres_[j].kdl_segment = seg + 1;
       links_[i].spheres_[j].kdl_chain = links_[i].i_chain_;
     }
+
+    for(size_t j = 0; j < links_[i].low_res_spheres_.size(); ++j)
+    {
+      links_[i].low_res_spheres_[j].kdl_segment = seg + 1;
+      links_[i].low_res_spheres_[j].kdl_chain = links_[i].i_chain_;
+    }
   }
 
   // fill the group's list of all the spheres
@@ -319,10 +359,13 @@ bool Group::initSpheres()
   {
     for(size_t j = 0; j < links_[i].spheres_.size(); ++j)
       spheres_.push_back(&(links_[i].spheres_[j]));
+    for(size_t j = 0; j < links_[i].low_res_spheres_.size(); ++j)
+      low_res_spheres_.push_back(&(links_[i].low_res_spheres_[j]));
   }
 
   // sort the spheres by priority
   sort(spheres_.begin(), spheres_.end(), sortSphere);
+  sort(low_res_spheres_.begin(), low_res_spheres_.end(), sortSphere);
 
   // populate the frames vector that stores the segments in each chain 
   frames_.resize(chains_.size());
@@ -330,6 +373,11 @@ bool Group::initSpheres()
   {
     if(std::find(frames_[spheres_[i]->kdl_chain].begin(), frames_[spheres_[i]->kdl_chain].end(), spheres_[i]->kdl_segment) == frames_[spheres_[i]->kdl_chain].end())
       frames_[spheres_[i]->kdl_chain].push_back(spheres_[i]->kdl_segment);
+  }
+  for(size_t i = 0; i < low_res_spheres_.size(); ++i)
+  {
+    if(std::find(frames_[low_res_spheres_[i]->kdl_chain].begin(), frames_[low_res_spheres_[i]->kdl_chain].end(), low_res_spheres_[i]->kdl_segment) == frames_[low_res_spheres_[i]->kdl_chain].end())
+      frames_[low_res_spheres_[i]->kdl_chain].push_back(low_res_spheres_[i]->kdl_segment);
   }
 
   // debug output
@@ -447,6 +495,8 @@ bool Group::computeFK(const std::vector<double> &angles, int chain, int segment,
         continue;
       joint_positions_[chain](angles_to_jntarray_[chain][i]) = angles[i];
     }
+//    for(size_t k = 0; k < joint_positions_[chain].rows(); ++k)
+//      ROS_WARN("[%s] [%d] chain: %d  joint_position: %0.3f", name_.c_str(), int(k), chain, joint_positions_[chain](k));
 
     if(solvers_[chain]->JntToCart(joint_positions_[chain], frame, segment) < 0)
     {
@@ -461,7 +511,6 @@ bool Group::computeFK(const std::vector<double> &angles, int chain, int segment,
 
 bool Group::computeFK(const std::vector<double> &angles, std::vector<std::vector<KDL::Frame> > &frames)
 {
-  //ROS_ERROR("Chains_ size: %d  frames_.size(): %d", chains_.size(), frames_.size()); fflush(stdout);
   frames.resize(chains_.size());
   for(int i = 0; i < int(frames_.size()); ++i)
   {
@@ -519,6 +568,7 @@ void Group::setJointPosition(const std::string &name, double position)
       if(name.compare(jntarray_names_[i][j]) == 0)
       {
         joint_positions_[i](j) = position;
+        //ROS_WARN("[%s] chain: %d  index: %d  name: %s  position: %0.3f", name_.c_str(), int(i), int(j), name.c_str(), position);
         break;
       }
     }
@@ -537,9 +587,12 @@ std::string Group::getName()
   return name_;
 }
 
-void Group::getSpheres(std::vector<Sphere*> &spheres)
+void Group::getSpheres(std::vector<Sphere*> &spheres, bool low_res)
 {
-  spheres = spheres_;
+  if(low_res)
+    spheres = low_res_spheres_;
+  else
+    spheres = spheres_;
 }
 
 bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
@@ -700,9 +753,13 @@ void Group::print()
     ROS_INFO(" chain: %d", links_[i].i_chain_);
     if(type_ == sbpl_arm_planner::Group::SPHERES)
     {
-      ROS_INFO(" spheres: %d", int(links_[i].spheres_.size()));
+      ROS_INFO("spheres: %d", int(links_[i].spheres_.size()));
       for(std::size_t j = 0; j < links_[i].spheres_.size(); ++j)
-        ROS_INFO("  [%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d chain: %d segment: %d", links_[i].spheres_[j].name.c_str(), links_[i].spheres_[j].v.x(), links_[i].spheres_[j].v.y(), links_[i].spheres_[j].v.z(), links_[i].spheres_[j].radius, links_[i].spheres_[j].priority, links_[i].spheres_[j].kdl_chain, links_[i].spheres_[j].kdl_segment);
+        links_[i].spheres_[j].print();
+
+      ROS_INFO("low_res_spheres: %d", int(links_[i].low_res_spheres_.size()));
+      for(std::size_t j = 0; j < links_[i].low_res_spheres_.size(); ++j)
+        links_[i].low_res_spheres_[j].print();
     }
     else if(type_ == sbpl_arm_planner::Group::VOXELS)
     {
@@ -718,9 +775,10 @@ void Group::print()
   {
     ROS_INFO("sorted spheres: ");
     for(std::size_t j = 0; j < spheres_.size(); ++j)
-    {
-      ROS_INFO("  [%s] x: %0.3f  y:%0.3f  z:%0.3f  radius: %0.3f  priority: %d", spheres_[j]->name.c_str(), spheres_[j]->v.x(), spheres_[j]->v.y(), spheres_[j]->v.z(), spheres_[j]->radius, spheres_[j]->priority);
-    }
+      spheres_[j]->print();
+    ROS_INFO("sorted low_res_spheres: ");
+    for(std::size_t j = 0; j < low_res_spheres_.size(); ++j)
+      low_res_spheres_[j]->print();
     ROS_INFO(" ");
   }
   ROS_INFO("kinematic chain(s): ");

@@ -47,3 +47,6 @@ target_link_libraries(sbpl_collision_checking
 
 rosbuild_add_executable(test_space src/test_collision_space.cpp)
 target_link_libraries(test_space sbpl_collision_checking moveit_distance_field)
+
+rosbuild_add_executable(test_collision_checking src/test_collision_checking.cpp)
+target_link_libraries(test_collision_checking sbpl_collision_checking moveit_distance_field)

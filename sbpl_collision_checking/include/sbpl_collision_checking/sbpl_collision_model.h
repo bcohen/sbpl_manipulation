@@ -61,9 +61,11 @@ class SBPLCollisionModel
 
     bool setDefaultGroup(std::string group_name);
 
-    void getDefaultGroupSpheres(std::vector<Sphere*> &spheres);
+    void getDefaultGroupSpheres(std::vector<Sphere*> &spheres, bool low_res=false);
 
     void getVoxelGroups(std::vector<Group*> &vg);
+
+    void getSphereGroups(std::vector<Group*> &vg);
 
     bool computeDefaultGroupFK(const std::vector<double> &angles, std::vector<std::vector<KDL::Frame> > &frames);
 

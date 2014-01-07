@@ -71,6 +71,10 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     /** --------------- Collision Checking ----------- */
     bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
     bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist);
+    bool checkSphereGroupAgainstWorld(const std::vector<double> &angles, Group *group, bool low_res, bool verbose, bool visualize, double &dist);
+    bool checkSpheresAgainstWorld(const std::vector<std::vector<KDL::Frame> > &frames, const std::vector<Sphere*> &spheres, bool verbose, bool visualize, std::vector<KDL::Vector> &sph_poses, double &dist);
+    bool checkSphereGroupAgainstSphereGroup(Group *group1, Group *group2, std::vector<KDL::Vector> &spheres1, std::vector<KDL::Vector> spheres2, bool low_res1, bool low_res2, bool verbose, bool visualize, double &dist);
+
     inline bool isValidCell(const int x, const int y, const int z, const int radius);
     double isValidLineSegment(const std::vector<int> a, const std::vector<int> b, const int radius);
     bool getClearance(const std::vector<double> &angles, int num_spheres, double &avg_dist, double &min_dist);
@@ -86,7 +90,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     std::string getReferenceFrame() { return model_.getReferenceFrame(group_name_); };
     void setJointPosition(std::string name, double position);
     bool setPlanningJoints(const std::vector<std::string> &joint_names);
-    bool getCollisionSpheres(const std::vector<double> &angles, std::vector<std::vector<double> > &spheres);
+    bool getCollisionSpheres(const std::vector<double> &angles, Group *group, bool low_res, std::vector<std::vector<double> > &spheres);
 
     /* ------------- Collision Objects -------------- */
     void addCollisionObject(const arm_navigation_msgs::CollisionObject &object);
@@ -104,7 +108,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     void attachMesh(std::string name, std::string link, geometry_msgs::Pose pose, const std::vector<geometry_msgs::Point> &vertices, const std::vector<int> &triangles);
     void removeAttachedObject();
     bool getAttachedObject(const std::vector<double> &angles, std::vector<std::vector<double> > &xyz);
-   
+    bool setAttachedObjects(const std::vector<arm_navigation_msgs::AttachedCollisionObject> &objects);
+
     /** --------------- Debugging ---------------- */
     visualization_msgs::MarkerArray getVisualization(std::string type);
     visualization_msgs::MarkerArray getCollisionModelVisualization(const std::vector<double> &angles);
@@ -131,6 +136,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     std::vector<double> max_limits_;
     std::vector<bool> continuous_;
     std::vector<Sphere*> spheres_; // temp
+    std::vector<Sphere*> low_res_spheres_; // temp
     std::vector<std::vector<KDL::Frame> > frames_; // temp
 
     /* ------------- Collision Objects -------------- */
@@ -140,12 +146,13 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     /** --------------- Attached Objects --------------*/
     bool object_attached_;
-    int attached_object_frame_num_;
     int attached_object_segment_num_;    
     int attached_object_chain_num_;
     std::string attached_object_frame_;
     std::vector<Sphere> object_spheres_;
-    
+    std::vector<Sphere*> object_spheres_p_;  // hack
+    std::map<std::string, std::vector<std::vector<double> > > object_spheres_map_;
+
     std::vector<sbpl_arm_planner::Sphere> collision_spheres_;
 };
 

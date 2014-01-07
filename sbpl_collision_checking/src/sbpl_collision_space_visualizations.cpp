@@ -101,17 +101,52 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
   }
   else if(type.compare("collision_model") == 0)
   {
-    std::vector<double> angles, rad;
-    std::vector<std::vector<double> > sph;
-    getCollisionSpheres(angles, sph);
+    std::vector<double> angles, rad, radi;
+    std::vector<std::vector<double> > sph, sphi;
+    std::vector<Group*> grps;
+    model_.getSphereGroups(grps);
 
-    if(sph.empty() || sph[0].size() < 4)
-      return ma;
+    for(size_t j = 0; j < grps.size(); ++j)
+    {
+      sphi.clear();
+      radi.clear();
+      getCollisionSpheres(angles, grps[j], false, sphi);
 
-    rad.resize(sph.size());
-    for(size_t i = 0; i < sph.size(); ++i)
-      rad[i] = sph[i][3];
+      if(sphi.empty() || sphi[0].size() < 4)
+        return ma;
 
+      radi.resize(sphi.size());
+      for(size_t i = 0; i < sphi.size(); ++i)
+        radi[i] = sphi[i][3];
+
+      sph.insert(sph.end(), sphi.begin(), sphi.end());
+      rad.insert(rad.end(), radi.begin(), radi.end());
+    }
+    ma = viz::getSpheresMarkerArray(sph, rad, 90, grid_->getReferenceFrame(), "collision_model", 0); 
+  }
+  else if(type.compare("low_res_collision_model") == 0)
+  {
+    std::vector<double> angles, rad, radi;
+    std::vector<std::vector<double> > sph, sphi;
+    std::vector<Group*> grps;
+    model_.getSphereGroups(grps);
+
+    for(size_t j = 0; j < grps.size(); ++j)
+    {
+      sphi.clear();
+      radi.clear();
+      getCollisionSpheres(angles, grps[j], true, sphi);
+
+      if(sphi.empty() || sphi[0].size() < 4)
+        return ma;
+
+      radi.resize(sphi.size());
+      for(size_t i = 0; i < sphi.size(); ++i)
+        radi[i] = sphi[i][3];
+
+      sph.insert(sph.end(), sphi.begin(), sphi.end());
+      rad.insert(rad.end(), radi.begin(), radi.end());
+    }
     ma = viz::getSpheresMarkerArray(sph, rad, 90, grid_->getReferenceFrame(), "collision_model", 0); 
   }
   else if(type.compare("attached_object") == 0)
@@ -142,7 +177,7 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getCollisionModelVisualizati
   std::vector<std::vector<double> > sph;
   visualization_msgs::MarkerArray ma;
 
-  getCollisionSpheres(angles, sph);
+  getCollisionSpheres(angles, model_.getGroup(group_name_), false, sph);
 
   if(sph.empty() || sph[0].size() < 4)
     return ma;
