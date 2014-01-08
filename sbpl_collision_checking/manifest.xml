@@ -27,6 +27,8 @@
   <depend package="leatherman" />
   <depend package="visualization_msgs" />
 
+  <depend package="pviz" /> <!-- temporary -->
+
   <rosdep name="eigen" />
 
   <export>

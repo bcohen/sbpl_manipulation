@@ -105,11 +105,7 @@ bool SBPLCollisionSpace::init(std::string group_name, std::string ns)
     return false;
   }
 
-  // get the collision spheres for the robot
-  model_.getDefaultGroupSpheres(spheres_);
-  model_.getDefaultGroupSpheres(low_res_spheres_, true);
-
-  model_.printGroups();
+  //model_.printGroups();
   //model_.printDebugInfo(group_name);
 
   if(!updateVoxelGroups())
@@ -119,105 +115,33 @@ bool SBPLCollisionSpace::init(std::string group_name, std::string ns)
 }
 
 bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist)
-{
+{  
+  bool low_res = false;
+  return checkCollision(angles, low_res, verbose, visualize, dist);
+}
+
+bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool low_res, bool verbose, bool visualize, double &dist)
+{  
+  bool in_collision = false;
   double dist_temp=100.0;
   dist = 100.0;
-  //KDL::Vector v;
-  //int x,y,z;
-  //Sphere s;
   std::vector<Sphere*> spheres;
   std::vector<KDL::Vector> dg_spheres, g_spheres;
-  bool in_collision = false;
+  std::vector<std::vector<KDL::Frame> > dframes, frames;
   if(visualize)
     collision_spheres_.clear();
 
   // compute foward kinematics
-  if(!model_.computeDefaultGroupFK(angles, frames_))
+  if(!model_.computeDefaultGroupFK(angles, dframes))
   {
     ROS_ERROR("[cspace] Failed to compute foward kinematics.");
     return false;
   }
 
-  /* 
-  // check attached object against the distance field
-  if(object_attached_)
-  {  
-    for(size_t i = 0; i < object_spheres_.size(); ++i)
-    {
-      v = frames_[object_spheres_[i].kdl_chain][object_spheres_[i].kdl_segment] * object_spheres_[i].v;
-
-      grid_->worldToGrid(v.x(), v.y(), v.z(), x, y, z);
-
-      // check bounds
-      if(!grid_->isInBounds(x, y, z))
-      {
-        if(verbose)
-          ROS_INFO("[cspace] Sphere %d %d %d is out of bounds.", x, y, z);
-        return false;
-      }
-
-      // check for collision with world
-      if((dist_temp = grid_->getDistance(x,y,z)) <= object_spheres_[i].radius)
-      {
-        dist = dist_temp;
-
-        if(visualize)
-        {
-          in_collision = true;
-          s = *(spheres_[i]);
-          s.v = v;
-          collision_spheres_.push_back(s);
-        }
-        else
-          return false;
-      }
-      if(dist_temp < dist)
-        dist = dist_temp;
-    }
-  }
-
-  // check robot model against the distance field
-  dg_spheres.resize(spheres_.size());
-  for(size_t i = 0; i < spheres_.size(); ++i)
-  {
-    dg_spheres[i] = frames_[spheres_[i]->kdl_chain][spheres_[i]->kdl_segment] * spheres_[i]->v;
-
-    grid_->worldToGrid(dg_spheres[i].x(), dg_spheres[i].y(), dg_spheres[i].z(), x, y, z);
-
-    // check bounds
-    if(!grid_->isInBounds(x, y, z))
-    {
-      if(verbose)
-        ROS_INFO("[cspace] Sphere '%s' with center at {%0.2f %0.2f %0.2f} (%d %d %d) is out of bounds.", spheres_[i]->name.c_str(), dg_spheres[i].x(), dg_spheres[i].y(), dg_spheres[i].z(), x, y, z);
-      return false;
-    }
-
-    // check for collision with world
-    if((dist_temp = grid_->getDistance(x,y,z)) <= (spheres_[i]->radius + padding_))
-    {
-      dist = dist_temp;
-      if(verbose)
-        ROS_INFO("    [sphere %d] name: %6s  x: %d y: %d z: %d radius: %0.3fm  dist: %0.3fm  *collision*", int(i), spheres_[i]->name.c_str(), x, y, z, spheres_[i]->radius + padding_, grid_->getDistance(x,y,z));
-
-      if(visualize)
-      {
-        in_collision = true;
-        s = *(spheres_[i]);
-        s.v = dg_spheres[i];
-        collision_spheres_.push_back(s);
-      }
-      else
-        return false;
-    }
-    if(dist_temp < dist)
-      dist = dist_temp;
-  }
-  */
-
   // check attached object against world
   if(object_attached_)
   {
-    if(!checkSpheresAgainstWorld(frames_, object_spheres_p_, verbose, visualize, dg_spheres, dist_temp))
+    if(!checkSpheresAgainstWorld(dframes, object_spheres_p_, verbose, visualize, dg_spheres, dist_temp))
     {
       if(!visualize)
         return false;
@@ -227,8 +151,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     if(dist_temp < dist)
       dist = dist_temp;
   }
+
   // check default sphere group against world
-  if(!checkSpheresAgainstWorld(frames_, spheres_, verbose, visualize, dg_spheres, dist_temp))
+  if(!checkSpheresAgainstWorld(dframes, model_.getDefaultGroup()->getSpheres(low_res), verbose, visualize, dg_spheres, dist_temp))
   {
     if(!visualize)
       return false;
@@ -239,11 +164,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     dist = dist_temp;
 
   // check other sphere groups
-  bool low_res = true;
   std::vector<Group*> sg;
   model_.getSphereGroups(sg);
   std::vector<double> empty_angles;
-  std::vector<std::vector<KDL::Frame> > frames;
   for(size_t i = 0; i < sg.size(); ++i)
   {
     // skip the default group
@@ -258,8 +181,7 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     }
 
     // check against world
-    sg[i]->getSpheres(spheres, low_res);
-    if(!checkSpheresAgainstWorld(frames, spheres, verbose, visualize, g_spheres, dist_temp))
+    if(!checkSpheresAgainstWorld(frames, sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
     {
       if(!visualize)
         return false;
@@ -268,9 +190,16 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     }
     if(dist_temp < dist)
       dist = dist_temp;
- 
+    
+    /*
+    sg[i]->getSpheres(spheres, low_res);
+    g_spheres.resize(spheres.size());
+    for(size_t j = 0; j < spheres.size(); ++j)
+      g_spheres[i] = frames[spheres[i]->kdl_chain][spheres[i]->kdl_segment] * spheres[i]->v;
+    */
+
     // check against default group spheres (TODO: change to all sphere groups)
-    if(!checkSphereGroupAgainstSphereGroup(model_.getGroup(group_name_), sg[i], dg_spheres, g_spheres, false, low_res, verbose, visualize, dist_temp))
+    if(!checkSphereGroupAgainstSphereGroup(model_.getDefaultGroup(), sg[i], dg_spheres, g_spheres, low_res, low_res, verbose, visualize, dist_temp))
     {
       if(!visualize)
         return false;
@@ -283,6 +212,7 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
  
   if(visualize && in_collision)
     return false;
+
 
   return true;
 }
@@ -299,9 +229,7 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstWorld(const std::vector<double> 
     ROS_ERROR("[cspace] Failed to compute FK for sphere group '%s'.", group->getName().c_str());
     return false;
   }
-
-  group->getSpheres(spheres, low_res);
-  return checkSpheresAgainstWorld(frames, spheres, verbose, visualize, sph_poses, dist); 
+  return checkSpheresAgainstWorld(frames, group->getSpheres(low_res), verbose, visualize, sph_poses, dist); 
 }
 
 bool SBPLCollisionSpace::checkSpheresAgainstWorld(const std::vector<std::vector<KDL::Frame> > &frames, const std::vector<Sphere*> &spheres, bool verbose, bool visualize, std::vector<KDL::Vector> &sph_poses, double &dist)
@@ -312,23 +240,6 @@ bool SBPLCollisionSpace::checkSpheresAgainstWorld(const std::vector<std::vector<
   bool in_collision = false; 
   Sphere s;
   sph_poses.resize(spheres.size());
-
-  /*
-  std::vector<Sphere*> sg_spheres;
-  std::vector<std::vector<KDL::Frame> > frames;
- 
-  // get spheres in group
-  group->getSpheres(sg_spheres, low_res);
-  spheres.resize(sg_spheres.size());
-
-  
-  // compute FK for group
-  if(!group->computeFK(angles, frames))
-  {
-    ROS_ERROR("[cspace] Failed to compute FK for sphere group '%s'.", group->getName().c_str());
-    return false;
-  }
-  */
 
   for(size_t i = 0; i < spheres.size(); ++i)
   {
@@ -416,10 +327,11 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group
         }
         else
           return false;
-        
-        if(d < dist)
-          dist = d;
       }
+
+      if(d < dist)
+        dist = d;
+
       cntr++;
     }
   }
@@ -608,10 +520,10 @@ bool SBPLCollisionSpace::getCollisionSpheres(const std::vector<double> &angles, 
   std::vector<double> xyzr(4,0);
   std::vector<std::vector<double> > object;
   KDL::Vector v;
+  std::vector<std::vector<KDL::Frame> > frames;
 
   // compute foward kinematics
-  if(!group->computeFK(angles, frames_))
-//  if(!model_.computeDefaultGroupFK(angles, frames_))
+  if(!group->computeFK(angles, frames))
   {
     ROS_ERROR("[cspace] Failed to compute foward kinematics.");
     return false;
@@ -622,7 +534,7 @@ bool SBPLCollisionSpace::getCollisionSpheres(const std::vector<double> &angles, 
   group->getSpheres(sph, low_res);
   for(size_t i = 0; i < sph.size(); ++i)
   {
-    v = frames_[sph[i]->kdl_chain][sph[i]->kdl_segment] * sph[i]->v; 
+    v = frames[sph[i]->kdl_chain][sph[i]->kdl_segment] * sph[i]->v; 
     xyzr[0] = v.x();
     xyzr[1] = v.y();
     xyzr[2] = v.z();
@@ -675,21 +587,23 @@ bool SBPLCollisionSpace::getClearance(const std::vector<double> &angles, int num
   int x,y,z;
   double sum = 0, dist = 100;
   min_dist = 100;
+  std::vector<std::vector<KDL::Frame> > frames;
+  std::vector<Sphere*> spheres = model_.getDefaultGroup()->getSpheres(false);
 
-  if(!model_.computeDefaultGroupFK(angles, frames_))
+  if(!model_.computeDefaultGroupFK(angles, frames))
   {
     ROS_ERROR("[cspace] Failed to compute foward kinematics.");
     return false;
   }
 
-  if(num_spheres > int(spheres_.size()))
-    num_spheres = spheres_.size();
+  if(num_spheres > int(spheres.size()))
+    num_spheres = spheres.size();
 
-  for(int i = 0; i < num_spheres; ++i)
+  for(int i = 0; i < int(spheres.size()); ++i)
   {
-    v = frames_[spheres_[i]->kdl_chain][spheres_[i]->kdl_segment] * spheres_[i]->v;
+    v = frames[spheres[i]->kdl_chain][spheres[i]->kdl_segment] * spheres[i]->v;
     grid_->worldToGrid(v.x(), v.y(), v.z(), x, y, z);
-    dist = grid_->getDistance(x, y, z) - spheres_[i]->radius;
+    dist = grid_->getDistance(x, y, z) - spheres[i]->radius;
 
     if(min_dist > dist)
       min_dist = dist;
@@ -767,8 +681,6 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
   updateVoxelGroups();
   return true;
 }
-
-
 
 }
 

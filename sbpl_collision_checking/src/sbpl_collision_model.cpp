@@ -200,6 +200,13 @@ void SBPLCollisionModel::getDefaultGroupSpheres(std::vector<Sphere *> &spheres, 
   dgroup_->getSpheres(spheres, low_res);
 }
 
+std::vector<Sphere*> SBPLCollisionModel::getGroupSpheres(std::string group_name, bool low_res)
+{
+  std::vector<Sphere*> spheres;
+  group_config_map_[group_name]->getSpheres(spheres, low_res);
+  return spheres;
+}
+
 bool SBPLCollisionModel::getJointLimits(std::string group_name, std::string joint_name, double &min_limit, double &max_limit, bool &continuous)
 {
   if(group_config_map_.find(group_name) == group_config_map_.end())

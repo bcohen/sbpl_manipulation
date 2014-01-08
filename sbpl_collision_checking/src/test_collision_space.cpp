@@ -6,7 +6,6 @@
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "sbpl_collision_space_test");
-  double dist = 0;
   ros::Publisher p = ros::NodeHandle().advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 500, true);
   ros::NodeHandle ph("~");
   sleep(1);

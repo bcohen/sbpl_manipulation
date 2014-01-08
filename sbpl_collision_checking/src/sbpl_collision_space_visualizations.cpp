@@ -64,7 +64,9 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
       rad[i] = collision_spheres_[i].radius + padding_;
       ROS_DEBUG("[col-sph %d] name: %s  xyz: %0.3f %0.3f %0.3f  radius: %0.3f", int(i), collision_spheres_[i].name.c_str(), sph[i][0], sph[i][1], sph[i][2], rad[i]);
     } 
-    ma = viz::getSpheresMarkerArray(sph, rad, 10, grid_->getReferenceFrame(), "collision_spheres", 0);
+    ma = viz::getSpheresMarkerArray(sph, rad, 0, grid_->getReferenceFrame(), "collision_spheres", 0);
+    for(size_t j = 0; j < ma.markers.size(); ++j)
+      ma.markers[j].color.a = 0.9; 
   }
   else if(type.compare("collision_object_voxels") == 0)
   {
@@ -147,7 +149,7 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
       sph.insert(sph.end(), sphi.begin(), sphi.end());
       rad.insert(rad.end(), radi.begin(), radi.end());
     }
-    ma = viz::getSpheresMarkerArray(sph, rad, 90, grid_->getReferenceFrame(), "collision_model", 0); 
+    ma = viz::getSpheresMarkerArray(sph, rad, 100, grid_->getReferenceFrame(), "low_res_collision_model", 0); 
   }
   else if(type.compare("attached_object") == 0)
   {
@@ -186,21 +188,17 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getCollisionModelVisualizati
   for(size_t i = 0; i < sph.size(); ++i)
     rad[i] = sph[i][3];
 
-  ma = viz::getSpheresMarkerArray(sph, rad, 90, grid_->getReferenceFrame(), "collision_model", 0); 
-
-  // debugging
-  //visualization_msgs::MarkerArray ma2 = getMeshModelVisualization("arm", angles);
-  //ma.markers.insert(ma.markers.end(), ma2.markers.begin(), ma2.markers.end());
-
-  return ma;
+  return viz::getSpheresMarkerArray(sph, rad, 90, grid_->getReferenceFrame(), "collision_model", 0); 
 }
 
+// Warning: This function is still in development...TODO: Finish this function
 visualization_msgs::MarkerArray SBPLCollisionSpace::getMeshModelVisualization(const std::string group_name, const std::vector<double> &angles)
 {
   visualization_msgs::MarkerArray ma;
   geometry_msgs::Pose fpose;
   geometry_msgs::PoseStamped lpose, mpose;
   std::string robot_description, mesh_resource;
+  std::vector<std::vector<KDL::Frame> > frames;
   Group* g = model_.getGroup(group_name);
 
   ros::NodeHandle nh;
@@ -211,7 +209,7 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getMeshModelVisualization(co
   }
 
   // compute foward kinematics
-  if(!model_.computeGroupFK(angles, g, frames_))
+  if(!model_.computeGroupFK(angles, g, frames))
   {
     ROS_ERROR("[cspace] Failed to compute foward kinematics.");
     return ma;
@@ -228,7 +226,7 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getMeshModelVisualization(co
 
     ROS_INFO("Got the mesh! (%s)", mesh_resource.c_str());
     // TODO: Has to be a spheres group
-    leatherman::msgFromPose(frames_[g->links_[i].spheres_[0].kdl_chain][g->links_[i].spheres_[0].kdl_segment], fpose);
+    leatherman::msgFromPose(frames[g->links_[i].spheres_[0].kdl_chain][g->links_[i].spheres_[0].kdl_segment], fpose);
     leatherman::multiply(fpose, lpose.pose, mpose.pose);
     mpose.header.frame_id = "base_link"; //getReferenceFrame();
     ma.markers.push_back(viz::getMeshMarker(mpose, mesh_resource, 180, "robot_model", i));

@@ -1,13 +1,174 @@
 #include <ros/ros.h>
 #include <leatherman/utils.h>
+#include <leatherman/viz.h>
 #include <sbpl_manipulation_components/occupancy_grid.h>
 #include <sbpl_collision_checking/sbpl_collision_space.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <pviz/pviz.h>
 
-#define VISUALIZE false
+#define VISUALIZE true
 #define DEBUG false
 #define NUM_TRIALS 5
 #define NUM_TIMING_SAMPLES 100000
+
+
+bool getCollisionObjects(std::string filename, std::vector<arm_navigation_msgs::CollisionObject> &collision_objects, visualization_msgs::MarkerArray &ma)
+{
+  int num_obs;
+  char sTemp[1024];
+  visualization_msgs::Marker marker;
+  std::vector<std::vector<double> > objects, object_colors;
+  std::vector<std::string> object_ids;
+  arm_navigation_msgs::CollisionObject object;
+  collision_objects.clear();
+
+  FILE* fCfg = fopen(filename.c_str(), "r");
+  if(fCfg == NULL)
+    return false;
+
+  // get number of objects
+  if(fscanf(fCfg,"%d",&num_obs) < 1)
+    ROS_INFO("Parsed string has length < 1.(number of obstacles)\n");
+  ROS_DEBUG("Parsing collision object file with %i objects.",num_obs);
+
+  //get {x y z dimx dimy dimz} for each object
+  objects.resize(num_obs, std::vector<double>(6,0.0));
+  object_colors.resize(num_obs, std::vector<double>(4,0.0));
+  object_ids.clear();
+  for (int i=0; i < num_obs; ++i)
+  {
+    if(fscanf(fCfg,"%s",sTemp) < 1)
+      ROS_INFO("Parsed string has length < 1.\n");
+    object_ids.push_back(sTemp);
+
+    for(int j=0; j < 6; ++j)
+    {
+      if(fscanf(fCfg,"%s",sTemp) < 1)
+        ROS_INFO("Parsed string has length < 1. (object parameters for %s)", object_ids.back().c_str());
+      if(!feof(fCfg) && strlen(sTemp) != 0)
+        objects[i][j] = atof(sTemp);
+    }
+    for(int j=0; j < 4; ++j)
+    {
+      if(fscanf(fCfg,"%s",sTemp) < 1)
+        ROS_INFO("Parsed string has length < 1. (object colors for %s)", object_ids.back().c_str());
+      if(!feof(fCfg) && strlen(sTemp) != 0)
+        object_colors[i][j] = atof(sTemp);
+    }
+  }
+
+  if(object_ids.size() != objects.size())
+  {
+    ROS_INFO("object id list is not same length as object list. exiting.");
+    return false;
+  }
+
+  object.shapes.resize(1);
+  object.poses.resize(1);
+  object.shapes[0].dimensions.resize(3);
+
+  bool apply_offset_to_collision_objects;
+  std::vector<double> collision_object_offset;
+  geometry_msgs::Pose collision_object_offset_pose;
+
+  ros::NodeHandle ph("~");
+  ph.param("apply_offset_to_collision_objects",apply_offset_to_collision_objects,false);
+
+  if(apply_offset_to_collision_objects)
+  {
+    ROS_WARN("Applying offset to the collision objects...");
+
+    if(ph.hasParam("collision_object_offset"))
+    {
+      XmlRpc::XmlRpcValue plist;
+      std::string p;
+      collision_object_offset.clear();
+      ph.getParam("collision_object_offset/xyz", plist);
+      std::stringstream ss(plist);
+      while(ss >> p)
+        collision_object_offset.push_back(atof(p.c_str()));
+
+      ph.getParam("collision_object_offset/rpy", plist);
+      std::stringstream ss1(plist);
+      while(ss1 >> p)
+        collision_object_offset.push_back(atof(p.c_str()));
+
+      collision_object_offset_pose.position.x = collision_object_offset[0];
+      collision_object_offset_pose.position.y = collision_object_offset[1];
+      collision_object_offset_pose.position.z = collision_object_offset[2];
+      leatherman::rpyToQuatMsg(collision_object_offset[3], collision_object_offset[4], collision_object_offset[5], collision_object_offset_pose.orientation);
+    }
+  }
+
+  for(size_t i = 0; i < objects.size(); i++)
+  {
+    object.id = object_ids[i];
+    object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
+    object.shapes[0].type = arm_navigation_msgs::Shape::BOX;
+    object.header.frame_id = "base_footprint";
+    object.header.stamp = ros::Time::now();
+
+    object.poses[0].position.x = objects[i][0];
+    object.poses[0].position.y = objects[i][1];
+    object.poses[0].position.z = objects[i][2];
+    object.poses[0].orientation.x = 0;
+    object.poses[0].orientation.y = 0;
+    object.poses[0].orientation.z = 0;
+    object.poses[0].orientation.w = 1;
+
+    object.shapes[0].dimensions[0] = objects[i][3];
+    object.shapes[0].dimensions[1] = objects[i][4];
+    object.shapes[0].dimensions[2] = objects[i][5];
+
+
+    // apply collision object offset
+    // right now just translates and rotates about z
+    if(apply_offset_to_collision_objects)
+    {
+      if(!collision_object_offset.empty())
+      {
+        geometry_msgs::Pose p, p2;
+        Eigen::Affine3d a;
+        a(0,0) = cos(collision_object_offset[5]);
+        a(1,0) = sin(collision_object_offset[5]);
+        a(0,1) = -sin(collision_object_offset[5]);
+        a(1,1) = cos(collision_object_offset[5]);
+        leatherman::msgFromPose(a, p2);
+        leatherman::multiplyPoses(p2, object.poses[0], p);
+        p.position.x += collision_object_offset_pose.position.x;
+        p.position.y += collision_object_offset_pose.position.y;
+        p.position.z += collision_object_offset_pose.position.z;
+        object.poses[0] = p;
+      }
+      else
+        ROS_ERROR("Expecting to translate/rotate collision objects in robot frame but offset not found.");
+    }
+
+    collision_objects.push_back(object);
+    ROS_DEBUG("[%d] id: %s xyz: %0.3f %0.3f %0.3f dims: %0.3f %0.3f %0.3f colors: %2.0f %2.0f %2.0f %2.0f",int(i),object_ids[i].c_str(),objects[i][0],objects[i][1],objects[i][2],objects[i][3],objects[i][4],objects[i][5], object_colors[i][0], object_colors[i][1], object_colors[i][2], object_colors[i][3]);
+
+    std::vector<double> dim(3,0);
+    dim[0] = objects[i][3];
+    dim[1] = objects[i][4];
+    dim[2] = objects[i][5];
+    marker = viz::getCubeMarker(object.poses[0], dim, object_colors[i], "base_footprint", "collision_objects", int(i));
+    ma.markers.push_back(marker);
+  }
+  return true;
+}
+
+bool getKnownObjectsFromFile(std::string objects_filename, std::vector<arm_navigation_msgs::CollisionObject> &objects, visualization_msgs::MarkerArray &ma)
+{
+  if(!objects_filename.empty())
+  {
+    if(!getCollisionObjects(objects_filename, objects, ma))
+    {
+      ROS_ERROR("Failed to get the known collision objects. (%s)", objects_filename.c_str());
+      return false;
+    }
+  }
+  return true;
+}
 
 std::vector<double> getRandomJointPositions(const std::vector<double> &min_limits, const std::vector<double> &max_limits, const std::vector<bool> &continuous)
 {
@@ -28,15 +189,20 @@ int main(int argc, char **argv)
   srand(time(NULL));
   double dist = 0;
   ros::Publisher p = ros::NodeHandle().advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 500, true);
+  PViz pviz;
   ros::NodeHandle nh, ph("~");
   sleep(1);
-  std::string group_name, world_frame, robot_description;
+  bool restrict_shoulder_pan;
+  std::string group_name, world_frame, robot_description, known_objects_filename;
   std::vector<double> dims(3, 0.0), origin(3, 0.0);
   std::vector<std::string> r_joint_names, l_joint_names, r_finger_names, l_finger_names;
   std::vector<double> r_min_limits, r_max_limits, l_min_limits, l_max_limits;
   std::vector<bool> r_continuous, l_continuous;
+  ph.param("restrict_shoulder_pan", restrict_shoulder_pan, true);
   ph.param<std::string>("group_name", group_name, "");
   ph.param<std::string>("world_frame", world_frame, "");
+  ph.param<std::string>("known_objects_filename", known_objects_filename, "");
+  pviz.setReferenceFrame(world_frame);
   ph.param("dims/x", dims[0], 3.0);
   ph.param("dims/y", dims[1], 3.0);
   ph.param("dims/z", dims[2], 2.0);
@@ -100,6 +266,13 @@ int main(int argc, char **argv)
     return 0;
   }
 
+  // cause more collisions
+  if(restrict_shoulder_pan)
+  {
+    r_min_limits[0] = 0;
+    l_max_limits[0] = 0;
+  }
+
   // add robot's pose in map
   arm_navigation_msgs::PlanningScenePtr scene(new arm_navigation_msgs::PlanningScene);
   scene->collision_map.header.frame_id = world_frame;
@@ -115,12 +288,20 @@ int main(int argc, char **argv)
 
   scene->robot_state.joint_state.name.push_back("torso_lift_joint");
   scene->robot_state.joint_state.position.push_back(0.29);
+
+  visualization_msgs::MarkerArray cma;
+  if(!getKnownObjectsFromFile(known_objects_filename, scene->collision_objects, cma))
+  {
+    ROS_ERROR("Failed to retrieve collision objects from file.");
+    return 0;
+  }
   cspace->setPlanningScene(*scene);
 
   ros::spinOnce();
   p.publish(cspace->getVisualization("distance_field"));
   p.publish(cspace->getVisualization("bounds"));
   p.publish(cspace->getVisualization("collision_objects"));
+  p.publish(cma);
 
   // prepare planning scene for non-planning arm
   arm_navigation_msgs::RobotState robot_state;
@@ -128,6 +309,8 @@ int main(int argc, char **argv)
     robot_state.joint_state.name.push_back(l_joint_names[j]);
   robot_state.joint_state.position.resize(l_joint_names.size());
 
+  BodyPose bp(0,0,0.29,0);
+  bool low_res = false;
   std::vector<double> langles, rangles, trial_time, ccps;
   for(size_t k = 0; k < NUM_TRIALS; ++k)
   {
@@ -147,14 +330,24 @@ int main(int argc, char **argv)
         ROS_INFO("[ left] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", langles[0], langles[1], langles[2], langles[3], langles[4], langles[5], langles[6]);
         ROS_INFO("[right] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", rangles[0], rangles[1], rangles[2], rangles[3], rangles[4], rangles[5], rangles[6]);
       }
-      if(!cspace->isStateValid(rangles, false, false, dist))
+      if(!cspace->isStateValid(rangles, false, VISUALIZE, dist))
         invalid++;
       else
         valid++;
 
       if(VISUALIZE)
       {
-        
+        pviz.deleteVisualizations("collision_spheres", 100);
+        usleep(5000);
+
+        pviz.visualizeRobot(rangles, langles, bp, 0, "robot", 0, true);
+        if(low_res)
+          p.publish(cspace->getVisualization("low_res_collision_model"));
+        else
+          p.publish(cspace->getVisualization("collision_model"));
+          
+        p.publish(cspace->getVisualization("collisions"));
+        sleep(1);
       }
     }
     trial_time.push_back((clock()-start)/(double)CLOCKS_PER_SEC);

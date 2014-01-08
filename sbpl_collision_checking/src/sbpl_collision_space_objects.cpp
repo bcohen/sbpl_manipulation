@@ -174,7 +174,8 @@ bool SBPLCollisionSpace::getAttachedObject(const std::vector<double> &angles, st
     return false;
 
   // compute forward kinematics
-  if(!model_.computeDefaultGroupFK(angles, frames_))
+  std::vector<std::vector<KDL::Frame> > frames;
+  if(!model_.computeDefaultGroupFK(angles, frames))
   {
     ROS_ERROR("[cspace] Failed to compute foward kinematics.");
     return false;
@@ -183,7 +184,7 @@ bool SBPLCollisionSpace::getAttachedObject(const std::vector<double> &angles, st
   xyz.resize(object_spheres_.size(), std::vector<double>(4,0));
   for(size_t i = 0; i < object_spheres_.size(); ++i)
   {
-    v = frames_[object_spheres_[i].kdl_chain][object_spheres_[i].kdl_segment] * object_spheres_[i].v;
+    v = frames[object_spheres_[i].kdl_chain][object_spheres_[i].kdl_segment] * object_spheres_[i].v;
 
     // snap to grid
     grid_->worldToGrid(v.x(), v.y(), v.z(), x, y, z); 

@@ -67,6 +67,8 @@ class SBPLCollisionModel
 
     void getSphereGroups(std::vector<Group*> &vg);
 
+    std::vector<Sphere*> getGroupSpheres(std::string group_name, bool low_res);
+
     bool computeDefaultGroupFK(const std::vector<double> &angles, std::vector<std::vector<KDL::Frame> > &frames);
 
     bool computeGroupFK(const std::vector<double> &angles, Group* group, std::vector<std::vector<KDL::Frame> > &frames);
@@ -82,6 +84,8 @@ class SBPLCollisionModel
     std::string getReferenceFrame(std::string group_name);
 
     Group* getGroup(std::string name);
+
+    Group* getDefaultGroup() {return dgroup_;};
 
     void printGroups();
     

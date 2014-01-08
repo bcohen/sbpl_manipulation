@@ -595,6 +595,14 @@ void Group::getSpheres(std::vector<Sphere*> &spheres, bool low_res)
     spheres = spheres_;
 }
 
+std::vector<Sphere*> Group::getSpheres(bool low_res)
+{
+  if(low_res)
+    return low_res_spheres_;
+  else
+    return spheres_;
+}
+
 bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
 {
   boost::shared_ptr<const urdf::Link> link = urdf_->getLink(name);

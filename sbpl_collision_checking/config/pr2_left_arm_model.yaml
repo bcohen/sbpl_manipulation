@@ -88,7 +88,7 @@ collision_groups:
     - name: forearm
       root: r_forearm_roll_link
       spheres: fa0 fa1 fa2 fa3 fa4 fa5 fa6
-      low_res_spheres: lr_fa0 lr_fa1 lr_fa2
+      low_res_spheres: lr_fa0 lr_fa1
     - name: gripper
       root: r_wrist_roll_link
       spheres: gr0 gr1 gr2
@@ -108,7 +108,7 @@ collision_groups:
 
 collision_spheres:
 
-  - {name: sh0, x: 0.13, y: 0.0, z: -0.04, radius: 0.15, priority: 5}
+  - {name: sh0, x: 0.13, y: 0.0, z: -0.03, radius: 0.15, priority: 5}
 
   - {name: ua0, x: 0.18, y: 0.0, z: -0.015, radius: 0.11, priority: 4}
   - {name: ua1, x: 0.26, y: 0.00, z: -0.035, radius: 0.08, priority: 4}
@@ -140,16 +140,15 @@ collision_spheres:
   - {name: lft1, x: 0.035, y: -0.005, z: 0.00, radius: 0.02, priority: 1}
 
 # low-res
-  - {name: lr_sh0, x: 0.13, y: 0.0, z: -0.04, radius: 0.15, priority: 5}
+  - {name: lr_sh0, x: 0.15, y: 0.0, z: -0.03, radius: 0.15, priority: 5}
 
   - {name: lr_ua0, x: 0.18, y: 0.0, z: -0.015, radius: 0.11, priority: 4}
   - {name: lr_ua1, x: 0.30, y: 0.00, z: -0.035, radius: 0.11, priority: 4}
   - {name: lr_ua2, x: 0.40, y: 0.0, z: -0.0, radius: 0.105, priority: 2}
 
-  - {name: lr_fa0, x: 0.13, y: 0.0, z: 0.005, radius: 0.09, priority: 2}
-  - {name: lr_fa1, x: 0.22, y: 0.0, z: -0.01, radius: 0.09, priority: 3}
-  - {name: lr_fa2, x: 0.33, y: 0.0, z: -0.005, radius: 0.09, priority: 3}
+  - {name: lr_fa0, x: 0.135, y: 0.0, z: -0.005, radius: 0.1, priority: 2}
+  - {name: lr_fa1, x: 0.275, y: 0.0, z: -0.01, radius: 0.1, priority: 3}
 
-  - {name: lr_gr0, x: 0.0725, y: 0.0, z: 0.00, radius: 0.08, priority: 2}
-  - {name: lr_gr1, x: 0.1525, y: 0.0, z: 0.00, radius: 0.08, priority: 2}
+  - {name: lr_gr0, x: 0.06, y: 0.0, z: 0.00, radius: 0.08, priority: 5}
+  - {name: lr_gr1, x: 0.14, y: 0.0, z: 0.00, radius: 0.08, priority: 5}
 

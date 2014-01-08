@@ -70,6 +70,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     /** --------------- Collision Checking ----------- */
     bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
+    bool checkCollision(const std::vector<double> &angles, bool low_res, bool verbose, bool visualize, double &dist);
     bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist);
     bool checkSphereGroupAgainstWorld(const std::vector<double> &angles, Group *group, bool low_res, bool verbose, bool visualize, double &dist);
     bool checkSpheresAgainstWorld(const std::vector<std::vector<KDL::Frame> > &frames, const std::vector<Sphere*> &spheres, bool verbose, bool visualize, std::vector<KDL::Vector> &sph_poses, double &dist);
@@ -135,9 +136,6 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     std::vector<double> min_limits_;
     std::vector<double> max_limits_;
     std::vector<bool> continuous_;
-    std::vector<Sphere*> spheres_; // temp
-    std::vector<Sphere*> low_res_spheres_; // temp
-    std::vector<std::vector<KDL::Frame> > frames_; // temp
 
     /* ------------- Collision Objects -------------- */
     std::vector<std::string> known_objects_;
@@ -153,6 +151,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     std::vector<Sphere*> object_spheres_p_;  // hack
     std::map<std::string, std::vector<std::vector<double> > > object_spheres_map_;
 
+    /* for debugging */
     std::vector<sbpl_arm_planner::Sphere> collision_spheres_;
 };
 

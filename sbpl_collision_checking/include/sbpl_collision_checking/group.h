@@ -69,6 +69,8 @@ class Group
 
     std::string getReferenceFrame();
 
+    std::vector<Sphere*> getSpheres(bool low_res);
+
     void getSpheres(std::vector<Sphere*> &spheres, bool low_res=false);
     
     bool computeFK(const std::vector<double> &angles, int chain, int segment, KDL::Frame &frame);
