@@ -6,10 +6,9 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <pviz/pviz.h>
 
-#define VISUALIZE true
 #define DEBUG false
-#define NUM_TRIALS 5
-#define NUM_TIMING_SAMPLES 100000
+#define NUM_TRIALS 1
+#define NUM_TIMING_SAMPLES 1000000
 
 
 bool getCollisionObjects(std::string filename, std::vector<arm_navigation_msgs::CollisionObject> &collision_objects, visualization_msgs::MarkerArray &ma)
@@ -192,16 +191,24 @@ int main(int argc, char **argv)
   PViz pviz;
   ros::NodeHandle nh, ph("~");
   sleep(1);
-  bool restrict_shoulder_pan;
+  bool restrict_shoulder_pan, compare_collision_models, test_timing, visualize, multi_level_check, low_res;
   std::string group_name, world_frame, robot_description, known_objects_filename;
   std::vector<double> dims(3, 0.0), origin(3, 0.0);
   std::vector<std::string> r_joint_names, l_joint_names, r_finger_names, l_finger_names;
   std::vector<double> r_min_limits, r_max_limits, l_min_limits, l_max_limits;
   std::vector<bool> r_continuous, l_continuous;
+  std_msgs::ColorRGBA white; white.r = 1; white.g = 1; white.b = 1; white.a = 0.4;
+  std::vector<double> black(4,0); black[3] = 1.0;
+  visualization_msgs::MarkerArray ma;
   ph.param("restrict_shoulder_pan", restrict_shoulder_pan, true);
   ph.param<std::string>("group_name", group_name, "");
   ph.param<std::string>("world_frame", world_frame, "");
   ph.param<std::string>("known_objects_filename", known_objects_filename, "");
+  ph.param("perform_a_timing_test", test_timing, true);
+  ph.param("perform_a_collision_model_fidelity_comparison", compare_collision_models, false);
+  ph.param("visualize", visualize, false);
+  ph.param("low_res", low_res, false);
+  ph.param("multi_level_check", multi_level_check, false);
   pviz.setReferenceFrame(world_frame);
   ph.param("dims/x", dims[0], 3.0);
   ph.param("dims/y", dims[1], 3.0);
@@ -269,6 +276,7 @@ int main(int argc, char **argv)
   // cause more collisions
   if(restrict_shoulder_pan)
   {
+    ROS_WARN("Restricting the shoulder motion.");
     r_min_limits[0] = 0;
     l_max_limits[0] = 0;
   }
@@ -310,49 +318,196 @@ int main(int argc, char **argv)
   robot_state.joint_state.position.resize(l_joint_names.size());
 
   BodyPose bp(0,0,0.29,0);
-  bool low_res = false;
+  geometry_msgs::Pose text_pose; text_pose.orientation.w = 1.0;
+  text_pose.position.x = 0.2; text_pose.position.y = -0.6; text_pose.position.z = 1.4;
   std::vector<double> langles, rangles, trial_time, ccps;
-  for(size_t k = 0; k < NUM_TRIALS; ++k)
+
+  ROS_INFO("-------------------------------------------------------------------------");
+  ROS_INFO("restrict_shoulder_pan: %d", restrict_shoulder_pan);
+  ROS_INFO("timing_test: %d", test_timing);
+//  ROS_INFO("   multi_level_check: %d", multi_level_check);
+//  ROS_INFO("             low_res: %d (matters if multi_level_check is disabled)", low_res);
+  ROS_INFO("collision_model_test:  %d", compare_collision_models);
+  ROS_INFO("visualize:  %d", visualize);
+  ROS_INFO("-------------------------------------------------------------------------");
+  double prep_time, ptps;
+
+  /*
+  if(test_timing)
   {
-    int invalid = 0, valid = 0;
     clock_t start = clock();
-    for(size_t i = 0; i < NUM_TIMING_SAMPLES; ++i)
-    {
       langles = getRandomJointPositions(l_min_limits, l_max_limits, l_continuous);
       rangles = getRandomJointPositions(r_min_limits, r_max_limits, r_continuous);
 
       for(size_t j = 0; j < langles.size(); ++j)
         robot_state.joint_state.position[j] = langles[j];
+    for(size_t i = 0; i < NUM_TIMING_SAMPLES; ++i)
+    {
       cspace->setRobotState(robot_state);
-
-      if(DEBUG)
-      {
-        ROS_INFO("[ left] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", langles[0], langles[1], langles[2], langles[3], langles[4], langles[5], langles[6]);
-        ROS_INFO("[right] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", rangles[0], rangles[1], rangles[2], rangles[3], rangles[4], rangles[5], rangles[6]);
-      }
-      if(!cspace->isStateValid(rangles, false, VISUALIZE, dist))
-        invalid++;
-      else
-        valid++;
-
-      if(VISUALIZE)
-      {
-        pviz.deleteVisualizations("collision_spheres", 100);
-        usleep(5000);
-
-        pviz.visualizeRobot(rangles, langles, bp, 0, "robot", 0, true);
-        if(low_res)
-          p.publish(cspace->getVisualization("low_res_collision_model"));
-        else
-          p.publish(cspace->getVisualization("collision_model"));
-          
-        p.publish(cspace->getVisualization("collisions"));
-        sleep(1);
-      }
     }
-    trial_time.push_back((clock()-start)/(double)CLOCKS_PER_SEC);
-    ccps.push_back(double(NUM_TIMING_SAMPLES)/trial_time.back());
-    ROS_INFO("[%d] Collision checked %d samples in %0.5f seconds.  (valid: %d  invalid: %d  checks_per_sec: %0.1f)", int(k), NUM_TIMING_SAMPLES, trial_time.back(), valid, invalid, ccps.back());
+    prep_time = (clock()-start)/(double)CLOCKS_PER_SEC;
+    ptps = (double(NUM_TIMING_SAMPLES)/prep_time);
+    ROS_INFO("Prepared %d samples for collision checking in %0.5f seconds.  (checks_per_sec: %0.1f)", NUM_TIMING_SAMPLES, prep_time, ptps);
+  }
+  */
+
+  std::string test_name = " ";
+  std::vector<std::vector<double> > langlesv(NUM_TIMING_SAMPLES), ranglesv(NUM_TIMING_SAMPLES);
+  for(size_t k = 0; k < NUM_TRIALS; ++k)
+  {
+    // Generate all random samples for this trial
+    clock_t start = clock();
+    for(size_t i = 0; i < NUM_TIMING_SAMPLES; ++i)
+    {
+      langlesv[i] = getRandomJointPositions(l_min_limits, l_max_limits, l_continuous);
+      ranglesv[i] = getRandomJointPositions(r_min_limits, r_max_limits, r_continuous);
+    }
+    prep_time = (clock()-start)/(double)CLOCKS_PER_SEC;
+    ptps = (double(NUM_TIMING_SAMPLES)/prep_time);
+    ROS_INFO("Computed %d random samples for collision checking in %0.5f seconds.  (samples_per_sec: %0.1f)", NUM_TIMING_SAMPLES, prep_time, ptps);
+
+    // for Timing Test, run 3 times with different params
+    for(size_t w = 0; w < 3; ++w)
+    {
+      // for collision model test, just run it once
+      if(!test_timing && w > 1)
+        break;
+
+      if(w == 0)    // multi_res
+      {
+        test_name = "multi_level";
+        multi_level_check = true;
+      }
+      else if(w == 1) // low_res
+      {
+        test_name = "low_res";
+        multi_level_check = false;
+        low_res = true;
+      }
+      else if(w == 2) // high_res
+      {
+        test_name = "high_res";
+        multi_level_check = false;
+        low_res = false;
+      }
+
+      int lrv_not_hrv = 0, hrv_not_lrv = 0, hrv_equals_lrv = 0;
+      int invalid = 0, valid = 0, lr_invalid = 0, lr_valid = 0;
+      start = clock();
+      for(size_t i = 0; i < NUM_TIMING_SAMPLES; ++i)
+      {
+        for(size_t j = 0; j < langlesv[i].size(); ++j)
+          robot_state.joint_state.position[j] = langlesv[i][j];
+        cspace->setRobotState(robot_state);
+
+        if(DEBUG)
+        {
+          ROS_INFO("[ left] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", langlesv[i][0], langlesv[i][1], langlesv[i][2], langlesv[i][3], langlesv[i][4], langlesv[i][5], langlesv[i][6]);
+          ROS_INFO("[right] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", ranglesv[i][0], ranglesv[i][1], ranglesv[i][2], ranglesv[i][3], ranglesv[i][4], ranglesv[i][5], ranglesv[i][6]);
+        }
+
+        // Timing test: Compute # collisions per second
+        if(test_timing) 
+        {
+          if(multi_level_check)
+          {
+            if(!cspace->isStateValid(ranglesv[i], false, visualize, dist))
+              invalid++;
+            else
+              valid++;
+          }
+          else
+          {
+            if(!cspace->checkCollision(ranglesv[i], low_res, false, visualize, dist))
+              invalid++;
+            else
+              valid++;
+          }
+        }
+
+        // Collision Model Fidelity Test: Compare the two collision models
+        if(compare_collision_models)
+        {
+          bool lrv = true; bool hrv = true;
+          if(!cspace->checkCollision(ranglesv[i], true, false, visualize, dist))
+          {
+            lrv = false;
+            lr_invalid++;
+          }
+          else
+            lr_valid++;
+
+          if(!cspace->checkCollision(ranglesv[i], false, false, visualize, dist))
+          {
+            hrv = false;
+            invalid++;
+          }
+          else
+            valid++;
+          // check if the collision check results make sense
+          if(lrv && (!hrv))
+          {
+            lrv_not_hrv++;
+            ROS_ERROR("   [%d] low-res model is VALID while the high-res model is INVALID.", int(i));
+
+            if(visualize)
+            {
+              ROS_INFO("low_res:");
+              cspace->checkCollision(ranglesv[i], true, true, true, dist);
+
+              ROS_INFO("high_res: ");
+              cspace->checkCollision(ranglesv[i], false, true, true, dist);
+
+              pviz.deleteVisualizations("collision_spheres", 100);
+              pviz.visualizeRobot(ranglesv[i], langlesv[i], bp, 0, "robot", 0, true);
+              p.publish(cspace->getVisualization("collision_model"));
+              ma = cspace->getVisualization("low_res_collision_model");
+              for(size_t y = 0; y <  ma.markers.size(); ++y)
+                ma.markers[y].color = white;
+              p.publish(ma);
+              p.publish(cspace->getVisualization("collisions"));
+              pviz.publish(viz::getTextMarker(text_pose, boost::lexical_cast<std::string>(i), 0.2, black, "base_footprint", "sample", 0));
+              ros::Duration(1.5).sleep();
+            }
+          }
+          else if((!lrv) && hrv)
+          {
+            hrv_not_lrv++;
+            ROS_DEBUG("   [%d] low-res model is INVALID while the high-res model is VALID.", int(i));
+          }
+          else if(lrv == hrv)
+          {
+            hrv_equals_lrv++;
+          }
+        }
+
+        // visualize
+        if(visualize)
+        {
+          pviz.deleteVisualizations("collision_spheres", 100);
+          usleep(5000);
+
+          pviz.visualizeRobot(ranglesv[i], langlesv[i], bp, 0, "robot", 0, true);
+          if(low_res)
+            p.publish(cspace->getVisualization("low_res_collision_model"));
+          else
+            p.publish(cspace->getVisualization("collision_model"));
+
+          p.publish(cspace->getVisualization("collisions"));
+          sleep(1);
+        }
+      }
+
+      if(test_timing)
+      {
+        trial_time.push_back((clock()-start)/(double)CLOCKS_PER_SEC);
+        ccps.push_back(double(NUM_TIMING_SAMPLES)/trial_time.back());
+        ROS_INFO("[trial %d] [%11s] Collision checked %d samples in %0.5f seconds.  (valid: %d  invalid: %d  checks_per_sec: %0.1f)", int(k), test_name.c_str(), NUM_TIMING_SAMPLES, trial_time.back(), valid, invalid, ccps.back());
+      }
+
+      if(compare_collision_models)
+        ROS_INFO("[%d] [low_res] valid: %6d  invalid: %6d  [high_res] valid: %6d  invalid: %6d (diff: %d  high_valid-low_invalid: %d  low_valid-high_invalid: %d  high_valid==low_valid: %d)", int(k), lr_valid, lr_invalid, valid, invalid, abs(valid-lr_valid), hrv_not_lrv, lrv_not_hrv, hrv_equals_lrv);
+    }
   }
 
   ros::spinOnce();

@@ -60,9 +60,9 @@ bool Group::initKinematics()
   // loop until all links are included in a single kdl chain
   while(unincluded_links && cnt < 100)
   {
-    ROS_INFO("--------------------------------------");
-    ROS_INFO("         %s:  %d ", name_.c_str(), cnt);
-    ROS_INFO("--------------------------------------");
+    ROS_DEBUG("--------------------------------------");
+    ROS_DEBUG("         %s:  %d ", name_.c_str(), cnt);
+    ROS_DEBUG("--------------------------------------");
     cnt++;
     std::vector<int> num_links_per_tip(links_.size(),0);
 
@@ -105,11 +105,11 @@ bool Group::initKinematics()
     int i_max = 0;
     for(size_t i = 0; i < num_links_per_tip.size(); ++i)
     {
-      ROS_INFO("[%d]  chain_tip: %25s  included_links %d", int(i), links_[i].root_name_.c_str(), num_links_per_tip[i]);
+      ROS_DEBUG("[%d]  chain_tip: %25s  included_links %d", int(i), links_[i].root_name_.c_str(), num_links_per_tip[i]);
       if(num_links_per_tip[i] > num_links_per_tip[i_max])
         i_max = i;
     }
-    ROS_INFO("[cnt %d] Creating a chain for %s group with %s as the tip.", cnt, name_.c_str(), links_[i_max].root_name_.c_str());
+    ROS_DEBUG("[cnt %d] Creating a chain for %s group with %s as the tip.", cnt, name_.c_str(), links_[i_max].root_name_.c_str());
 
     // create chain with link i_max as the tip
     if (!tree.getChain(root_name_, links_[i_max].root_name_, chain))
@@ -170,7 +170,7 @@ bool Group::initKinematics()
   for(size_t i = 0; i < chains_.size(); ++i)
   {
     solvers_[i] = new KDL::ChainFkSolverPos_recursive(chains_[i]);
-    ROS_INFO("[%s] Instantiated a forward kinematics solver for chain #%d for the %s with %d joints.", name_.c_str(), int(i), name_.c_str(), chains_[i].getNrOfJoints());
+    ROS_DEBUG("[%s] Instantiated a forward kinematics solver for chain #%d for the %s with %d joints.", name_.c_str(), int(i), name_.c_str(), chains_[i].getNrOfJoints());
   }
 
   ROS_INFO("Initialized %d chains for the %s group.", int(chains_.size()), name_.c_str());
@@ -277,7 +277,6 @@ bool Group::getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres)
       // low-res spheres
       if(type_ == sbpl_arm_planner::Group::SPHERES)
       {
-        ROS_ERROR("link: %s", link.name_.c_str());
         std::stringstream ss(all_links[j]["low_res_spheres"]);
         Sphere sphere;
         std::string sphere_name;
@@ -295,7 +294,6 @@ bool Group::getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres)
               sphere.priority = spheres[i]["priority"];
               sphere.radius = spheres[i]["radius"];
               link.low_res_spheres_.push_back(sphere);
-              ROS_ERROR("sphere: %s", sphere_name.c_str());
               break;
             }
           }

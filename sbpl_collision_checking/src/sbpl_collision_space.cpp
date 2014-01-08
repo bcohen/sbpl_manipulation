@@ -42,6 +42,7 @@ SBPLCollisionSpace::SBPLCollisionSpace(sbpl_arm_planner::OccupancyGrid* grid)
   object_attached_ = false;
   padding_ = 0.005;
   object_enclosing_sphere_radius_ = 0.03;
+  use_multi_level_collision_check_ = true;
 }
 
 void SBPLCollisionSpace::setPadding(double padding)
@@ -115,9 +116,16 @@ bool SBPLCollisionSpace::init(std::string group_name, std::string ns)
 }
 
 bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist)
-{  
-  bool low_res = false;
-  return checkCollision(angles, low_res, verbose, visualize, dist);
+{ 
+  if(!use_multi_level_collision_check_)
+    return checkCollision(angles, false, verbose, visualize, dist);
+  else
+  {
+    if(checkCollision(angles, true, verbose, visualize, dist))
+      return true;
+    else
+      return checkCollision(angles, false, verbose, visualize, dist);
+  }
 }
 
 bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool low_res, bool verbose, bool visualize, double &dist)
@@ -163,6 +171,7 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   if(dist_temp < dist)
     dist = dist_temp;
 
+
   // check other sphere groups
   std::vector<Group*> sg;
   model_.getSphereGroups(sg);
@@ -173,6 +182,7 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     if(sg[i]->getName().compare(group_name_) == 0)
       continue;
 
+  
     // compute FK for group
     if(!sg[i]->computeFK(empty_angles, frames))
     {
@@ -197,7 +207,7 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     for(size_t j = 0; j < spheres.size(); ++j)
       g_spheres[i] = frames[spheres[i]->kdl_chain][spheres[i]->kdl_segment] * spheres[i]->v;
     */
-
+    
     // check against default group spheres (TODO: change to all sphere groups)
     if(!checkSphereGroupAgainstSphereGroup(model_.getDefaultGroup(), sg[i], dg_spheres, g_spheres, low_res, low_res, verbose, visualize, dist_temp))
     {
@@ -208,11 +218,11 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     }
     if(dist_temp < dist)
       dist = dist_temp;
+    
   }
  
   if(visualize && in_collision)
     return false;
-
 
   return true;
 }
@@ -283,7 +293,7 @@ bool SBPLCollisionSpace::checkSpheresAgainstWorld(const std::vector<std::vector<
   return true;
 }
 
-bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group *group2, std::vector<KDL::Vector> &spheres1, std::vector<KDL::Vector> spheres2, bool low_res1, bool low_res2, bool verbose, bool visualize, double &dist)
+bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group *group2, const std::vector<KDL::Vector> &spheres1, const std::vector<KDL::Vector> &spheres2, bool low_res1, bool low_res2, bool verbose, bool visualize, double &dist)
 {
   bool in_collision = false;
   double d;
@@ -305,15 +315,15 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group
     for(size_t j = 0; j < spheres2.size(); ++j)
     {
       d = leatherman::distance(spheres1[i], spheres2[j]);
-
-      ROS_DEBUG("    [group1: %s  sphere: %d (%s)] [group2: %s  sphere: %d (%s)]  (radius1: %0.3fm  radius2: %0.3fm  dist: %0.3fm)", group1->getName().c_str(), int(i), gsph1[i]->name.c_str(), group2->getName().c_str(), int(j),gsph2[j]->name.c_str(), gsph1[i]->radius + padding_, gsph2[j]->radius + padding_, d);
+      
+      //  ROS_INFO("    [group1: %s sphere: %d (%s)] [group2: %s  sphere: %d (%s)]  (radius1: %0.3fm  radius2: %0.3fm  dist: %0.3fm)", group1->getName().c_str(), int(i), gsph1[i]->name.c_str(), group2->getName().c_str(), int(j),gsph2[j]->name.c_str(), gsph1[i]->radius + padding_, gsph2[j]->radius + padding_, d);
       if(d <= max(gsph1[i]->radius + padding_, gsph2[j]->radius + padding_))
       {
         if(d < dist)
           dist = d;
 
         if(verbose)
-          ROS_INFO("    [group1: %s  sphere: %d] [group2: %s  sphere: %d] *collision* found. (radius1: %0.3fm  radius2: %0.3fm  dist: %0.3fm)", group1->getName().c_str(), int(i), group2->getName().c_str(), int(j), gsph1[i]->radius + padding_, gsph2[j]->radius + padding_, d);
+          ROS_INFO("[group1: %s  sphere: %s] [group2: %s  sphere: %s] *collision* found. (rad1: %0.3fm  rad2: %0.3fm  dist: %0.3fm)", group1->getName().c_str(), gsph1[i]->name.c_str(), group2->getName().c_str(), gsph2[j]->name.c_str(), gsph1[i]->radius + padding_, gsph2[j]->radius + padding_, d);
 
         if(visualize)
         {
