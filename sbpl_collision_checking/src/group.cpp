@@ -477,6 +477,26 @@ bool Group::initVoxels()
   return true;
 }
 
+bool Group::computeFK(const KDL::JntArray &angles, int chain, int segment, KDL::Frame &frame)
+{
+  if(segment == 0)
+  {
+    ROS_ERROR("segment is 0!");
+    frame = KDL::Frame::Identity();
+  }
+  else
+  {
+    if(solvers_[chain]->JntToCart(angles, frame, segment) < 0)
+    {
+      ROS_ERROR("JntToCart returned < 0. Exiting.");
+      return false;
+    }
+  }
+
+  frame = T_root_to_world_ * frame;
+  return true;
+}
+
 bool Group::computeFK(const std::vector<double> &angles, int chain, int segment, KDL::Frame &frame)
 {
   if(segment == 0)
@@ -513,10 +533,19 @@ bool Group::computeFK(const std::vector<double> &angles, std::vector<std::vector
   for(int i = 0; i < int(frames_.size()); ++i)
   {
     frames[i].resize(chains_[i].getNrOfSegments()+1);
+
+    // sort elements of input angles into proper positions in the KDL::JntArray
+    for(size_t k = 0; k < angles.size(); ++k)
+    {
+      if(angles_to_jntarray_[i][k] == -1)
+        continue;
+      joint_positions_[i](angles_to_jntarray_[i][k]) = angles[k];
+    }
+
     for(size_t j = 0; j < frames_[i].size(); ++j)
     {
-      ROS_DEBUG("chain: %d   frame_index: %d  frame: %d  size_of_frames_vector: %d", i, int(j), int(frames_[i][j]), int(frames[i].size()));
-      if(!computeFK(angles, i, frames_[i][j]/*+1*/, frames[i][frames_[i][j]]))
+      if(!computeFK(joint_positions_[i], i, frames_[i][j]/*+1*/, frames[i][frames_[i][j]]))
+      //if(!computeFK(angles, i, frames_[i][j]/*+1*/, frames[i][frames_[i][j]]))
         return false;
     }
   }

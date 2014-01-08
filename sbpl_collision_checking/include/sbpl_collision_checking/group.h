@@ -76,6 +76,8 @@ class Group
     bool computeFK(const std::vector<double> &angles, int chain, int segment, KDL::Frame &frame);
 
     bool computeFK(const std::vector<double> &angles, std::vector<std::vector<KDL::Frame> > &frames);
+    
+    bool computeFK(const KDL::JntArray &angles, int chain, int segment, KDL::Frame &frame);
 
     void setOrderOfJointPositions(const std::vector<std::string> &joint_names);
 
