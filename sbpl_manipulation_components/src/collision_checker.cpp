@@ -23,6 +23,12 @@ void CollisionChecker::setRobotState(const arm_navigation_msgs::RobotState &stat
   robot_state_ = state;
 }
 
+bool CollisionChecker::setAttachedObjects(const std::vector<arm_navigation_msgs::AttachedCollisionObject> &objects)
+{
+  ROS_ERROR("Function is not filled in.");
+  return false;
+}
+
 bool CollisionChecker::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)
 {
   planning_scene_  = scene;

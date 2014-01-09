@@ -86,6 +86,7 @@ class KDLRobotModel : public RobotModel {
   protected:
 
     boost::shared_ptr<urdf::Model> urdf_;
+    bool use_safety_limits_;
     int free_angle_;
     std::string chain_root_name_;
     std::string chain_tip_name_;
@@ -105,9 +106,9 @@ class KDLRobotModel : public RobotModel {
     std::map<std::string, int> joint_map_;
     std::map<std::string, int> link_map_;
 
-    bool getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous);
+    bool getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous, bool safety_limits=true);
     
-    bool getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous);
+    bool getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous, bool use_safety_limit=true);
 
     bool getCount(int &count, const int &max_count, const int &min_count);
 };

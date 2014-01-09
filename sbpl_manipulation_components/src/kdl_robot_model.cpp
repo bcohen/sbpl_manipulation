@@ -45,6 +45,7 @@ KDLRobotModel::KDLRobotModel() : ik_solver_(NULL), ik_vel_solver_(NULL), fk_solv
   ph.param<std::string>("robot_model/chain_root_link", chain_root_name_, " ");
   ph.param<std::string>("robot_model/chain_tip_link", chain_tip_name_, " ");
   ph.param("robot_model/free_angle", free_angle_, 2);
+  ph.param("robot_model/use_safety_joint_limits", use_safety_limits_, true);
 }
 
 KDLRobotModel::KDLRobotModel(std::string chain_root_link, std::string chain_tip_link) : ik_solver_(NULL), ik_vel_solver_(NULL), fk_solver_(NULL)
@@ -121,7 +122,7 @@ bool KDLRobotModel::init(std::string robot_description, std::vector<std::string>
 
   // joint limits
   planning_joints_ = planning_joints;
-  if(!getJointLimits(planning_joints_, min_limits_, max_limits_, continuous_))
+  if(!getJointLimits(planning_joints_, min_limits_, max_limits_, continuous_, use_safety_limits_))
   {
     ROS_ERROR("Failed to get the joint limits.");
     return false;
@@ -155,7 +156,7 @@ bool KDLRobotModel::init(std::string robot_description, std::vector<std::string>
   return true;
 }
 
-bool KDLRobotModel::getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous)
+bool KDLRobotModel::getJointLimits(std::vector<std::string> &joint_names, std::vector<double> &min_limits, std::vector<double> &max_limits, std::vector<bool> &continuous, bool safety_limits)
 {
   min_limits.resize(joint_names.size());
   max_limits.resize(joint_names.size());
@@ -168,7 +169,7 @@ bool KDLRobotModel::getJointLimits(std::vector<std::string> &joint_names, std::v
       return false;
     }
     bool c;
-    if(!getJointLimits(joint_names[i], min_limits[i], max_limits[i], c))
+    if(!getJointLimits(joint_names[i], min_limits[i], max_limits[i], c, safety_limits))
     {
       ROS_ERROR("Joint limits were not found for %s.", joint_names[i].c_str());
       return false;
@@ -178,7 +179,7 @@ bool KDLRobotModel::getJointLimits(std::vector<std::string> &joint_names, std::v
   return true;
 }
 
-bool KDLRobotModel::getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous)
+bool KDLRobotModel::getJointLimits(std::string joint_name, double &min_limit, double &max_limit, bool &continuous, bool safety_limit)
 {
   bool found_joint = false;
   boost::shared_ptr<const urdf::Link> link = urdf_->getLink(chain_tip_name_);
@@ -193,7 +194,7 @@ bool KDLRobotModel::getJointLimits(std::string joint_name, double &min_limit, do
         {
           continuous = false;
 
-          if(joint->safety == NULL)
+          if((joint->safety == NULL) || (!safety_limit))
           {
             min_limit = joint->limits->lower;
             max_limit = joint->limits->upper;

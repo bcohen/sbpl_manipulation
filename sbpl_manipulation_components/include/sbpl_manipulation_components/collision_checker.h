@@ -30,6 +30,8 @@ class CollisionChecker
 
     virtual bool setPlanningScene(const arm_navigation_msgs::PlanningScene &scene);
 
+    virtual bool setAttachedObjects(const std::vector<arm_navigation_msgs::AttachedCollisionObject> &objects);
+
     /* Collision Checking */
     virtual bool isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
    
