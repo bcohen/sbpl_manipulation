@@ -249,6 +249,49 @@ visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type
   return ma;
 }
 
+bool OccupancyGrid::writeCollisionMapToBagFile(const arm_navigation_msgs::CollisionMap &map, std::string bag_filename, std::string topic_name)
+{
+  //TODO: Add in error checking
+  rosbag::Bag bag;
+  bag.open(bag_filename, rosbag::bagmode::Write);
+  bag.write(topic_name, ros::Time::now(), map);
+  bag.close();
+  return true;
+}
+
+bool OccupancyGrid::writeOccupancyGridToBagFile(std::string bag_filename, std::string topic_name)
+{
+  arm_navigation_msgs::CollisionMap map;
+  arm_navigation_msgs::OrientedBoundingBox box;
+  std::vector<double> dim(3,0), origin(3,0);
+  getOrigin(origin[0], origin[1], origin[2]);
+  getWorldSize(dim[0], dim[1], dim[2]);
+
+  map.header.frame_id = reference_frame_;
+  box.angle = 0.0;
+  box.extents.x = grid_->getResolution();
+  box.extents.y = grid_->getResolution();
+  box.extents.z = grid_->getResolution();
+ 
+  for(double x=origin[0]; x<=origin[0]+dim[0]; x+=grid_->getResolution())
+  {
+    for(double y=origin[1]; y<=origin[1]+dim[1]; y+=grid_->getResolution())
+    {
+      for(double z=origin[2]; z<=origin[2]+dim[2]; z+=grid_->getResolution())
+      {
+        if(getDistanceFromPoint(x,y,z) == 0)
+        {
+          box.center.x = x;
+          box.center.y = y;
+          box.center.z = z;
+          map.boxes.push_back(box);
+        }
+      }
+    }
+  }
+  return writeCollisionMapToBagFile(map, bag_filename, topic_name);
+}
+
 /*
 void OccupancyGrid::printGridFromBinaryFile(std::string filename)
 {

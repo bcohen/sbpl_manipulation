@@ -41,6 +41,7 @@
 #include <moveit/distance_field/propagation_distance_field.h>
 #include <arm_navigation_msgs/CollisionMap.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <rosbag/bag.h>
 
 /* \brief At this point, this is a very lightweight layer on top of the
  * PropagationDistanceField class. I'll eventually get rid of it once the
@@ -139,6 +140,10 @@ class OccupancyGrid
     void reset();
 
     visualization_msgs::MarkerArray getVisualization(std::string type);
+
+    bool writeOccupancyGridToBagFile(std::string bag_filename, std::string topic_name);
+
+    bool writeCollisionMapToBagFile(const arm_navigation_msgs::CollisionMap &map, std::string bag_filename, std::string topic_name);
 
   private:
 
