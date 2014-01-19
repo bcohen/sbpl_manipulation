@@ -64,13 +64,6 @@ bool BFS_3D::isWall(int x, int y, int z) {
     return distance_grid[node] == WALL;
 }
 
-void BFS_3D::reset(){
-  for (int node = 0; node < dim_xyz; node++) {
-    if(distance_grid[node] < WALL)
-      distance_grid[node] = UNDISCOVERED;
-  }
-}
-
 void BFS_3D::run(int x, int y, int z) {
     if (running) {
         //error "Search already running"
@@ -83,7 +76,7 @@ void BFS_3D::run(int x, int y, int z) {
 
     origin = getNode(x, y, z);
 
-   queue_head = 0;
+    queue_head = 0;
     queue_tail = 1;
     queue[0] = origin;
 
