@@ -244,9 +244,15 @@ bool ActionSet::getAction(const RobotState &parent, double dist_to_goal, MotionP
   {
     if(dist_to_goal > ik_amp_dist_thresh_m_)
       return false;
-    
+
+    // set desired FA
+    double fa;
+    RobotState desired_fa = parent;
+    if(env_->getGoalFA(fa))
+      desired_fa[2] = fa;
+
     action.resize(1);
-    if(!env_->getRobotModel()->computeIK(goal, parent, action[0]))
+    if(!env_->getRobotModel()->computeIK(goal, desired_fa, action[0]))
     {
       ROS_DEBUG("IK failed. (dist_to_goal: %0.3f)  (goal: xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
       return false;
@@ -256,11 +262,17 @@ bool ActionSet::getAction(const RobotState &parent, double dist_to_goal, MotionP
   {
     if(dist_to_goal > 0.02)
       return false;
-    
+
+    // set desired FA 
+    double fa;
+    RobotState desired_fa = parent;
+    if(env_->getGoalFA(fa))
+      desired_fa[2] = fa;
+
     action.resize(1);
-    if(!env_->getRobotModel()->computeIK(goal, parent, action[0], sbpl_arm_planner::ik_option::RESTRICT_XYZ_JOINTS))
+    if(!env_->getRobotModel()->computeIK(goal, desired_fa, action[0], sbpl_arm_planner::ik_option::RESTRICT_XYZ_JOINTS))
     {
-      ROS_INFO("RPY-solver failed. (dist_to_goal: %0.3f)  (goal: xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
+      ROS_DEBUG("RPY-solver failed. (dist_to_goal: %0.3f)  (goal: xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
       return false;
     }
   }

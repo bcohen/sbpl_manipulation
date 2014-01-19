@@ -176,7 +176,6 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 
   ROS_DEBUG_NAMED(prm_->expands_log_, "\nstate %d: %.2f %.2f %.2f %.2f %.2f %.2f %.2f  endeff: %3d %3d %3d",SourceStateID, source_angles[0],source_angles[1],source_angles[2],source_angles[3],source_angles[4],source_angles[5],source_angles[6], parent_entry->xyz[0],parent_entry->xyz[1],parent_entry->xyz[2]);
  
-
   int valid = 1;
   std::vector<Action> actions;
   if(!as_->getActionSet(source_angles, actions))
@@ -200,7 +199,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
         valid = -1;
 
       //check for collisions
-      if(!cc_->isStateValid(actions[i][j], prm_->verbose_collisions_, false, dist))
+      if(!cc_->isStateValid(actions[i][j], pdata_.frames, prm_->verbose_collisions_, false, dist))
       {
         ROS_DEBUG_NAMED(prm_->expands_log_, " succ: %2d  dist: %0.3f is in collision.", i, dist);
         valid = -2;
@@ -214,7 +213,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
       continue;
 
     // check for collisions along path from parent to first waypoint
-    if(!cc_->isStateToStateValid(source_angles, actions[i][0], path_length, nchecks, dist))
+    if(!cc_->isStateToStateValid(source_angles, actions[i][0], pdata_.frames, path_length, nchecks, dist))
     {
       ROS_DEBUG_NAMED(prm_->expands_log_, " succ: %2d  dist: %0.3f is in collision along interpolated path. (path_length: %d)", i, dist, path_length);
       valid = -3;
@@ -226,8 +225,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     // check for collisions between waypoints
     for(size_t j = 1; j < actions[i].size(); ++j)
     {
-      //ROS_INFO("[ succ: %d] Checking interpolated path from waypoint %d to waypoint %d.", int(i), int(j-1), int(j));
-      if(!cc_->isStateToStateValid(actions[i][j-1], actions[i][j], path_length, nchecks, dist))
+      if(!cc_->isStateToStateValid(actions[i][j-1], actions[i][j], pdata_.frames, path_length, nchecks, dist))
       {
         ROS_DEBUG_NAMED(prm_->expands_log_, " succ: %2d  dist: %0.3f is in collision along interpolated path. (path_length: %d)", i, dist, path_length);
         valid = -4;
@@ -450,7 +448,7 @@ bool EnvironmentROBARM3D::initEnvironment()
 
 bool EnvironmentROBARM3D::isGoalState(const std::vector<double> &pose, GoalConstraint &goal)
 {
-  if(goal.type == XYZ_RPY_GOAL)
+  if(goal.type >= GoalType::XYZ_RPY_GOAL)
   {
     if(fabs(pose[0]-goal.pose[0]) <= goal.xyz_tolerance[0] && 
         fabs(pose[1]-goal.pose[1]) <= goal.xyz_tolerance[1] && 
@@ -470,7 +468,7 @@ bool EnvironmentROBARM3D::isGoalState(const std::vector<double> &pose, GoalConst
         return true;
     }
   }
-  else if(goal.type == XYZ_GOAL)
+  else if(goal.type == GoalType::XYZ_GOAL)
   {
     if(fabs(pose[0]-goal.pose[0]) <= goal.xyz_tolerance[0] && 
         fabs(pose[1]-goal.pose[1]) <= goal.xyz_tolerance[1] && 
@@ -553,7 +551,8 @@ bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles
     ROS_WARN("Starting configuration violates the joint limits. Attempting to plan anyway.");
 
   //check if the start configuration is in collision but plan anyway
-  if(!cc_->isStateValid(angles, true, false, dist))
+  pdata_.frames.clear(); 
+  if(!cc_->isStateValid(angles, pdata_.frames, true, false, dist))
   {
     ROS_WARN("[env] The starting configuration is in collision. Attempting to plan anyway. (distance to nearest obstacle %0.2fm)", double(dist)*grid_->getResolution());
   }
@@ -564,13 +563,13 @@ bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles
   pdata_.start_entry->xyz[0] = (int)x;
   pdata_.start_entry->xyz[1] = (int)y;
   pdata_.start_entry->xyz[2] = (int)z;
-  ROS_INFO("[start]              coord: %d %d %d %d %d %d %d   pose: %d %d %d", pdata_.start_entry->coord[0], pdata_.start_entry->coord[1], pdata_.start_entry->coord[2], pdata_.start_entry->coord[3], pdata_.start_entry->coord[4], pdata_.start_entry->coord[5], pdata_.start_entry->coord[6], x, y, z);
+  ROS_DEBUG("[start]              coord: %d %d %d %d %d %d %d   pose: %d %d %d", pdata_.start_entry->coord[0], pdata_.start_entry->coord[1], pdata_.start_entry->coord[2], pdata_.start_entry->coord[3], pdata_.start_entry->coord[4], pdata_.start_entry->coord[5], pdata_.start_entry->coord[6], x, y, z);
   return true;
 }
 
 bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double> > &goals, const std::vector<std::vector<double> > &tolerances)
 {
-  //goals: {{x1,y1,z1,r1,p1,y1,is_6dof},{x2,y2,z2,r2,p2,y2,is_6dof}...}
+  //goals: {{x1,y1,z1,r1,p1,y1,is_6dof,quat,free_angle},{x2,y2,z2,r2,p2,y2,is_6dof}...}
 
   if(!prm_->ready_to_plan_)
   {
@@ -598,7 +597,10 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
   pdata_.goal.rpy_tolerance[1] = tolerances[0][4];
   pdata_.goal.rpy_tolerance[2] = tolerances[0][5];
   pdata_.goal.type = goals[0][6];
+  pdata_.goal.free_angle = goals[0][11];
 
+  if(pdata_.goal.type == GoalType::XYZ_RPY_FA_GOAL)
+    ROS_DEBUG("[env] Goal requires goal free angle to be %0.3f",pdata_.goal.free_angle);
 
   // set goal hash entry
   grid_->worldToGrid(goals[0][0], goals[0][1], goals[0][2], pdata_.goal_entry->xyz[0],pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2]);
@@ -643,6 +645,7 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
   //bfs_->configure(pdata_.goal_entry->xyz[0], pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2]);
 
   pdata_.near_goal = false; 
+  pdata_.expanded_states.clear();
   pdata_.t_start = clock();
   return true;
 }
@@ -810,6 +813,16 @@ double EnvironmentROBARM3D::getDistanceToGoal(double x, double y, double z)
 std::vector<double> EnvironmentROBARM3D::getGoal()
 {
   return pdata_.goal.pose;
+}
+
+bool EnvironmentROBARM3D::getGoalFA(double &fa)
+{
+  fa = pdata_.goal.free_angle;
+
+  if(pdata_.goal.type == GoalType::XYZ_RPY_FA_GOAL)
+    return true;
+  else
+    return false;
 }
 
 visualization_msgs::MarkerArray EnvironmentROBARM3D::getVisualization(std::string type)

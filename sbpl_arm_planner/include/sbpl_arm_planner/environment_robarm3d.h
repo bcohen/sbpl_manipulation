@@ -37,10 +37,11 @@
 #include <string>
 #include <angles/angles.h>
 #include <bfs3d/BFS_3D.h>
-#include <sbpl/sbpl_exception.h>
-#include <sbpl/planners/planner.h>
-#include <sbpl/utils/mdpconfig.h>
-#include <sbpl/discrete_space_information/environment.h>
+#include <sbpl/headers.h>
+//#include <sbpl/sbpl_exception.h>
+//#include <sbpl/planners/planner.h>
+//#include <sbpl/utils/mdpconfig.h>
+//#include <sbpl/discrete_space_information/environment.h>
 #include <sbpl_manipulation_components/occupancy_grid.h>
 #include <sbpl_manipulation_components/robot_model.h>
 #include <sbpl_manipulation_components/collision_checker.h>
@@ -50,16 +51,20 @@
 
 namespace sbpl_arm_planner {
 
-enum GoalType
-{
-  XYZ_GOAL,
-  XYZ_RPY_GOAL,
-  NUMBER_OF_GOAL_TYPES
-};
+namespace GoalType {
+  enum GoalType
+  {
+    XYZ_GOAL,
+    XYZ_RPY_GOAL,
+    XYZ_RPY_FA_GOAL,
+    NUMBER_OF_GOAL_TYPES
+  };
+}
 
 typedef struct
 {
   int type;
+  double free_angle;
   std::vector<double> pose;
   double xyz_tolerance[3];
   double rpy_tolerance[3];
@@ -104,6 +109,7 @@ typedef struct EnvironmentPlanningData
 
   EnvROBARM3DHashEntry_t* goal_entry;
   EnvROBARM3DHashEntry_t* start_entry;
+  std::vector<std::vector<std::vector<KDL::Frame> > > frames;
 
   // maps from coords to stateID
   int HashTableSize;
@@ -167,6 +173,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     RobotModel* getRobotModel(){ return rmodel_; };
     CollisionChecker* getCollisionChecker(){ return cc_; };
     std::vector<double> getGoal();
+    bool getGoalFA(double &fa);
     double getDistanceToGoal(double x, double y, double z);
 
     visualization_msgs::MarkerArray getVisualization(std::string type);

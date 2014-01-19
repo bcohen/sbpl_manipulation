@@ -107,7 +107,39 @@ bool SBPLArmPlannerInterface::initializePlannerAndEnvironment(std::string ns)
 
   //set search mode (true - settle with first solution)
   planner_->set_search_mode(prm_->search_mode_);
+
   ROS_INFO("Initialized sbpl arm planning environment.");
+  return true;
+}
+
+bool SBPLArmPlannerInterface::solve(const arm_navigation_msgs::GetMotionPlan::Request &req,
+                                    arm_navigation_msgs::GetMotionPlan::Response &res) 
+{
+  // this version of solve doesn't recompute the distance field
+
+  if(!planner_initialized_)
+    return false;
+
+  if(req.motion_plan_request.goal_constraints.position_constraints.empty())
+    return false;
+
+  // preprocess
+  clock_t t_preprocess = clock();
+  prm_->planning_frame_ = req.motion_plan_request.goal_constraints.position_constraints[0].header.frame_id;
+  grid_->setReferenceFrame(prm_->planning_frame_); 
+  cc_->setRobotState(req.motion_plan_request.start_state);
+  // TODO: set kinematics to planning frame
+  double preprocess_time = (clock() - t_preprocess) / (double)CLOCKS_PER_SEC;
+
+  // plan
+  clock_t t_plan = clock();
+  res.robot_state = req.motion_plan_request.start_state;
+  if(!planToPosition(req,res))
+    return false;
+
+  res_ = res;
+  double plan_time = (clock() - t_plan) / (double)CLOCKS_PER_SEC;
+  ROS_INFO("t_plan: %0.3fsec  t_preprocess: %0.3fsec", plan_time, preprocess_time);
   return true;
 }
 
@@ -157,14 +189,14 @@ bool SBPLArmPlannerInterface::setStart(const sensor_msgs::JointState &state)
     ROS_ERROR("Failed to set start state. Not Planning.");
     return false;
   }
-  ROS_INFO("start: %1.3f %1.3f %1.3f %1.3f %1.3f %1.3f %1.3f", initial_positions[0],initial_positions[1],initial_positions[2],initial_positions[3],initial_positions[4],initial_positions[5],initial_positions[6]);
+  ROS_DEBUG("start: %1.3f %1.3f %1.3f %1.3f %1.3f %1.3f %1.3f", initial_positions[0],initial_positions[1],initial_positions[2],initial_positions[3],initial_positions[4],initial_positions[5],initial_positions[6]);
   return true;
 }
 
 bool SBPLArmPlannerInterface::setGoalPosition(const arm_navigation_msgs::Constraints &goals)
 {
   geometry_msgs::Quaternion goalq;
-  std::vector <std::vector <double> > sbpl_goal(1, std::vector<double> (11,0));  //Changed to include Quaternion
+  std::vector <std::vector <double> > sbpl_goal(1, std::vector<double> (12,0));  //Changed to include Quaternion, and FA
   std::vector <std::vector <double> > sbpl_tolerance(1, std::vector<double> (12,0));
 
   if(goals.position_constraints.size() != goals.orientation_constraints.size())
@@ -180,9 +212,16 @@ bool SBPLArmPlannerInterface::setGoalPosition(const arm_navigation_msgs::Constra
   goalq.w += 0.001; //perturb quaternion if rpy will suffer from gimbal lock
   leatherman::getRPY(goalq, sbpl_goal[0][3], sbpl_goal[0][4], sbpl_goal[0][5]);
  
-  //6dof goal: true, 3dof: false 
-  sbpl_goal[0][6] = true;
- 
+  // set sbpl_arm_planner::GoalType
+  if(!goals.joint_constraints.empty())
+  {
+    sbpl_goal[0][6] = GoalType::XYZ_RPY_FA_GOAL;
+    sbpl_goal[0][11] = goals.joint_constraints[0].position;
+  }
+  else
+    sbpl_goal[0][6] = GoalType::XYZ_RPY_GOAL;
+
+
   //orientation constraint as a quaternion 
   sbpl_goal[0][7] = goals.orientation_constraints[0].orientation.x;
   sbpl_goal[0][8] = goals.orientation_constraints[0].orientation.y;
@@ -254,7 +293,15 @@ bool SBPLArmPlannerInterface::plan(trajectory_msgs::JointTrajectory &traj)
   planner_->force_planning_from_scratch();
 
   //plan
-  b_ret = planner_->replan(prm_->allowed_time_, &solution_state_ids, &solution_cost_);
+  
+  ReplanParams replan_params(prm_->allowed_time_);
+  replan_params.initial_eps = 100.0;
+  replan_params.final_eps = 100.0;
+  replan_params.dec_eps = 10.0;
+  replan_params.return_first_solution = false;
+
+  //b_ret = planner_->replan(prm_->allowed_time_, &solution_state_ids, &solution_cost_);
+  b_ret = planner_->replan(&solution_state_ids, replan_params, &solution_cost_);
 
   //check if an empty plan was received.
   if(b_ret && solution_state_ids.size() <= 0)

@@ -19,7 +19,9 @@
   <depend package="leatherman" />
   <depend package="sbpl_manipulation_components" />
 
-  <rosdep name="sbpl" />
+  <!--  <rosdep name="sbpl" /> -->
+
+  <depend package="sbpl" />
 
   <export>
     <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_arm_planner"/>

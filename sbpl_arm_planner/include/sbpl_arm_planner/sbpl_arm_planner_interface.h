@@ -41,7 +41,8 @@
 #include <leatherman/utils.h>
 #include <leatherman/print.h>
 #include <leatherman/viz.h>
-#include <sbpl/planners/araplanner.h>
+#include <sbpl/headers.h>
+//#include <sbpl/planners/araplanner.h>
 #include <sbpl_arm_planner/environment_robarm3d.h>
 #include <sbpl_manipulation_components/post_processing.h>
 #include <moveit/distance_field/propagation_distance_field.h>
@@ -66,6 +67,8 @@ class SBPLArmPlannerInterface
 
     bool planKinematicPath(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
 
+    bool solve(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
+    
     bool solve(const arm_navigation_msgs::PlanningSceneConstPtr& planning_scene, const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
 
     bool canServiceRequest(const arm_navigation_msgs::GetMotionPlan::Request &req);
