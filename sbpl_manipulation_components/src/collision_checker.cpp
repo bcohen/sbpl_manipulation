@@ -41,7 +41,19 @@ bool CollisionChecker::isStateValid(const std::vector<double> &angles, bool verb
   return false;
 }
 
-bool CollisionChecker::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, double &dist)
+bool CollisionChecker::isStateValid(const std::vector<double> &angles, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool verbose, bool visualize, double &dist)
+{
+  ROS_ERROR("Function is not filled in.");
+  return false;
+}
+
+bool CollisionChecker::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, int &path_length, int &num_checks, double &dist)
+{
+  ROS_ERROR("Function is not filled in.");
+  return false;
+}
+
+bool CollisionChecker::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int &path_length, int &num_checks, double &dist)
 {
   ROS_ERROR("Function is not filled in.");
   return false;
