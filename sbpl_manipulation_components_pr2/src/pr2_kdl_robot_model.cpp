@@ -114,7 +114,7 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
 
   // joint limits
   planning_joints_ = planning_joints;
-  if(!getJointLimits(planning_joints_, min_limits_, max_limits_, continuous_))
+  if(!getJointLimits(planning_joints_, min_limits_, max_limits_, continuous_, false))
   {
     ROS_ERROR("Failed to get the joint limits.");
     return false;
@@ -159,7 +159,7 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
   // initialize rpy solver
   double wrist_min_limit, wrist_max_limit;
   bool wrist_continuous;
-  if(!getJointLimits(wrist_pitch_joint_name_, wrist_min_limit, wrist_max_limit, wrist_continuous))
+  if(!getJointLimits(wrist_pitch_joint_name_, wrist_min_limit, wrist_max_limit, wrist_continuous, false))
     return false;
   rpy_solver_ = new sbpl_arm_planner::RPYSolver(wrist_min_limit, wrist_max_limit);
 
