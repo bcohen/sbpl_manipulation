@@ -1,7 +1,9 @@
 #ifndef _BFS_3D_
 #define _BFS_3D_
 
-#define WALL         0x7FFFFFFF
+//largest positive number
+#define WALL         0x7FFFFFFF 
+//-1
 #define UNDISCOVERED 0xFFFFFFFF
 
 namespace sbpl_arm_planner{
@@ -29,6 +31,8 @@ class BFS_3D {
 
         void setWall(int, int, int);
         bool isWall(int, int, int);
+
+        void reset();
 
         void run(int, int, int);
 
