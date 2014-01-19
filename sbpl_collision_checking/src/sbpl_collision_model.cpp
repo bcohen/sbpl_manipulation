@@ -130,6 +130,16 @@ bool SBPLCollisionModel::setDefaultGroup(std::string group_name)
     return false;
 
   dgroup_ = group_config_map_[group_name];
+
+  // initialize set of sphere groups (for fast reference by the collision space)
+  sphere_groups_.clear();
+  sphere_groups_.push_back(dgroup_);
+  for(std::map<std::string, Group*>::const_iterator iter = group_config_map_.begin(); iter != group_config_map_.end(); ++iter)
+  {
+    if((iter->second->type_ == sbpl_arm_planner::Group::SPHERES) && 
+       (iter->second->getName().compare(group_name) != 0))
+      sphere_groups_.push_back(iter->second);
+  }
   return true;
 }
 
@@ -245,12 +255,17 @@ void SBPLCollisionModel::getVoxelGroups(std::vector<Group*> &vg)
 }
 
 void SBPLCollisionModel::getSphereGroups(std::vector<Group*> &vg)
-{
-  vg.clear();
-  for(std::map<std::string, Group*>::const_iterator iter = group_config_map_.begin(); iter != group_config_map_.end(); ++iter)
+{ 
+  if(!sphere_groups_.empty())
+    vg = sphere_groups_;
+  else
   {
-    if(iter->second->type_ == sbpl_arm_planner::Group::SPHERES)
-      vg.push_back(iter->second);
+    vg.clear();
+    for(std::map<std::string, Group*>::const_iterator iter = group_config_map_.begin(); iter != group_config_map_.end(); ++iter)
+    {
+      if(iter->second->type_ == sbpl_arm_planner::Group::SPHERES)
+        vg.push_back(iter->second);
+    }
   }
 }
 

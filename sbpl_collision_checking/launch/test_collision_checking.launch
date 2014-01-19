@@ -1,0 +1,44 @@
+<launch>
+
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_description)/robots/pr2.urdf.xacro'" />
+
+  <node pkg="sbpl_collision_checking" type="test_collision_checking" name="test_collision_checking_pr2_right" output="screen" respawn="false" clear_params="true" >
+
+    <rosparam command="load" file="$(find handoff_experiments)/experiments/simple_handoff2.yaml" />
+
+<!--    <param name="known_objects_filename" value="$(find handoff_experiments)/env/table.env" /> -->
+
+    <!-- Only set one of these two options to true! -->
+    <param name="perform_a_timing_test" value="true" />
+    <param name="perform_a_collision_model_fidelity_comparison" value="false" />
+
+    <!-- Testing details -->
+    <param name="restrict_shoulder_pan" value="false" />
+    <param name="visualize" value="true" />
+
+    <!--
+    <param name="multi_level_check" value="false" />
+    -->
+
+    <!-- Only matters when visualize is set to true -->
+    <param name="low_res" value="false" />
+    
+
+    <!-- planning/world parameters -->
+    <param name="group_name" value="right_arm" />
+    <param name="world_frame" value="base_footprint" />
+
+    <param name="dims/x" value="3.0" />
+    <param name="dims/y" value="3.0" />
+    <param name="dims/z" value="3.0" />
+
+    <param name="origin/x" value="-1.00" />
+    <param name="origin/y" value="-1.25" />
+    <param name="origin/z" value="-0.5" />
+
+    <rosparam command="load" file="$(find sbpl_collision_checking)/config/pr2_right_arm_model.yaml" />
+
+  </node>
+
+</launch>
+

@@ -121,11 +121,125 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     return checkCollision(angles, false, verbose, visualize, dist);
   else
   {
-    if(checkCollision(angles, true, verbose, visualize, dist))
+    std::vector<std::vector<std::vector<KDL::Frame> > > frames;
+
+    if(checkCollision(angles, frames, true, verbose, visualize, dist))
       return true;
     else
-      return checkCollision(angles, false, verbose, visualize, dist);
+      return checkCollision(angles, frames, false, verbose, visualize, dist);
   }
+}
+
+bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::vector<std::vector<std::vector<KDL::Frame> > > &frames,  bool low_res, bool verbose, bool visualize, double &dist)
+{  
+  bool in_collision = false;
+  double dist_temp=100.0;
+  dist = 100.0;
+  std::vector<Sphere*> spheres;
+  std::vector<KDL::Vector> dg_spheres, g_spheres;  
+  if(visualize)
+    collision_spheres_.clear();
+
+  // first group, is default group
+  std::vector<Group*> sg;
+  model_.getSphereGroups(sg);
+
+  // if empty, low_res is probably enabled
+  if(frames.empty())
+    frames.resize(sg.size());
+    
+  // compute FK for default group
+  if(frames[0].empty())
+  {
+    if(!model_.computeDefaultGroupFK(angles, frames[0]))
+    {
+      ROS_ERROR("[cspace] Failed to compute foward kinematics.");
+      return false;
+    }
+  }
+
+  ROS_DEBUG("[cspace] Checking collisions in checkCollision().");
+
+  // check attached object against world
+  if(object_attached_)
+  {
+    if(!checkSpheresAgainstWorld(frames[0], object_spheres_p_, verbose, visualize, dg_spheres, dist_temp))
+    {
+      if(!visualize)
+        return false;
+      else
+        in_collision = true;
+    }
+    if(dist_temp < dist)
+      dist = dist_temp;
+  }
+
+  /*
+  sg[0]->getSpheres(spheres, low_res);
+  dg_spheres.resize(spheres.size());
+  for(size_t j = 0; j < spheres.size(); ++j)
+    dg_spheres[j] = frames[0][spheres[j]->kdl_chain][spheres[j]->kdl_segment] * spheres[j]->v;
+  */
+ 
+  // check default sphere group against world
+  if(!checkSpheresAgainstWorld(frames[0], sg[0]->getSpheres(low_res), verbose, visualize, dg_spheres, dist_temp))
+  {
+    if(!visualize)
+      return false;
+    else
+      in_collision = true;
+  }
+  if(dist_temp < dist)
+    dist = dist_temp;
+
+  // check other sphere groups
+  std::vector<double> empty_angles;
+  for(size_t i = 1; i < sg.size(); ++i)
+  {
+    // compute FK for group
+    if(frames[i].empty())
+    {
+      if(!sg[i]->computeFK(empty_angles, frames[i]))
+      {
+        ROS_ERROR("[cspace] Failed to compute FK for sphere group '%s'.", sg[i]->getName().c_str());
+        return false;
+      }
+    }
+
+    // check against world
+    if(!checkSpheresAgainstWorld(frames[i], sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
+    {
+      if(!visualize)
+        return false;
+      else
+        in_collision = true;
+    }
+    if(dist_temp < dist)
+      dist = dist_temp;
+
+    /*
+    sg[i]->getSpheres(spheres, low_res);
+    g_spheres.resize(spheres.size());
+    for(size_t j = 0; j < spheres.size(); ++j)
+      g_spheres[j] = frames[i][spheres[j]->kdl_chain][spheres[j]->kdl_segment] * spheres[j]->v;
+    */
+
+    // check against default group spheres (TODO: change to all sphere groups)
+    if(!checkSphereGroupAgainstSphereGroup(sg[0], sg[i], dg_spheres, g_spheres, low_res, low_res, verbose, visualize, dist_temp))
+    {
+      if(!visualize)
+        return false;
+      else
+        in_collision = true;
+    }
+    if(dist_temp < dist)
+      dist = dist_temp;
+  }
+
+  if(visualize && in_collision)
+    return false;
+
+  return true;
 }
 
 bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool low_res, bool verbose, bool visualize, double &dist)
@@ -139,7 +253,7 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   if(visualize)
     collision_spheres_.clear();
 
-  // compute foward kinematics
+  // compute FK for default group
   if(!model_.computeDefaultGroupFK(angles, dframes))
   {
     ROS_ERROR("[cspace] Failed to compute foward kinematics.");
@@ -171,18 +285,12 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   if(dist_temp < dist)
     dist = dist_temp;
 
-
   // check other sphere groups
   std::vector<Group*> sg;
   model_.getSphereGroups(sg);
   std::vector<double> empty_angles;
-  for(size_t i = 0; i < sg.size(); ++i)
+  for(size_t i = 1; i < sg.size(); ++i)
   {
-    // skip the default group
-    if(sg[i]->getName().compare(group_name_) == 0)
-      continue;
-
-  
     // compute FK for group
     if(!sg[i]->computeFK(empty_angles, frames))
     {
@@ -200,14 +308,14 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     }
     if(dist_temp < dist)
       dist = dist_temp;
-    
-    /*
+
+    /* 
     sg[i]->getSpheres(spheres, low_res);
     g_spheres.resize(spheres.size());
     for(size_t j = 0; j < spheres.size(); ++j)
       g_spheres[i] = frames[spheres[i]->kdl_chain][spheres[i]->kdl_segment] * spheres[i]->v;
     */
-    
+
     // check against default group spheres (TODO: change to all sphere groups)
     if(!checkSphereGroupAgainstSphereGroup(model_.getDefaultGroup(), sg[i], dg_spheres, g_spheres, low_res, low_res, verbose, visualize, dist_temp))
     {
@@ -217,10 +325,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
         in_collision = true;
     }
     if(dist_temp < dist)
-      dist = dist_temp;
-    
+      dist = dist_temp; 
   }
- 
+
   if(visualize && in_collision)
     return false;
 
@@ -251,6 +358,7 @@ bool SBPLCollisionSpace::checkSpheresAgainstWorld(const std::vector<std::vector<
   Sphere s;
   sph_poses.resize(spheres.size());
 
+  //ROS_INFO("frames: %d", int(frames.size()));
   for(size_t i = 0; i < spheres.size(); ++i)
   {
     sph_poses[i] = frames[spheres[i]->kdl_chain][spheres[i]->kdl_segment] * spheres[i]->v;
@@ -411,6 +519,12 @@ bool SBPLCollisionSpace::updateVoxelGroup(Group *g)
 
 bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist)
 {
+  std::vector<std::vector<std::vector<KDL::Frame> > > frames;
+  return checkPathForCollision(start, end, frames, verbose, path_length, num_checks, dist); 
+}
+
+bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool verbose, int &path_length, int &num_checks, double &dist)
+{
   int inc_cc = 5;
   double dist_temp = 0;
   std::vector<double> start_norm(start);
@@ -447,7 +561,7 @@ bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start,
       for(size_t j = i; j < path.size(); j=j+inc_cc)
       {
         num_checks++;
-        if(!checkCollision(path[j], verbose, false, dist_temp))
+        if(!isStateValid(path[j], frames, verbose, false, dist_temp))
         {
           dist = dist_temp;
           return false; 
@@ -463,7 +577,7 @@ bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start,
     for(size_t i = 0; i < path.size(); i++)
     {
       num_checks++;
-      if(!checkCollision(path[i], verbose, false, dist_temp))
+      if(!isStateValid(path[i], frames, verbose, false, dist_temp))
       {
         dist = dist_temp;
         return false;
@@ -627,12 +741,35 @@ bool SBPLCollisionSpace::getClearance(const std::vector<double> &angles, int num
 
 bool SBPLCollisionSpace::isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist)
 {
+  ROS_DEBUG("Calling old isStateValid()");
   return checkCollision(angles, verbose, visualize, dist);
 }
 
-bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int path_length, int num_checks, double &dist)
+bool SBPLCollisionSpace::isStateValid(const std::vector<double> &angles, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool verbose, bool visualize, double &dist)
+{
+  if(!frames.empty())
+    frames[0].clear();
+
+  if(!use_multi_level_collision_check_)
+    return checkCollision(angles, false, verbose, visualize, dist);
+  else
+  {
+
+    if(checkCollision(angles, frames, true, verbose, visualize, dist))
+      return true;
+    else
+      return checkCollision(angles, frames, false, verbose, visualize, dist);
+  }
+}
+
+bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int &path_length, int &num_checks, double &dist)
 {
   return checkPathForCollision(angles0, angles1, false, path_length, num_checks, dist);
+}
+
+bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, int &path_length, int &num_checks, double &dist)
+{
+  return checkPathForCollision(angles0, angles1, frames, false, path_length, num_checks, dist);
 }
 
 void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &state)

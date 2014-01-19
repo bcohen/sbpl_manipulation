@@ -103,6 +103,8 @@ class SBPLCollisionModel
     
     Group* dgroup_;
 
+    std::vector<Group*> sphere_groups_;
+
     bool getRobotModel();
 
     bool readGroups(std::string ns="");

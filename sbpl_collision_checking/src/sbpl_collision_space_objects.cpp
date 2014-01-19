@@ -105,7 +105,7 @@ void SBPLCollisionSpace::attachCube(std::string name, std::string link, geometry
   {
     ros::WallTime start = ros::WallTime::now();
     sbpl::SphereEncloser::encloseBox(x_dim, y_dim, z_dim, object_enclosing_sphere_radius_, spheres);
-    ROS_WARN("[cspace] It took %0.3fsec to enclose %s with %d spheres.", (ros::WallTime::now() - start).toSec(), name.c_str(), int(spheres.size()));
+    ROS_DEBUG("[cspace] It took %0.3fsec to enclose %s with %d spheres.", (ros::WallTime::now() - start).toSec(), name.c_str(), int(spheres.size()));
     object_spheres_map_[name] = spheres;
   }
   else
@@ -133,8 +133,8 @@ void SBPLCollisionSpace::attachCube(std::string name, std::string link, geometry
 
     object_spheres_p_[i] = &(object_spheres_[i]);
   }
-  ROS_INFO("[cspace] Attaching '%s' represented by %d spheres with dimensions: %0.3f %0.3f %0.3f", name.c_str(), int(spheres.size()), x_dim, y_dim, z_dim);
-  ROS_INFO("[cspace] ['%s' pose] xyz: %0.3f %0.3f %0.3f  quat: %0.3f %0.3f %0.3f %0.3f", name.c_str(), pose.position.x,pose.position.y,pose.position.z, pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w); 
+  ROS_DEBUG("[cspace] Attaching '%s' represented by %d spheres with dimensions: %0.3f %0.3f %0.3f", name.c_str(), int(spheres.size()), x_dim, y_dim, z_dim);
+  ROS_DEBUG("[cspace] ['%s' pose] xyz: %0.3f %0.3f %0.3f  quat: %0.3f %0.3f %0.3f %0.3f", name.c_str(), pose.position.x,pose.position.y,pose.position.z, pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w); 
 }
 
 void SBPLCollisionSpace::attachMesh(std::string name, std::string link, geometry_msgs::Pose pose, const std::vector<geometry_msgs::Point> &vertices, const std::vector<int> &triangles)

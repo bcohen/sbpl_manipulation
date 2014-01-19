@@ -207,7 +207,7 @@ int main(int argc, char **argv)
   ph.param("perform_a_timing_test", test_timing, true);
   ph.param("perform_a_collision_model_fidelity_comparison", compare_collision_models, false);
   ph.param("visualize", visualize, false);
-  ph.param("low_res", low_res, false);
+  ph.param("low_res", low_res, true);
   ph.param("multi_level_check", multi_level_check, false);
   pviz.setReferenceFrame(world_frame);
   ph.param("dims/x", dims[0], 3.0);
@@ -331,6 +331,7 @@ int main(int argc, char **argv)
   ROS_INFO("visualize:  %d", visualize);
   ROS_INFO("-------------------------------------------------------------------------");
   double prep_time, ptps;
+  std::vector<std::vector<std::vector<KDL::Frame> > > frames;
 
   /*
   if(test_timing)
@@ -406,19 +407,23 @@ int main(int argc, char **argv)
           ROS_INFO("[right] %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", ranglesv[i][0], ranglesv[i][1], ranglesv[i][2], ranglesv[i][3], ranglesv[i][4], ranglesv[i][5], ranglesv[i][6]);
         }
 
+
         // Timing test: Compute # collisions per second
         if(test_timing) 
         {
+          if(!frames.empty())
+            frames[0].clear();
+
           if(multi_level_check)
           {
-            if(!cspace->isStateValid(ranglesv[i], false, visualize, dist))
+            if(!cspace->isStateValid(ranglesv[i], frames, false, visualize, dist))
               invalid++;
             else
               valid++;
           }
           else
           {
-            if(!cspace->checkCollision(ranglesv[i], low_res, false, visualize, dist))
+            if(!cspace->checkCollision(ranglesv[i], frames, low_res, false, visualize, dist))
               invalid++;
             else
               valid++;
@@ -485,6 +490,8 @@ int main(int argc, char **argv)
         if(visualize)
         {
           pviz.deleteVisualizations("collision_spheres", 100);
+          pviz.deleteVisualizations("collision_model", 100);
+          pviz.deleteVisualizations("low_res_collision_model", 100);
           usleep(5000);
 
           pviz.visualizeRobot(ranglesv[i], langlesv[i], bp, 0, "robot", 0, true);
@@ -494,7 +501,7 @@ int main(int argc, char **argv)
             p.publish(cspace->getVisualization("collision_model"));
 
           p.publish(cspace->getVisualization("collisions"));
-          sleep(1);
+          ros::Duration(1.5).sleep();
         }
       }
 

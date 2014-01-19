@@ -11,32 +11,12 @@ collision_groups:
       root: head_pan_link
     - name: laser_mount
       root: laser_tilt_mount_link
-    - name: torso
-      root: torso_lift_link
+#    - name: torso
+#      root: torso_lift_link
+    - name: bellows
+      root: base_bellow_link
     - name: base
       root: base_link
-
-#  - name: left_arm
-#    type: voxels
-#    root_name: base_footprint
-#    tip_name: l_wrist_roll_link
-#    collision_links:
-#    - name: shoulder
-#      root: l_shoulder_pan_link
-#    - name: upper_arm
-#      root: l_upper_arm_link
-#    - name: forearm
-#      root: l_forearm_link
-#    - name: gripper
-#      root: l_gripper_palm_link
-#    - name: left_finger
-#      root: l_gripper_l_finger_link
-#    - name: right_finger
-#      root: l_gripper_r_finger_link
-#    - name: right_finger_tip
-#      root: l_gripper_r_finger_tip_link
-#    - name: left_finger_tip
-#      root: l_gripper_l_finger_tip_link
 
   - name: right_arm
     type: spheres
@@ -45,8 +25,8 @@ collision_groups:
     collision_links:
     - name: shoulder
       root: r_shoulder_pan_link
-      spheres: sh0
-      low_res_spheres: lr_sh0
+      spheres: sh0 tur0 tur1
+      low_res_spheres: lr_sh0 tur0 tur1
     - name: upper_arm
       root: r_upper_arm_roll_link
       spheres: ua0 ua1 ua2 ua3
@@ -54,7 +34,7 @@ collision_groups:
     - name: forearm
       root: r_forearm_roll_link
       spheres: fa0 fa1 fa2 fa3 fa4 fa5 fa6
-      low_res_spheres: lr_fa0 lr_fa1 #lr_fa2
+      low_res_spheres: lr_fa0 lr_fa1
     - name: gripper
       root: r_wrist_roll_link
       spheres: gr0 gr1 gr2
@@ -79,8 +59,8 @@ collision_groups:
     collision_links:
     - name: shoulder
       root: l_shoulder_pan_link
-      spheres: sh0
-      low_res_spheres: lr_sh0
+      spheres: sh0 tur0 tur1
+      low_res_spheres: lr_sh0 tur0 tur1
     - name: upper_arm
       root: l_upper_arm_roll_link
       spheres: ua0 ua1 ua2 ua3
@@ -109,6 +89,9 @@ collision_groups:
 collision_spheres:
     # Radius of sh0 should really be 0.16
   - {name: sh0, x: 0.13, y: 0.0, z: -0.03, radius: 0.15, priority: 5}
+
+  - {name: tur0, x: -0.02, y: -0.03, z: -0.3, radius: 0.09, priority: 5}
+  - {name: tur1, x: -0.02, y: -0.03, z: -0.42, radius: 0.09, priority: 5}
 
   - {name: ua0, x: 0.18, y: 0.0, z: -0.015, radius: 0.11, priority: 4}
   - {name: ua1, x: 0.26, y: 0.00, z: -0.035, radius: 0.08, priority: 4}
