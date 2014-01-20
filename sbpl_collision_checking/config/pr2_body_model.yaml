@@ -12,7 +12,7 @@ collision_groups:
     - name: laser_mount
       root: laser_tilt_mount_link
     - name: bellows
-      root: base_bellows_link
+      root: base_bellow_link
     - name: torso
       root: torso_lift_link
     - name: base
