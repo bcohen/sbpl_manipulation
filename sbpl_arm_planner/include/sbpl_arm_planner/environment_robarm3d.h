@@ -103,6 +103,7 @@ typedef struct
 typedef struct EnvironmentPlanningData
 {
   bool near_goal;
+  bool set_walls_in_bfs;
   clock_t t_start;
   double time_to_goal_region;
   GoalConstraint goal;
@@ -126,6 +127,7 @@ typedef struct EnvironmentPlanningData
     near_goal = false;
     start_entry = NULL;
     goal_entry = NULL;
+    set_walls_in_bfs = true;
     Coord2StateIDHashTable = NULL;
   }
 

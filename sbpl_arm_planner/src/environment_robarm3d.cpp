@@ -613,22 +613,38 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
   ROS_DEBUG_NAMED(prm_->expands_log_, "grid: %d %d %d (cells)  xyz: %.2f %.2f %.2f (meters)  (tol: %.3f) rpy: %1.2f %1.2f %1.2f (radians) (tol: %.3f)", pdata_.goal_entry->xyz[0],pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2], pdata_.goal.pose[0], pdata_.goal.pose[1], pdata_.goal.pose[2], pdata_.goal.xyz_tolerance[0], pdata_.goal.pose[3], pdata_.goal.pose[4], pdata_.goal.pose[5], pdata_.goal.rpy_tolerance[0]);
 
 
-  // push obstacles into bfs grid
-  ros::WallTime start = ros::WallTime::now();
-  start = ros::WallTime::now();
-  int dimX, dimY, dimZ;
-  grid_->getGridSize(dimX, dimY, dimZ);
-  int walls=0;
-  for (int z = 0; z < dimZ - 2; z++)
-    for (int y = 0; y < dimY - 2; y++)
-      for (int x = 0; x < dimX - 2; x++)
-        if(grid_->getDistance(x,y,z) <= prm_->planning_link_sphere_radius_)
-        {
-          bfs_->setWall(x + 1, y + 1, z + 1); //, true);
-          walls++;
-        }
-  double set_walls_time = (ros::WallTime::now() - start).toSec();
-  ROS_INFO("[env] %0.5fsec to set walls in new bfs. (%d walls (%0.3f percent))", set_walls_time, walls, double(walls)/double(dimX*dimY*dimZ));
+  if(pdata_.set_walls_in_bfs)
+  {
+    // push obstacles into bfs grid
+    ros::WallTime start = ros::WallTime::now();
+    clock_t t_start = clock();
+    start = ros::WallTime::now();
+
+    int dimX, dimY, dimZ;
+    grid_->getGridSize(dimX, dimY, dimZ);
+    int walls=0;
+    for (int z = 0; z < dimZ - 2; z++)
+      for (int y = 0; y < dimY - 2; y++)
+        for (int x = 0; x < dimX - 2; x++)
+          if(grid_->getDistance(x,y,z) <= prm_->planning_link_sphere_radius_)
+          {
+            bfs_->setWall(x + 1, y + 1, z + 1); //, true);
+            walls++;
+          }
+    double t_set_walls_time = (clock() - t_start) / (double)CLOCKS_PER_SEC;
+    double set_walls_time = (ros::WallTime::now() - start).toSec();
+    ROS_INFO("[env] %0.5f(%0.5f)sec to set walls in bfs. (%d walls (%0.3f percent))", set_walls_time, t_set_walls_time, walls, double(walls)/double(dimX*dimY*dimZ));
+
+    // clear flag to set walls.
+    pdata_.set_walls_in_bfs = false;
+  }
+  else
+  {
+    clock_t t_start = clock();
+    bfs_->reset(); 
+    double t_set_walls_time = (clock() - t_start) / (double)CLOCKS_PER_SEC;
+    ROS_INFO("[env] %0.5fsec to reset bfs (without setting walls).", t_set_walls_time);
+  }
 
   /*
   start = ros::WallTime::now();
