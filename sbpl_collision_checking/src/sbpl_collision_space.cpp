@@ -184,6 +184,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
   // check default sphere group against world
   if(!checkSpheresAgainstWorld(frames[0], sg[0]->getSpheres(low_res), verbose, visualize, dg_spheres, dist_temp))
   {
+    if(dist_temp < dist)
+      dist = dist_temp;
+
     if(!visualize)
       return false;
     else
@@ -209,6 +212,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
     // check against world
     if(!checkSpheresAgainstWorld(frames[i], sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
     {
+      if(dist_temp < dist)
+        dist = dist_temp;
+
       if(!visualize)
         return false;
       else
@@ -227,6 +233,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
     // check against default group spheres (TODO: change to all sphere groups)
     if(!checkSphereGroupAgainstSphereGroup(sg[0], sg[i], dg_spheres, g_spheres, low_res, low_res, verbose, visualize, dist_temp))
     {
+      if(dist_temp < dist)
+        dist = dist_temp;
+
       if(!visualize)
         return false;
       else
@@ -265,6 +274,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   {
     if(!checkSpheresAgainstWorld(dframes, object_spheres_p_, verbose, visualize, dg_spheres, dist_temp))
     {
+      if(dist_temp < dist)
+        dist = dist_temp;
+
       if(!visualize)
         return false;
       else
@@ -277,6 +289,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   // check default sphere group against world
   if(!checkSpheresAgainstWorld(dframes, model_.getDefaultGroup()->getSpheres(low_res), verbose, visualize, dg_spheres, dist_temp))
   {
+    if(dist_temp < dist)
+      dist = dist_temp;
+
     if(!visualize)
       return false;
     else
@@ -301,6 +316,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     // check against world
     if(!checkSpheresAgainstWorld(frames, sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
     {
+      if(dist_temp < dist)
+        dist = dist_temp;
+
       if(!visualize)
         return false;
       else
@@ -319,6 +337,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     // check against default group spheres (TODO: change to all sphere groups)
     if(!checkSphereGroupAgainstSphereGroup(model_.getDefaultGroup(), sg[i], dg_spheres, g_spheres, low_res, low_res, verbose, visualize, dist_temp))
     {
+      if(dist_temp < dist)
+        dist = dist_temp;
+
       if(!visualize)
         return false;
       else
@@ -754,7 +775,6 @@ bool SBPLCollisionSpace::isStateValid(const std::vector<double> &angles, std::ve
     return checkCollision(angles, false, verbose, visualize, dist);
   else
   {
-
     if(checkCollision(angles, frames, true, verbose, visualize, dist))
       return true;
     else
