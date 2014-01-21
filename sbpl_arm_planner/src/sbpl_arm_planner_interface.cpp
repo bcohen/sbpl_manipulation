@@ -317,6 +317,8 @@ bool SBPLArmPlannerInterface::plan(trajectory_msgs::JointTrajectory &traj)
     
     if(!sbpl_arm_env_->convertStateIDPathToJointTrajectory(solution_state_ids, traj))
       return false;
+
+    path_distance_ = sbpl_arm_env_->getEndEffectorDistance(solution_state_ids);
   }
   return b_ret;
 }

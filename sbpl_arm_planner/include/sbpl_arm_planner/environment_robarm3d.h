@@ -179,6 +179,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     double getDistanceToGoal(double x, double y, double z);
 
     visualization_msgs::MarkerArray getVisualization(std::string type);
+    double getEndEffectorDistance(std::vector<int> &state_ids);
 
   protected:
 

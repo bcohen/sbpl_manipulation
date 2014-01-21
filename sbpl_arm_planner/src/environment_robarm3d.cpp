@@ -887,4 +887,19 @@ visualization_msgs::MarkerArray EnvironmentROBARM3D::getVisualization(std::strin
   return ma;
 }
 
+double EnvironmentROBARM3D::getEndEffectorDistance(std::vector<int> &state_ids)
+{
+  double d = 0;
+
+  for(size_t i = 1; i < state_ids.size(); ++i)
+  {
+    EnvROBARM3DHashEntry_t* a = pdata_.StateID2CoordTable[state_ids[i-1]];
+    EnvROBARM3DHashEntry_t* b = pdata_.StateID2CoordTable[state_ids[i]];
+
+    d+=getEuclideanDistance(a->xyz[0], a->xyz[1], a->xyz[2], b->xyz[0], b->xyz[1], b->xyz[2]);
+  }
+  d *= grid_->getResolution();
+  return d;
+}
+
 }

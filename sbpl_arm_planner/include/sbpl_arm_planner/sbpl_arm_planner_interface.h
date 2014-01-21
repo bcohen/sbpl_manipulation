@@ -79,6 +79,8 @@ class SBPLArmPlannerInterface
 
     visualization_msgs::MarkerArray getCollisionModelTrajectoryMarker();
 
+    double getEndEffectorPathDistance() {return path_distance_;};
+
   private:
 
     ros::NodeHandle nh_;
@@ -87,6 +89,8 @@ class SBPLArmPlannerInterface
     bool planner_initialized_;
     int num_joints_;
     int solution_cost_;
+
+    double path_distance_;
 
     /* planner & environment */
     MDPConfig mdp_cfg_;
