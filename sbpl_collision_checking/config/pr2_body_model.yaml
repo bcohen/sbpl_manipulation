@@ -17,7 +17,10 @@ collision_groups:
       root: torso_lift_link
     - name: base
       root: base_link
-
+    - name: right_turret
+      root: r_shoulder_pan_link
+    - name: left_turret
+      root: l_shoulder_pan_link
 
 collision_spheres:
 
