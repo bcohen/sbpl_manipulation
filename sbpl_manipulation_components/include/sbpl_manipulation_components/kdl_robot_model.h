@@ -54,7 +54,7 @@ class KDLRobotModel : public RobotModel {
 
   public:
 
-    KDLRobotModel();
+    KDLRobotModel(std::string ns="~");
     KDLRobotModel(std::string chain_root_link, std::string chain_tip_link);
     ~KDLRobotModel();
    

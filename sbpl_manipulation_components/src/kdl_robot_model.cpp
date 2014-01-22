@@ -39,9 +39,9 @@ using namespace std;
 
 namespace sbpl_arm_planner {
 
-KDLRobotModel::KDLRobotModel() : ik_solver_(NULL), ik_vel_solver_(NULL), fk_solver_(NULL)
+KDLRobotModel::KDLRobotModel(std::string ns) : ik_solver_(NULL), ik_vel_solver_(NULL), fk_solver_(NULL)
 {
-  ros::NodeHandle ph("~");
+  ros::NodeHandle ph(ns);
   ph.param<std::string>("robot_model/chain_root_link", chain_root_name_, " ");
   ph.param<std::string>("robot_model/chain_tip_link", chain_tip_name_, " ");
   ph.param("robot_model/free_angle", free_angle_, 2);
@@ -85,7 +85,7 @@ bool KDLRobotModel::init(std::string robot_description, std::vector<std::string>
   {
     if(!leatherman::getSegmentOfJoint(ktree_, planning_joints[j], segments[j]))
     {
-      ROS_ERROR("Failed to find kdl segment for '%s'.", planning_joints_[j].c_str());
+      ROS_ERROR("Failed to find kdl segment for '%s'.", planning_joints[j].c_str());
       return false;
     }
   }
