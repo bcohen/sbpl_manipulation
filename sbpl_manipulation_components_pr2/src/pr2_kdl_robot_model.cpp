@@ -38,13 +38,16 @@ using namespace std;
 
 namespace sbpl_arm_planner {
 
-PR2KDLRobotModel::PR2KDLRobotModel() : pr2_ik_solver_(NULL), rpy_solver_(NULL)
+PR2KDLRobotModel::PR2KDLRobotModel(std::string ns) : pr2_ik_solver_(NULL), rpy_solver_(NULL)
 {
-  chain_root_name_ = "torso_lift_link";
-  chain_tip_name_ = "r_gripper_palm_link";
-  forearm_roll_link_name_ = "r_forearm_roll_link";
-  wrist_pitch_joint_name_ = "r_wrist_flex_joint";
-  end_effector_link_name_ = "r_gripper_palm_link";
+  ros::NodeHandle ph(ns);
+  ph.param("robot_model/free_angle", free_angle_, 2);
+  ph.param("robot_model/use_safety_joint_limits", use_safety_limits_, false);
+  ph.param<std::string>("robot_model/chain_root_link", chain_root_name_, "torso_lift_link");
+  ph.param<std::string>("robot_model/chain_tip_link", chain_tip_name_, "r_gripper_palm_link");
+  ph.param<std::string>("robot_model/forearm_roll_link", forearm_roll_link_name_, "r_forearm_roll_link");
+  ph.param<std::string>("robot_model/wrist_pitch_joint_name", wrist_pitch_joint_name_, "r_wrist_flex_joint");
+  ph.param<std::string>("robot_model/end_effector_link_name", end_effector_link_name_, "r_gripper_palm_link");
 }
 
 PR2KDLRobotModel::~PR2KDLRobotModel()
@@ -76,7 +79,7 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
   {
     if(!leatherman::getSegmentOfJoint(ktree_, planning_joints[j], segments[j]))
     {
-      ROS_ERROR("Failed to find kdl segment for '%s'.", planning_joints_[j].c_str());
+      ROS_ERROR("Failed to find kdl segment for '%s'.", planning_joints[j].c_str());
       return false;
     }
   }

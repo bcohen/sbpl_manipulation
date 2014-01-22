@@ -56,7 +56,7 @@ class PR2KDLRobotModel : public KDLRobotModel {
 
   public:
 
-    PR2KDLRobotModel();
+    PR2KDLRobotModel(std::string ns="~");
 
     ~PR2KDLRobotModel();
    
