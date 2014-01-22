@@ -9,7 +9,7 @@ namespace sbpl_arm_planner{
     }
 
 void BFS_3D::search(int width, int planeSize, int volatile* distance_grid, int* queue, int &queue_head, int &queue_tail) {
-    while (queue_head < queue_tail) {
+    while (!should_stop && queue_head < queue_tail) {
         int currentNode = queue[queue_head++];
         int currentCost = distance_grid[currentNode] + 1;
 

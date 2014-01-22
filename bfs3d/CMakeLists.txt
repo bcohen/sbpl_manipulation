@@ -26,3 +26,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(bfs3d src/BFS_3D.cpp src/Search.cpp)
 
+rosbuild_add_executable(test_bfs src/test_bfs.cpp)
+target_link_libraries(test_bfs bfs3d)
