@@ -612,6 +612,8 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
   ROS_DEBUG_NAMED(prm_->expands_log_, "A new goal has been set.");
   ROS_DEBUG_NAMED(prm_->expands_log_, "grid: %d %d %d (cells)  xyz: %.2f %.2f %.2f (meters)  (tol: %.3f) rpy: %1.2f %1.2f %1.2f (radians) (tol: %.3f)", pdata_.goal_entry->xyz[0],pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2], pdata_.goal.pose[0], pdata_.goal.pose[1], pdata_.goal.pose[2], pdata_.goal.xyz_tolerance[0], pdata_.goal.pose[3], pdata_.goal.pose[4], pdata_.goal.pose[5], pdata_.goal.rpy_tolerance[0]);
 
+  // preempt the bfs, just in case its running
+  bfs_->stop();
 
   if(pdata_.set_walls_in_bfs)
   {
