@@ -19,6 +19,7 @@ class BFS_3D {
         int queue_head, queue_tail;
 
         volatile bool running;
+        volatile bool should_stop;
 
         void search(int, int, int volatile*, int*, int&, int&);
         inline int getNode(int, int, int);
@@ -35,6 +36,7 @@ class BFS_3D {
         void reset();
 
         void run(int, int, int);
+        void stop();
 
         int getDistance(int, int, int);
 };
