@@ -685,7 +685,20 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
       return false;
     }
     ROS_DEBUG("mesh: %s  triangles: %u  vertices: %u", name.c_str(), int(triangles.size()), int(vertices.size()));
-    sbpl::Voxelizer::voxelizeMesh(vertices, triangles, p, RESOLUTION, v, false);
+
+	// copied from sbpl_geometry_utils
+    std::vector<geometry_msgs::Point> verticesCopy = vertices;
+    Eigen::Quaterniond q(p.orientation.w, p.orientation.x, p.orientation.y, p.orientation.z);
+    Eigen::Translation3d transMatrix(p.position.x, p.position.y, p.position.z);
+    Eigen::Affine3d transform = transMatrix * q;
+    for (int i = 0; i < (int)verticesCopy.size(); i++) {
+      Eigen::Vector3d vec(verticesCopy[i].x, verticesCopy[i].y, verticesCopy[i].z);
+      Eigen::Vector3d transVec = transform * vec;
+      verticesCopy[i].x = transVec(0);
+      verticesCopy[i].y = transVec(1);
+      verticesCopy[i].z = transVec(2);
+    }
+    sbpl::Voxelizer::voxelizeMesh(verticesCopy, triangles, RESOLUTION, v, true);
     ROS_DEBUG("mesh: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
