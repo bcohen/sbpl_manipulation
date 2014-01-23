@@ -7,8 +7,8 @@ collision_groups:
     collision_links:
     - name: shoulder
       root: arm0_shoulder_pan_link
-      spheres: sh0 tur0 tur1
-      low_res_spheres: lr_sh0 tur0 tur1
+      spheres: sh0 tur0 tur1 tur2 tur3
+      low_res_spheres: lr_sh0 tur0 tur1 tur2 tur3
     - name: upper_arm
       root: arm0_upper_arm_roll_link
       spheres: ua0 ua1 ua2 ua3
@@ -41,8 +41,8 @@ collision_groups:
     collision_links:
     - name: shoulder
       root: arm1_shoulder_pan_link
-      spheres: sh0 tur0 tur1
-      low_res_spheres: lr_sh0 tur0 tur1
+      spheres: sh0 tur0 tur1 tur2 tur3
+      low_res_spheres: lr_sh0 tur0 tur1 tur2 tur3
     - name: upper_arm
       root: arm1_upper_arm_roll_link
       spheres: ua0 ua1 ua2 ua3
@@ -75,8 +75,8 @@ collision_groups:
     collision_links:
     - name: shoulder
       root: arm2_shoulder_pan_link
-      spheres: sh0 tur0 tur1
-      low_res_spheres: lr_sh0 tur0 tur1
+      spheres: sh0 tur0 tur1 tur2 tur3
+      low_res_spheres: lr_sh0 tur0 tur1 tur2 tur3
     - name: upper_arm
       root: arm2_upper_arm_roll_link
       spheres: ua0 ua1 ua2 ua3
@@ -108,8 +108,10 @@ collision_spheres:
     # Radius of sh0 should really be 0.16
   - {name: sh0, x: 0.13, y: 0.0, z: -0.03, radius: 0.15, priority: 5}
 
-  - {name: tur0, x: -0.02, y: -0.03, z: -0.3, radius: 0.09, priority: 5}
-  - {name: tur1, x: -0.02, y: -0.03, z: -0.42, radius: 0.09, priority: 5}
+  - {name: tur0, x: -0.01, y: -0.01, z: 0.02, radius: 0.15, priority: 5}
+  - {name: tur1, x: -0.01, y: -0.01, z: -0.13, radius: 0.15, priority: 5}
+  - {name: tur2, x: -0.01, y: -0.01, z: -0.26, radius: 0.15, priority: 5}
+  - {name: tur3, x: -0.01, y: -0.01, z: -0.39, radius: 0.15, priority: 5}
 
   - {name: ua0, x: 0.18, y: 0.0, z: -0.015, radius: 0.11, priority: 4}
   - {name: ua1, x: 0.26, y: 0.00, z: -0.035, radius: 0.08, priority: 4}
