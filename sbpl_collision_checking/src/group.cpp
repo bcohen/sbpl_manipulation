@@ -852,4 +852,18 @@ void Group::printDebugInfo()
     ROS_INFO("[angles_to_jntarray] [%d] %d", int(i), int(angles_to_jntarray_[i].size()));
 }
 
+void Group::setName(std::string name)
+{
+  name_ = name;
+}
+
+bool Group::setSpheres(std::vector<Sphere*> &spheres, bool low_res)
+{
+  if(low_res)
+    low_res_spheres_ = spheres;
+  else
+    spheres_ = spheres;
+}
+
+
 }

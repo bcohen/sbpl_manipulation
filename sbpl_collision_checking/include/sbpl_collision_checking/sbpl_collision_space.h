@@ -68,6 +68,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     void setRobotState(const arm_navigation_msgs::RobotState &state);
 
+    void setSphereGroupsForCollisionCheck(const std::vector<std::string> &group_names);
+
     /** --------------- Collision Checking ----------- */
     bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
     bool checkCollision(const std::vector<double> &angles, bool low_res, bool verbose, bool visualize, double &dist);
@@ -113,7 +115,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     void attachCube(std::string name, std::string link, geometry_msgs::Pose pose, double x_dim, double y_dim, double z_dim);
     void attachMesh(std::string name, std::string link, geometry_msgs::Pose pose, const std::vector<geometry_msgs::Point> &vertices, const std::vector<int> &triangles);
     void removeAttachedObject();
-    bool getAttachedObject(const std::vector<double> &angles, std::vector<std::vector<double> > &xyz);
+    bool getAttachedObject(const std::vector<double> &angles, bool low_res, std::vector<std::vector<double> > &xyz);
     bool setAttachedObjects(const std::vector<arm_navigation_msgs::AttachedCollisionObject> &objects);
 
     /** --------------- Debugging ---------------- */
@@ -126,6 +128,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     bool updateVoxelGroup(Group *g);
     bool updateVoxelGroup(std::string name);
 
+    bool isObjectAttached() {return object_attached_;}; 
   private:
 
     sbpl_arm_planner::SBPLCollisionModel model_;
@@ -156,6 +159,11 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     std::vector<Sphere> object_spheres_;
     std::vector<Sphere*> object_spheres_p_;  // hack
     std::map<std::string, std::vector<std::vector<double> > > object_spheres_map_;
+    Group att_object_;
+
+    double object_enclosing_low_res_sphere_radius_;
+    std::vector<Sphere> low_res_object_spheres_;
+    std::vector<Sphere*> low_res_object_spheres_p_;  // hack
 
     /* for debugging */
     std::vector<sbpl_arm_planner::Sphere> collision_spheres_;

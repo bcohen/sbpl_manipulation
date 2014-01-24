@@ -269,6 +269,21 @@ void SBPLCollisionModel::getSphereGroups(std::vector<Group*> &vg)
   }
 }
 
+void SBPLCollisionModel::setSphereGroupsForCheckCollision(const std::vector<std::string> &group_names)
+{
+  sphere_groups_.clear();
+  sphere_groups_.push_back(dgroup_);
+  for(size_t i = 0; i < group_names.size(); ++i)
+  {
+    if(group_config_map_.find(group_names[i]) != group_config_map_.end() && 
+        (dgroup_->getName().compare(group_names[i]) != 0))
+    {
+      sphere_groups_.push_back(group_config_map_[group_names[i]]);
+    }
+  }
+  ROS_INFO("Checking group '%s' against %d other collision groups.", dgroup_->getName().c_str(), int(sphere_groups_.size()-1));
+}
+
 bool SBPLCollisionModel::doesLinkExist(std::string name, std::string group_name)
 { 
   int chain, segment;

@@ -93,6 +93,8 @@ class SBPLCollisionModel
 
     bool setModelToWorldTransform(const arm_navigation_msgs::MultiDOFJointState &state, std::string world_frame);
 
+    void setSphereGroupsForCheckCollision(const std::vector<std::string> &group_names);
+
   private:
 
     ros::NodeHandle nh_, ph_;

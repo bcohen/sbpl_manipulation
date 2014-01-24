@@ -98,6 +98,11 @@ class Group
     std::string tip_name_;
     std::vector<Link> links_;
 
+    // for attached object
+    Group() : init_(false){};
+    void setName(std::string name);
+    bool setSpheres(std::vector<Sphere*> &spheres, bool low_res);
+
   private:
 
     boost::shared_ptr<urdf::Model> urdf_;

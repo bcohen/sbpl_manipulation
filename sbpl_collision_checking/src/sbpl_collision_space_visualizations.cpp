@@ -156,7 +156,7 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
     std::vector<double> angles, rad;
     std::vector<std::vector<double> > sph;
     if(object_attached_)
-      getAttachedObject(angles, sph);
+      getAttachedObject(angles, false, sph);
 
     if(sph.empty() || sph[0].size() < 4)
       return ma;
@@ -167,6 +167,23 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
 
     ma = viz::getSpheresMarkerArray(sph, rad, 200, grid_->getReferenceFrame(), "attached_object", 0); 
   }
+  else if(type.compare("low_res_attached_object") == 0)
+  {
+    std::vector<double> angles, rad;
+    std::vector<std::vector<double> > sph;
+    if(object_attached_)
+      getAttachedObject(angles, true, sph);
+
+    if(sph.empty() || sph[0].size() < 4)
+      return ma;
+
+    rad.resize(sph.size());
+    for(size_t i = 0; i < sph.size(); ++i)
+      rad[i] = sph[i][3];
+
+    ma = viz::getSpheresMarkerArray(sph, rad, 200, grid_->getReferenceFrame(), "low_res_attached_object", 0); 
+  }
+
   else
     ma = grid_->getVisualization(type);
 

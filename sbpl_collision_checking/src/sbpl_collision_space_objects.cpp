@@ -133,6 +133,38 @@ void SBPLCollisionSpace::attachCube(std::string name, std::string link, geometry
 
     object_spheres_p_[i] = &(object_spheres_[i]);
   }
+
+  // low res spheres 
+  
+  // TODO: Hardcoded for cube
+  //sbpl::SphereEncloser::encloseBox(x_dim, y_dim, z_dim, object_enclosing_low_res_sphere_radius_, low_res_spheres);
+
+  std::vector<std::vector<double> > low_res_spheres(5,std::vector<double>(3,0));
+  low_res_spheres[0][1] = -0.16;
+  low_res_spheres[1][1] = -0.07;
+  low_res_spheres[2][1] = -0.00;
+  low_res_spheres[3][1] =  0.07;
+  low_res_spheres[4][1] =  0.16;
+  low_res_object_spheres_.resize(low_res_spheres.size());
+  low_res_object_spheres_p_.resize(low_res_spheres.size());
+  for(size_t i = 0; i < low_res_spheres.size(); ++i)
+  {
+    low_res_object_spheres_[i].v.x(low_res_spheres[i][0]);
+    low_res_object_spheres_[i].v.y(low_res_spheres[i][1]);
+    low_res_object_spheres_[i].v.z(low_res_spheres[i][2]);
+    low_res_object_spheres_[i].v = center * low_res_object_spheres_[i].v;
+
+    low_res_object_spheres_[i].name =  name + "_lr_" + boost::lexical_cast<std::string>(i);
+    low_res_object_spheres_[i].radius = object_enclosing_low_res_sphere_radius_;
+    low_res_object_spheres_[i].kdl_chain = attached_object_chain_num_;
+    low_res_object_spheres_[i].kdl_segment = attached_object_segment_num_;
+
+    low_res_object_spheres_p_[i] = &(low_res_object_spheres_[i]);
+  }
+
+  att_object_.setSpheres(object_spheres_p_, false);
+  att_object_.setSpheres(low_res_object_spheres_p_, true);
+
   ROS_DEBUG("[cspace] Attaching '%s' represented by %d spheres with dimensions: %0.3f %0.3f %0.3f", name.c_str(), int(spheres.size()), x_dim, y_dim, z_dim);
   ROS_DEBUG("[cspace] ['%s' pose] xyz: %0.3f %0.3f %0.3f  quat: %0.3f %0.3f %0.3f %0.3f", name.c_str(), pose.position.x,pose.position.y,pose.position.z, pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w); 
 }
@@ -164,7 +196,7 @@ void SBPLCollisionSpace::attachMesh(std::string name, std::string link, geometry
   ROS_INFO("[cspace] Attaching '%s' represented by %d spheres with %d vertices and %d triangles.", name.c_str(), int(spheres.size()), int(vertices.size()), int(triangles.size()));
 }
 
-bool SBPLCollisionSpace::getAttachedObject(const std::vector<double> &angles, std::vector<std::vector<double> > &xyz)
+bool SBPLCollisionSpace::getAttachedObject(const std::vector<double> &angles, bool low_res, std::vector<std::vector<double> > &xyz)
 {
   KDL::Vector v;
   int x,y,z;
@@ -181,18 +213,35 @@ bool SBPLCollisionSpace::getAttachedObject(const std::vector<double> &angles, st
     return false;
   }
 
-  xyz.resize(object_spheres_.size(), std::vector<double>(4,0));
-  for(size_t i = 0; i < object_spheres_.size(); ++i)
+  if(low_res)
   {
-    v = frames[object_spheres_[i].kdl_chain][object_spheres_[i].kdl_segment] * object_spheres_[i].v;
+    xyz.resize(low_res_object_spheres_.size(), std::vector<double>(4,0));
+    for(size_t i = 0; i < low_res_object_spheres_.size(); ++i)
+    {
+      v = frames[low_res_object_spheres_[i].kdl_chain][low_res_object_spheres_[i].kdl_segment] * low_res_object_spheres_[i].v;
 
-    // snap to grid
-    grid_->worldToGrid(v.x(), v.y(), v.z(), x, y, z); 
-    grid_->gridToWorld(x, y, z, xyz[i][0], xyz[i][1], xyz[i][2]);
+      // snap to grid
+      grid_->worldToGrid(v.x(), v.y(), v.z(), x, y, z); 
+      grid_->gridToWorld(x, y, z, xyz[i][0], xyz[i][1], xyz[i][2]);
 
-    xyz[i][3] = object_spheres_[i].radius;
+      xyz[i][3] = low_res_object_spheres_[i].radius;
+    }
   }
+  else
+  {
+    xyz.resize(object_spheres_.size(), std::vector<double>(4,0));
+    for(size_t i = 0; i < object_spheres_.size(); ++i)
+    {
+      v = frames[object_spheres_[i].kdl_chain][object_spheres_[i].kdl_segment] * object_spheres_[i].v;
 
+      // snap to grid
+      grid_->worldToGrid(v.x(), v.y(), v.z(), x, y, z); 
+      grid_->gridToWorld(x, y, z, xyz[i][0], xyz[i][1], xyz[i][2]);
+
+      xyz[i][3] = object_spheres_[i].radius;
+    }
+
+  }
   return true;
 }
 
