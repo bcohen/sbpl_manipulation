@@ -557,6 +557,9 @@ bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles
     ROS_WARN("[env] The starting configuration is in collision. Attempting to plan anyway. (distance to nearest obstacle %0.2fm)", double(dist)*grid_->getResolution());
   }
 
+  if(cc_->isObjectAttached())
+    ROS_WARN("[env] Planning for link, '%s', with attached object.", rmodel_->getPlanningLink().c_str());
+
   //get arm position in environment
   anglesToCoord(angles, pdata_.start_entry->coord);
   grid_->worldToGrid(pose[0],pose[1],pose[2],x,y,z);
