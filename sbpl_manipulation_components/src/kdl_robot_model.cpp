@@ -306,7 +306,7 @@ bool KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vector
   if(option == sbpl_arm_planner::ik_option::RESTRICT_XYZ_JOINTS)
     return false;
 
-  return computeIKSearch(pose, start, solution, 0.005);
+  return computeIKSearch(pose, start, solution, 0.04);
 }
 
 bool KDLRobotModel::computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)

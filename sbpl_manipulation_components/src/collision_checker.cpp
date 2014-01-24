@@ -77,4 +77,16 @@ visualization_msgs::MarkerArray CollisionChecker::getVisualization(std::string t
   return visualization_msgs::MarkerArray();
 }
 
+void CollisionChecker::setSphereGroupsForCollisionCheck(const std::vector<std::string> &group_names)
+{
+  ROS_ERROR("Function is not filled in.");
+  return;
+}
+
+bool CollisionChecker::isObjectAttached()
+{
+  ROS_ERROR("Function is not filled in.");
+  return false;
+}
+
 }

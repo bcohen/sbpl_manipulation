@@ -26,6 +26,8 @@ class CollisionChecker
 
     virtual bool setPlanningJoints(const std::vector<std::string> &planning_joints);
 
+    virtual void setSphereGroupsForCollisionCheck(const std::vector<std::string> &group_names);
+
     /* World Update */
     virtual void setRobotState(const arm_navigation_msgs::RobotState &state);
 
@@ -48,7 +50,10 @@ class CollisionChecker
     virtual visualization_msgs::MarkerArray getCollisionModelVisualization(const std::vector<double> &angles);
     
     virtual visualization_msgs::MarkerArray getVisualization(std::string type);
-  
+
+    /* HACK: For Handoff Planner */
+    virtual bool isObjectAttached();
+
   protected:
 
     std::string group_name_;
