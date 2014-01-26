@@ -83,11 +83,14 @@ class KDLRobotModel : public RobotModel {
     /* Debug Output */
     virtual void printRobotModelInformation();
 
+    double getIKClock(int option=0);
+
   protected:
 
     boost::shared_ptr<urdf::Model> urdf_;
     bool use_safety_limits_;
     int free_angle_;
+    double ik_clock_;
     std::string chain_root_name_;
     std::string chain_tip_name_;
 

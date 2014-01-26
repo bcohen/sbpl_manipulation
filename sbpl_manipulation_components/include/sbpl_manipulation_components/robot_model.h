@@ -100,6 +100,7 @@ class RobotModel {
     /* Transform between Kinematics frame <-> Planning frame */
     void setKinematicsToPlanningTransform(const KDL::Frame &f, std::string name);
 
+    virtual double getIKClock(int option) { return 0; } ;
 
   protected:
 

@@ -306,7 +306,10 @@ bool KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vector
   if(option == sbpl_arm_planner::ik_option::RESTRICT_XYZ_JOINTS)
     return false;
 
-  return computeIKSearch(pose, start, solution, 0.04);
+  ros::Time t_start = ros::Time::now();
+  bool res = computeIKSearch(pose, start, solution, 0.005);
+  ik_clock_ += (ros::Time::now() - t_start).toSec();
+  return res;
 }
 
 bool KDLRobotModel::computeFastIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution)
@@ -449,6 +452,13 @@ bool KDLRobotModel::getCount(int &count, const int &max_count, const int &min_co
     else
       return false;
   }
+}
+
+double KDLRobotModel::getIKClock(int option)
+{
+  if(option == 1) // reset;
+    ik_clock_ = 0;
+  return ik_clock_;
 }
 
 }
