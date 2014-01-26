@@ -1,0 +1,152 @@
+collision_groups:
+
+  - name: arm1
+    type: spheres
+    root_name: base_footprint
+    tip_name: arm1_wrist_roll_link
+    collision_links:
+    - name: shoulder
+      root: arm1_shoulder_pan_link
+      spheres: sh0 tur0 tur1 tur2 tur3
+      low_res_spheres: lr_sh0 tur0 tur1 tur2 tur3
+    - name: upper_arm
+      root: arm1_upper_arm_roll_link
+      spheres: ua0 ua1 ua2 ua3
+      low_res_spheres: lr_ua0 lr_ua1 lr_ua2
+    - name: forearm
+      root: arm1_forearm_roll_link
+      spheres: fa0 fa1 fa2 fa3 fa4 fa5 fa6
+      low_res_spheres: lr_fa0 lr_fa1
+    - name: gripper
+      root: arm1_wrist_roll_link
+      spheres: gr0 gr1 gr2
+      low_res_spheres: lr_gr0 lr_gr1
+    - name: left_finger
+      root: arm1_gripper_l_finger_link
+      spheres: lf0 lf1
+    - name: right_finger
+      root: arm1_gripper_r_finger_link
+      spheres: rf0 rf1
+    - name: right_finger_tip
+      root: arm1_gripper_r_finger_tip_link
+      spheres: rft0 rft1
+    - name: left_finger_tip
+      root: arm1_gripper_l_finger_tip_link
+      spheres: lft0 lft1
+
+  - name: arm0
+    type: voxels
+    root_name: base_footprint
+    tip_name: arm0_wrist_roll_link
+    collision_links:
+    - name: shoulder
+      root: arm0_shoulder_pan_link
+    - name: upper_arm
+      root: arm0_upper_arm_link
+    - name: forearm
+      root: arm0_forearm_link
+    - name: gripper
+      root: arm0_gripper_palm_link
+    - name: left_finger
+      root: arm0_gripper_l_finger_link
+    - name: right_finger
+      root: arm0_gripper_r_finger_link
+    - name: right_finger_tip
+      root: arm0_gripper_r_finger_tip_link
+    - name: left_finger_tip
+      root: arm0_gripper_l_finger_tip_link
+
+  - name: arm2
+    type: voxels
+    root_name: base_footprint
+    tip_name: arm2_wrist_roll_link
+    collision_links:
+    - name: shoulder
+      root: arm2_shoulder_pan_link
+    - name: upper_arm
+      root: arm2_upper_arm_link
+    - name: forearm
+      root: arm2_forearm_link
+    - name: gripper
+      root: arm2_gripper_palm_link
+    - name: left_finger
+      root: arm2_gripper_l_finger_link
+    - name: right_finger
+      root: arm2_gripper_r_finger_link
+    - name: right_finger_tip
+      root: arm2_gripper_r_finger_tip_link
+    - name: left_finger_tip
+      root: arm2_gripper_l_finger_tip_link
+
+  - name: arm3
+    type: voxels
+    root_name: base_footprint
+    tip_name: arm3_wrist_roll_link
+    collision_links:
+    - name: shoulder
+      root: arm3_shoulder_pan_link
+    - name: upper_arm
+      root: arm3_upper_arm_link
+    - name: forearm
+      root: arm3_forearm_link
+    - name: gripper
+      root: arm3_gripper_palm_link
+    - name: left_finger
+      root: arm3_gripper_l_finger_link
+    - name: right_finger
+      root: arm3_gripper_r_finger_link
+    - name: right_finger_tip
+      root: arm3_gripper_r_finger_tip_link
+    - name: left_finger_tip
+      root: arm3_gripper_l_finger_tip_link
+
+collision_spheres:
+  - {name: sh0, x: 0.13, y: 0.0, z: -0.015, radius: 0.16, priority: 5}
+
+  - {name: tur0, x: -0.0, y: -0.0, z: 0.02, radius: 0.15, priority: 5}
+  - {name: tur1, x: -0.0, y: -0.0, z: -0.13, radius: 0.15, priority: 5}
+  - {name: tur2, x: -0.0, y: -0.0, z: -0.26, radius: 0.15, priority: 5}
+  - {name: tur3, x: -0.0, y: -0.0, z: -0.39, radius: 0.15, priority: 5}
+
+  - {name: ua0, x: 0.18, y: 0.0, z: -0.015, radius: 0.11, priority: 4}
+  - {name: ua1, x: 0.26, y: 0.00, z: -0.035, radius: 0.08, priority: 4}
+  - {name: ua2, x: 0.3275, y: 0.00, z: -0.035, radius: 0.08, priority: 4}
+  - {name: ua3, x: 0.40, y: 0.0, z: -0.0, radius: 0.105, priority: 2}
+
+  - {name: fa0, x: 0.13, y: 0.0, z: 0.005, radius: 0.075, priority: 2}
+  - {name: fa1, x: 0.20, y: 0.025, z: -0.01, radius: 0.055, priority: 3}
+  - {name: fa2, x: 0.20, y: -0.025, z: -0.01, radius: 0.055, priority: 3}
+  - {name: fa3, x: 0.265, y: 0.0275, z: -0.015, radius: 0.05, priority: 3}
+  - {name: fa4, x: 0.265, y: -0.0275, z: -0.015, radius: 0.05, priority: 3}
+  - {name: fa5, x: 0.32, y: 0.0225, z: -0.005, radius: 0.05, priority: 3}
+  - {name: fa6, x: 0.32, y: -0.0225, z: -0.005, radius: 0.05, priority: 3}
+
+  - {name: gr0, x: 0.0725, y: -0.0175, z: 0.00, radius: 0.04, priority: 2}
+  - {name: gr1, x: 0.0725, y: 0.0175, z: 0.00, radius: 0.04, priority: 2}
+  - {name: gr2, x: 0.0925, y: 0.0, z: 0.00, radius: 0.04, priority: 2}
+
+  - {name: lf0, x: 0.03, y: 0.025, z: 0.00, radius: 0.04, priority: 1}
+  - {name: lf1, x: 0.08, y: 0.0175, z: 0.00, radius: 0.035, priority: 1}
+
+  - {name: rf0, x: 0.03, y: -0.025, z: 0.00, radius: 0.04, priority: 1}
+  - {name: rf1, x: 0.08, y: -0.0175, z: 0.00, radius: 0.035, priority: 1}
+
+  - {name: rft0, x: 0.015, y: 0.005, z: 0.00, radius: 0.03, priority: 1}
+  - {name: rft1, x: 0.035, y: 0.005, z: 0.00, radius: 0.02, priority: 1}
+
+  - {name: lft0, x: 0.015, y: -0.005, z: 0.00, radius: 0.03, priority: 1}
+  - {name: lft1, x: 0.035, y: -0.005, z: 0.00, radius: 0.02, priority: 1}
+
+# low-res
+  - {name: lr_sh0, x: 0.14, y: 0.0, z: -0.03, radius: 0.17, priority: 5}
+
+  - {name: lr_ua0, x: 0.18, y: 0.0, z: -0.015, radius: 0.1225, priority: 4}
+  - {name: lr_ua1, x: 0.30, y: 0.00, z: -0.035, radius: 0.1225, priority: 2}
+  - {name: lr_ua2, x: 0.40, y: 0.0, z: -0.0, radius: 0.1225, priority: 2}
+
+  - {name: lr_fa0, x: 0.135, y: 0.0, z: -0.005, radius: 0.12, priority: 2}
+  - {name: lr_fa1, x: 0.275, y: 0.0, z: -0.01, radius: 0.12, priority: 1}
+
+  - {name: lr_gr0, x: 0.06, y: 0.0, z: 0.00, radius: 0.1, priority: 1}
+  - {name: lr_gr1, x: 0.16, y: 0.0, z: 0.00, radius: 0.1, priority: 1}
+    
