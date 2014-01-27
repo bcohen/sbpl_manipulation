@@ -252,7 +252,7 @@ bool ActionSet::getAction(const RobotState &parent, double dist_to_goal, MotionP
       desired_fa[2] = fa;
 
     action.resize(1);
-    if(!env_->getRobotModel()->computeIK(goal, desired_fa, action[0]))
+    if(!env_->getRobotModel()->computeIKWithPvizTransform(goal, desired_fa, action[0], 0))
     {
       ROS_DEBUG("IK failed. (dist_to_goal: %0.3f)  (goal: xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
       return false;
