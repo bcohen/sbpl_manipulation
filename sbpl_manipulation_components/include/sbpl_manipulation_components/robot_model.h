@@ -102,6 +102,10 @@ class RobotModel {
 
     virtual double getIKClock(int option) { return 0; } ;
 
+    void setRobotBodyPoseForPviz(std::vector<double> &pose) {robot_body_pose_for_pviz = pose;};
+
+    virtual bool computeIKWithPvizTransform(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option);
+
   protected:
 
     bool initialized_;
@@ -126,6 +130,8 @@ class RobotModel {
    
     /** \brief ROS logger stream name */ 
     std::string logger_;
+
+    std::vector<double> robot_body_pose_for_pviz;
 };
 
 }

@@ -135,5 +135,10 @@ void RobotModel::setKinematicsToPlanningTransform(const KDL::Frame &f, std::stri
   planning_frame_ = name;
 }
 
+bool RobotModel::computeIKWithPvizTransform(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option)
+{
+  ROS_ERROR("Function not filled in.");
+  return false;
+}
 
 }
