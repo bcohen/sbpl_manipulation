@@ -71,6 +71,8 @@ class PR2KDLRobotModel : public KDLRobotModel {
     /* Debug Output */
     virtual void printRobotModelInformation();
 
+    bool computeIKWithPvizTransform(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option);
+
   private:
 
     pr2_arm_kinematics::PR2ArmIKSolver* pr2_ik_solver_;

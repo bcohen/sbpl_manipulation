@@ -170,8 +170,25 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
   return true;
 }
 
+
+bool PR2KDLRobotModel::computeIKWithPvizTransform(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option)
+{
+  std::vector<double> pose_translated = pose;
+  pose_translated[0] -= robot_body_pose_for_pviz[0];
+  pose_translated[1] -= robot_body_pose_for_pviz[1];
+
+  std::vector<double> rotation(6,0);
+  rotation[5] = -robot_body_pose_for_pviz[3];
+
+  std::vector<double> pose_in_world(6,0);
+  leatherman::multiply(rotation, pose_translated, pose_in_world);
+  return computeIK(pose_in_world, start, solution, option);
+}
+
 bool PR2KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option)
 {
+  ros::Time t_start = ros::Time::now();
+
   //pose: {x,y,z,r,p,y} or {x,y,z,qx,qy,qz,qw}
   KDL::Frame frame_des;
   frame_des.p.x(pose[0]);
@@ -220,12 +237,15 @@ bool PR2KDLRobotModel::computeIK(const std::vector<double> &pose, const std::vec
   else
   {
     if(pr2_ik_solver_->CartToJntSearch(jnt_pos_in_, frame_des, jnt_pos_out_, 0.2) < 0)
+    {
+      ik_clock_ += (ros::Time::now() - t_start).toSec();
       return false;
-    
+    }
     for(size_t i = 0; i < solution.size(); ++i)
       solution[i] = jnt_pos_out_(i);
   }
 
+  ik_clock_ += (ros::Time::now() - t_start).toSec();
   return true;
 }
 
