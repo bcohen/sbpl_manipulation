@@ -686,7 +686,8 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
     }
     ROS_DEBUG("mesh: %s  triangles: %u  vertices: %u", name.c_str(), int(triangles.size()), int(vertices.size()));
 
-	// copied from sbpl_geometry_utils
+    /*
+	  // copied from sbpl_geometry_utils
     std::vector<geometry_msgs::Point> verticesCopy = vertices;
     Eigen::Quaterniond q(p.orientation.w, p.orientation.x, p.orientation.y, p.orientation.z);
     Eigen::Translation3d transMatrix(p.position.x, p.position.y, p.position.z);
@@ -699,6 +700,11 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
       verticesCopy[i].z = transVec(2);
     }
     sbpl::Voxelizer::voxelizeMesh(verticesCopy, triangles, RESOLUTION, v, true);
+    */
+    
+    ROS_ERROR("To speed up computation, we are not flood filling the voxelized body meshes.");
+    sbpl::Voxelizer::voxelizeMesh(vertices, triangles, p, RESOLUTION, v, false);
+
     ROS_DEBUG("mesh: %s  voxels: %u", name.c_str(), int(v.size()));
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)

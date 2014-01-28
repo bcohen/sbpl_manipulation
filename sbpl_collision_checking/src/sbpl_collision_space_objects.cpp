@@ -437,7 +437,7 @@ bool SBPLCollisionSpace::setAttachedObjects(const std::vector<arm_navigation_msg
   {
     if(!model_.doesLinkExist(objects[i].link_name, group_name_))
     {
-      ROS_WARN("[cspace] This attached object is not intended for the planning joints of the robot.");
+      ROS_WARN("[cspace] This attached object is not intended for the planning joints of the robot. (link: %s)", objects[i].link_name.c_str());
     }
     // add object
     else if(objects[i].object.operation.operation == arm_navigation_msgs::CollisionObjectOperation::ADD)
