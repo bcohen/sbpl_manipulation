@@ -28,6 +28,8 @@ class CollisionChecker
 
     virtual void setSphereGroupsForCollisionCheck(const std::vector<std::string> &group_names);
 
+    virtual void setInterpolationParams(bool use_ompl, int num_steps=10){};
+
     /* World Update */
     virtual void setRobotState(const arm_navigation_msgs::RobotState &state);
 
