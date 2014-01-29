@@ -47,6 +47,13 @@
 #include <arm_navigation_msgs/CollisionObject.h>
 #include <geometry_msgs/Point.h>
 
+//OMPL for interpolation
+#include <ompl/base/State.h>
+#include <ompl/base/ScopedState.h>
+#include <ompl/geometric/PathGeometric.h>
+#include <ompl/base/spaces/RealVectorStateSpace.h>
+#include <ompl/base/spaces/SO2StateSpace.h>
+
 using namespace std;
 
 namespace sbpl_arm_planner
@@ -69,6 +76,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     void setRobotState(const arm_navigation_msgs::RobotState &state);
 
     void setSphereGroupsForCollisionCheck(const std::vector<std::string> &group_names);
+
+    void setInterpolationParams(bool use_ompl, int num_steps=10);
 
     /** --------------- Collision Checking ----------- */
     bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist); // multi-res
@@ -145,6 +154,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     std::vector<double> min_limits_;
     std::vector<double> max_limits_;
     std::vector<bool> continuous_;
+    ompl::base::StateSpacePtr omplStateSpace_;
+    ompl::base::SpaceInformationPtr si_;
 
     /* ------------- Collision Objects -------------- */
     std::vector<std::string> known_objects_;
@@ -164,6 +175,10 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     double object_enclosing_low_res_sphere_radius_;
     std::vector<Sphere> low_res_object_spheres_;
     std::vector<Sphere*> low_res_object_spheres_p_;  // hack
+
+    /** --------------- Interpolation --------------*/
+    bool use_ompl_interpolation_;
+    int num_interpolation_steps_;
 
     /* for debugging */
     std::vector<sbpl_arm_planner::Sphere> collision_spheres_;

@@ -44,11 +44,18 @@ SBPLCollisionSpace::SBPLCollisionSpace(sbpl_arm_planner::OccupancyGrid* grid)
   object_enclosing_sphere_radius_ = 0.03;
   object_enclosing_low_res_sphere_radius_ = 0.065;
   use_multi_level_collision_check_ = true;
+  use_ompl_interpolation_ = false;
+  num_interpolation_steps_ = 10;
 }
 
 void SBPLCollisionSpace::setPadding(double padding)
 {
   padding_ = padding;
+}
+
+void SBPLCollisionSpace::setInterpolationParams(bool use_ompl, int num_steps){
+  use_ompl_interpolation_ = use_ompl;
+  num_interpolation_steps_ = num_steps;
 }
 
 bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint_names)
@@ -80,6 +87,38 @@ bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint
 
   // set the order of the planning joints
   model_.setOrderOfJointPositions(joint_names, group_name_);
+
+
+  //Set up OMPL for interpolation
+  ompl::base::RealVectorStateSpace* r5 = new ompl::base::RealVectorStateSpace(5);
+  r5->setDimensionName(0,"shoulder_pan");
+  r5->setDimensionName(1,"shoulder_lift");
+  r5->setDimensionName(2,"upper_arm_roll");
+  r5->setDimensionName(3,"elbow_flex");
+  r5->setDimensionName(4,"wrist_flex");
+  ompl::base::RealVectorBounds bounds(5);
+  bounds.setLow(0, min_limits_[0]);
+  bounds.setHigh(0, max_limits_[0]);
+  bounds.setLow(1, min_limits_[1]);
+  bounds.setHigh(1, max_limits_[1]);
+  bounds.setLow(2, min_limits_[2]);
+  bounds.setHigh(2, max_limits_[2]);
+  bounds.setLow(3, min_limits_[3]);
+  bounds.setHigh(3, max_limits_[3]);
+  bounds.setLow(4, min_limits_[5]);
+  bounds.setHigh(4, max_limits_[5]);
+  r5->setBounds(bounds);
+  ompl::base::StateSpacePtr r5_p(r5);
+
+  ompl::base::StateSpacePtr forearm(new ompl::base::SO2StateSpace());
+  ompl::base::StateSpacePtr wrist(new ompl::base::SO2StateSpace());
+
+  omplStateSpace_ = r5_p + forearm + wrist;
+  
+  si_.reset(new ompl::base::SpaceInformation(omplStateSpace_));
+  si_->setStateValidityCheckingResolution(0.00001);  
+  //si_->setup();
+
   return true;
 }
 
@@ -815,7 +854,46 @@ bool SBPLCollisionSpace::interpolatePath(const std::vector<double>& start,
                                          const std::vector<double>& inc,
                                          std::vector<std::vector<double> >& path)
 {
-  return sbpl::Interpolator::interpolatePath(start, end, min_limits_, max_limits_, inc, path);
+  if(!use_ompl_interpolation_)
+    return sbpl::Interpolator::interpolatePath(start, end, min_limits_, max_limits_, inc, path);
+  
+  ompl::base::ScopedState<ompl::base::CompoundStateSpace> s0(omplStateSpace_);
+  (*(s0->as<ompl::base::RealVectorStateSpace::StateType>(0)))[0] = start[0];
+  (*(s0->as<ompl::base::RealVectorStateSpace::StateType>(0)))[1] = start[1];
+  (*(s0->as<ompl::base::RealVectorStateSpace::StateType>(0)))[2] = start[2];
+  (*(s0->as<ompl::base::RealVectorStateSpace::StateType>(0)))[3] = start[3];
+  (*(s0->as<ompl::base::RealVectorStateSpace::StateType>(0)))[4] = start[5];
+  s0->as<ompl::base::SO2StateSpace::StateType>(1)->value = start[4];
+  s0->as<ompl::base::SO2StateSpace::StateType>(2)->value = start[6];
+
+  ompl::base::ScopedState<ompl::base::CompoundStateSpace> s1(omplStateSpace_);
+  (*(s1->as<ompl::base::RealVectorStateSpace::StateType>(0)))[0] = end[0];
+  (*(s1->as<ompl::base::RealVectorStateSpace::StateType>(0)))[1] = end[1];
+  (*(s1->as<ompl::base::RealVectorStateSpace::StateType>(0)))[2] = end[2];
+  (*(s1->as<ompl::base::RealVectorStateSpace::StateType>(0)))[3] = end[3];
+  (*(s1->as<ompl::base::RealVectorStateSpace::StateType>(0)))[4] = end[5];
+  s1->as<ompl::base::SO2StateSpace::StateType>(1)->value = end[4];
+  s1->as<ompl::base::SO2StateSpace::StateType>(2)->value = end[6];
+
+  ompl::geometric::PathGeometric geo_path(si_,s0.get(),s1.get());
+  //printf("geo before %d\n",geo_path.getStateCount());
+  geo_path.interpolate(num_interpolation_steps_);
+  //printf("geo after %d\n",geo_path.getStateCount());
+
+  for(unsigned int i=0; i<geo_path.getStateCount(); i++){
+    ompl::base::State* state = geo_path.getState(i);
+    const ompl::base::CompoundState* s = dynamic_cast<const ompl::base::CompoundState*> (state);
+    vector<double> p(7,0);
+    p[0] = (*(s->as<ompl::base::RealVectorStateSpace::StateType>(0)))[0];
+    p[1] = (*(s->as<ompl::base::RealVectorStateSpace::StateType>(0)))[1];
+    p[2] = (*(s->as<ompl::base::RealVectorStateSpace::StateType>(0)))[2];
+    p[3] = (*(s->as<ompl::base::RealVectorStateSpace::StateType>(0)))[3];
+    p[5] = (*(s->as<ompl::base::RealVectorStateSpace::StateType>(0)))[4];
+    p[4] = s->as<ompl::base::SO2StateSpace::StateType>(1)->value;
+    p[6] = s->as<ompl::base::SO2StateSpace::StateType>(2)->value;
+    path.push_back(p);
+  }
+  return true;
 }
 
 bool SBPLCollisionSpace::interpolatePath(const std::vector<double>& start,

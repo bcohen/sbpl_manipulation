@@ -28,6 +28,7 @@
   <depend package="visualization_msgs" />
 
   <depend package="pviz" /> <!-- temporary -->
+  <depend package="ompl" />
 
   <rosdep name="eigen" />
 
