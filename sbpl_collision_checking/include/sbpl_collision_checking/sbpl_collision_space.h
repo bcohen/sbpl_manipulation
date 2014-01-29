@@ -80,7 +80,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     void setInterpolationParams(bool use_ompl, int num_steps=10);
 
     /** --------------- Collision Checking ----------- */
-    bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
+    bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist); // multi-res
     bool checkCollision(const std::vector<double> &angles, bool low_res, bool verbose, bool visualize, double &dist);
     bool checkCollision(const std::vector<double> &angles, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool low_res, bool verbose, bool visualize, double &dist);
     bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist);
@@ -88,7 +88,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     bool checkSphereGroupAgainstWorld(const std::vector<double> &angles, Group *group, bool low_res, bool verbose, bool visualize, double &dist);
     bool checkSpheresAgainstWorld(const std::vector<std::vector<KDL::Frame> > &frames, const std::vector<Sphere*> &spheres, bool verbose, bool visualize, std::vector<KDL::Vector> &sph_poses, double &dist);
-    bool checkSphereGroupAgainstSphereGroup(Group *group1, Group *group2, const std::vector<KDL::Vector> &spheres1, const std::vector<KDL::Vector> &spheres2, bool low_res1, bool low_res2, bool verbose, bool visualize, double &dist);
+    bool checkSphereGroupAgainstSphereGroup(Group *group1, Group *group2, const std::vector<KDL::Vector> &spheres1, const std::vector<KDL::Vector> &spheres2, bool low_res1, bool low_res2, bool verbose, bool visualize, double &dist, int group1_min_priority, int group1_max_priority, int group2_min_priority, int group2_max_priority);
 
     inline bool isValidCell(const int x, const int y, const int z, const int radius);
     double isValidLineSegment(const std::vector<int> a, const std::vector<int> b, const int radius);
