@@ -3,25 +3,12 @@
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find hdt_arm)/urdf/hdt_urdf.urdf'" />
 
   <node pkg="sbpl_arm_planner_test" type="callPlanner" name="call_planner" output="screen" respawn="false" >
-
-    <rosparam command="load" file="$(find sbpl_arm_planner)/config/hdt_arm.yaml" />
-    
+    <rosparam command="load" file="$(find sbpl_arm_planner)/config/hdt_arm.yaml" />    
     <rosparam command="load" file="$(find sbpl_collision_checking)/config/hdt_arm.yaml" />
-
-    <param name="group_name" value="hdt_arm" />
-    <param name="kinematics_frame" value="base_link" />
-    <param name="planning_frame" value="base_link" />
-    <param name="planning_link" value="gripper_base" />
-    <param name="chain_tip_link" value="gripper_base" />
-    <param name="object_filename" value="$(find sbpl_arm_planner_test)/env/tabletop_hdt.env" />
     <param name="action_set_filename" value="$(find sbpl_arm_planner)/config/pr2.mprim" />
 
-    <param name="goal/x" value="1.1" />
-    <param name="goal/y" value="0" />
-    <param name="goal/z" value="0.6" />
-    <param name="goal/r" value="0" />
-    <param name="goal/p" value="0" />
-    <param name="goal/ya" value="0" />
+    <rosparam command="load" file="$(find sbpl_arm_planner_test)/experiments/hdt_goal.yaml" />
+    <param name="object_filename" value="$(find sbpl_arm_planner_test)/env/tabletop_hdt.env" />
   </node>
 
 </launch>
