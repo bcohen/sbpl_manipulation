@@ -144,20 +144,19 @@ bool ActionSet::getMotionPrimitivesFromFile(FILE* fCfg)
 
   // add amps (will be added to MP file format)
   MotionPrimitive m;
-  /*
   m.type = sbpl_arm_planner::MotionPrimitiveType::SNAP_TO_XYZ_RPY;
   m.group = 2;
   m.id =  mp_.size();
   m.action.push_back(mprim);
   mp_.push_back(m);
-  */
-
+  
+  /*
   m.type = sbpl_arm_planner::MotionPrimitiveType::SNAP_TO_RPY;
   m.group = 2;
   m.id =  mp_.size();
   m.action.push_back(mprim);
   mp_.push_back(m);
-
+  */
   return true;
 }
 
@@ -262,7 +261,7 @@ bool ActionSet::getAction(const RobotState &parent, double dist_to_goal, MotionP
     action.resize(1);
     if(!env_->getRobotModel()->computeIK(goal, parent, action[0], sbpl_arm_planner::ik_option::RESTRICT_XYZ_JOINTS))
     {
-      ROS_INFO("RPY-solver failed. (dist_to_goal: %0.3f)  (goal: xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
+      ROS_DEBUG("RPY-solver failed. (dist_to_goal: %0.3f)  (goal: xyz: %0.3f %0.3f %0.3f rpy: %0.3f %0.3f %0.3f)", dist_to_goal, goal[0], goal[1], goal[2], goal[3], goal[4], goal[5]);
       return false;
     }
   }
