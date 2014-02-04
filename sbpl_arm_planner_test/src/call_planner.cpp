@@ -291,7 +291,7 @@ int main(int argc, char **argv)
   // robot model
   RobotModel *rm;
   if(group_name.compare("right_arm") == 0)
-    rm = new sbpl_arm_planner::PR2KDLRobotModel("pr2");
+    rm = new sbpl_arm_planner::PR2KDLRobotModel(); // should take in "pr2"
   else if(group_name.compare("arm") == 0)
     rm = new sbpl_arm_planner::UBR1KDLRobotModel();
   else
