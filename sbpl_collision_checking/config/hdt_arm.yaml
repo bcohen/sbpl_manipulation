@@ -23,7 +23,7 @@ collision_groups:
     collision_links:
     - name: link1
       root: link1
-      spheres: l1_0 l1_1 l1_2 l1_3 l1_4
+      spheres: l1_2 l1_3 l1_4
     - name: link2
       root: link2
       spheres: l2_0
