@@ -12,9 +12,9 @@
   <review status="unreviewed" notes="" />
   <url>http://www.ros.org/wiki/sbpl_arm_planner</url>
 
-	<depend package="roscpp"/>
-	<depend package="angles" />
-	<depend package="distance_field" />
+  <depend package="roscpp"/>
+  <depend package="angles" />
+  <depend package="distance_field" />
   <depend package="kdl" />
   <depend package="urdf" />
   <depend package="sbpl_geometry_utils" />
