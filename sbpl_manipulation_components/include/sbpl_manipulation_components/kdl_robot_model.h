@@ -65,7 +65,11 @@ class KDLRobotModel : public RobotModel {
 
     /* Joint Limits */
     virtual bool checkJointLimits(const std::vector<double> &angles);
-   
+
+    virtual std::vector<double> getMaxJointLimits();
+
+    virtual std::vector<double> getMinJointLimits();
+
     /* Forward Kinematics */
     virtual bool computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f);
 

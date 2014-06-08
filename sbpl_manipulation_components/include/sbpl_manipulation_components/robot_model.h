@@ -80,6 +80,10 @@ class RobotModel {
 
     double getMinJointLimit(std::string name);
 
+    virtual std::vector<double> getMaxJointLimits()=0;
+    
+    virtual std::vector<double> getMinJointLimits()=0;
+
     /* Forward Kinematics */
     virtual bool computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f);
 

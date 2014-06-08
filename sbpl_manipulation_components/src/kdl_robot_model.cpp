@@ -461,4 +461,15 @@ double KDLRobotModel::getIKClock(int option)
   return ik_clock_;
 }
 
+std::vector<double> KDLRobotModel::getMinJointLimits()
+{
+  return min_limits_;
+}
+
+std::vector<double> KDLRobotModel::getMaxJointLimits()
+{
+  return max_limits_;
+}
+
+
 }
