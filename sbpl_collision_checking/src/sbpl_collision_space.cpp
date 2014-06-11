@@ -676,13 +676,13 @@ bool SBPLCollisionSpace::updateVoxelGroup(Group *g)
   return true;
 }
 
-bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist)
+bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist, std::vector<std::vector<double> > *path_out)
 {
   std::vector<std::vector<std::vector<KDL::Frame> > > frames;
-  return checkPathForCollision(start, end, frames, verbose, path_length, num_checks, dist); 
+  return checkPathForCollision(start, end, frames, verbose, path_length, num_checks, dist, path_out); 
 }
 
-bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool verbose, int &path_length, int &num_checks, double &dist)
+bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool verbose, int &path_length, int &num_checks, double &dist, std::vector<std::vector<double> > *path_out)
 {
   int inc_cc = 5;
   double dist_temp = 0;
@@ -708,6 +708,8 @@ bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start,
     ROS_ERROR("[interpolate]    max: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", max_limits_[0], max_limits_[1], max_limits_[2], max_limits_[3], max_limits_[4], max_limits_[5], max_limits_[6]);
     return false;
   }
+  if(path_out != NULL)
+    path_out = &path;
 
   // for debugging & statistical purposes
   path_length = path.size();
@@ -958,14 +960,14 @@ bool SBPLCollisionSpace::isStateValid(const std::vector<double> &angles, std::ve
   }
 }
 
-bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int &path_length, int &num_checks, double &dist)
+bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int &path_length, int &num_checks, double &dist, std::vector<std::vector<double> > *path_out)
 {
-  return checkPathForCollision(angles0, angles1, false, path_length, num_checks, dist);
+  return checkPathForCollision(angles0, angles1, false, path_length, num_checks, dist, path_out);
 }
 
-bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, int &path_length, int &num_checks, double &dist)
+bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, int &path_length, int &num_checks, double &dist, std::vector<std::vector<double> > *path_out)
 {
-  return checkPathForCollision(angles0, angles1, frames, false, path_length, num_checks, dist);
+  return checkPathForCollision(angles0, angles1, frames, false, path_length, num_checks, dist, path_out);
 }
 
 void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &state)
