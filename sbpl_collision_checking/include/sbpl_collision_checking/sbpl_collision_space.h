@@ -83,8 +83,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist); // multi-res
     bool checkCollision(const std::vector<double> &angles, bool low_res, bool verbose, bool visualize, double &dist);
     bool checkCollision(const std::vector<double> &angles, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool low_res, bool verbose, bool visualize, double &dist);
-    bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist);
-    bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool verbose, int &path_length, int &num_checks, double &dist);
+    bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, bool verbose, int &path_length, int &num_checks, double &dist, std::vector<std::vector<double> > *path_out=NULL);
+    bool checkPathForCollision(const std::vector<double> &start, const std::vector<double> &end, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool verbose, int &path_length, int &num_checks, double &dist, std::vector<std::vector<double> > *path=NULL);
 
     bool checkSphereGroupAgainstWorld(const std::vector<double> &angles, Group *group, bool low_res, bool verbose, bool visualize, double &dist);
     bool checkSpheresAgainstWorld(const std::vector<std::vector<KDL::Frame> > &frames, const std::vector<Sphere*> &spheres, bool verbose, bool visualize, std::vector<KDL::Vector> &sph_poses, double &dist);
@@ -95,8 +95,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     bool getClearance(const std::vector<double> &angles, int num_spheres, double &avg_dist, double &min_dist);
     bool isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
     bool isStateValid(const std::vector<double> &angles, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool verbose, bool visualize, double &dist);
-    bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int &path_length, int &num_checks, double &dist);
-    bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, int &path_length, int &num_checks, double &dist);
+    bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int &path_length, int &num_checks, double &dist, std::vector<std::vector<double> > *path_out=NULL);
+    bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, int &path_length, int &num_checks, double &dist, std::vector<std::vector<double> > *path_out=NULL);
 
     /** ---------------- Utils ---------------- */
     bool interpolatePath(const std::vector<double>& start, const std::vector<double>& end, std::vector<std::vector<double> >& path);
