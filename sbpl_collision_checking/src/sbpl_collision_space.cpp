@@ -700,16 +700,16 @@ bool SBPLCollisionSpace::checkPathForCollision(const std::vector<double> &start,
 
   if(!interpolatePath(start_norm, end_norm, inc_, path))
   {
-    path_length = 0;
-    ROS_ERROR_ONCE("[cspace] Failed to interpolate the path. It's probably infeasible due to joint limits.");
+    ROS_ERROR("[cspace] Failed to interpolate the path. It's probably infeasible due to joint limits (path_length: %d).", int(path.size()));
     ROS_ERROR("[interpolate]  start: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", start_norm[0], start_norm[1], start_norm[2], start_norm[3], start_norm[4], start_norm[5], start_norm[6]);
     ROS_ERROR("[interpolate]    end: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", end_norm[0], end_norm[1], end_norm[2], end_norm[3], end_norm[4], end_norm[5], end_norm[6]);
     ROS_ERROR("[interpolate]    min: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", min_limits_[0], min_limits_[1], min_limits_[2], min_limits_[3], min_limits_[4], min_limits_[5], min_limits_[6]);
     ROS_ERROR("[interpolate]    max: % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f % 0.3f", max_limits_[0], max_limits_[1], max_limits_[2], max_limits_[3], max_limits_[4], max_limits_[5], max_limits_[6]);
+    path_length = 0;
     return false;
   }
   if(path_out != NULL)
-    path_out = &path;
+    *path_out = path;
 
   // for debugging & statistical purposes
   path_length = path.size();

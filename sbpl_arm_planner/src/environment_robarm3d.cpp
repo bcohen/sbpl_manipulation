@@ -543,8 +543,8 @@ bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles
   //get joint positions of starting configuration
   if(!rmodel_->computePlanningLinkFK(angles, pose))
     ROS_WARN("Unable to compute forward kinematics for initial robot state. Attempting to plan anyway.");
-  ROS_INFO("[start]             angles: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", angles[0], angles[1], angles[2], angles[3], angles[4], angles[5], angles[6]); 
-  ROS_INFO("[start] planning_link pose:   xyz: %0.3f %0.3f %0.3f  rpy: %0.3f %0.3f %0.3f", pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
+  ROS_DEBUG("[start]             angles: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", angles[0], angles[1], angles[2], angles[3], angles[4], angles[5], angles[6]); 
+  ROS_DEBUG("[start] planning_link pose:   xyz: %0.3f %0.3f %0.3f  rpy: %0.3f %0.3f %0.3f", pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
 
   //check joint limits of starting configuration but plan anyway
   if(!rmodel_->checkJointLimits(angles))
@@ -638,7 +638,7 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
           }
     double t_set_walls_time = (clock() - t_start) / (double)CLOCKS_PER_SEC;
     double set_walls_time = (ros::WallTime::now() - start).toSec();
-    ROS_INFO("[env] %0.5f(%0.5f)sec to set walls in bfs. (%d walls (%0.3f percent))", set_walls_time, t_set_walls_time, walls, double(walls)/double(dimX*dimY*dimZ));
+    ROS_DEBUG("[env] %0.5f(%0.5f)sec to set walls in bfs. (%d walls (%0.3f percent))", set_walls_time, t_set_walls_time, walls, double(walls)/double(dimX*dimY*dimZ));
 
     // clear flag to set walls.
     pdata_.set_walls_in_bfs = false;
@@ -648,7 +648,7 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
     clock_t t_start = clock();
     bfs_->reset(); 
     double t_set_walls_time = (clock() - t_start) / (double)CLOCKS_PER_SEC;
-    ROS_INFO("[env] %0.5fsec to reset bfs (without setting walls).", t_set_walls_time);
+    ROS_DEBUG("[env] %0.5fsec to reset bfs (without setting walls).", t_set_walls_time);
   }
 
   /*
