@@ -6,6 +6,7 @@ The process for a new robot requires that you manually design the collision mode
 
 Look at the [config folder](https://github.com/bcohen/sbpl_manipulation/tree/master/sbpl_collision_checking/config) for robot descriptions of popular robots.
 
+**Note: This collision checker was written with motion planning for manipulation in mind. A robot state is defined as the set of joint positions of the planning joints only....not all n joints on the robot. You define the planning joints during initialization and they negotiate the order of joints in the robot state (so we don't need to do constant string compares). It doesn't mean that it can be used for other things or for full body planning...it was hacked up and modified to create the pr2_collision_checker. It just means that don't expect it to work out of the gate for something else. Don't expect that anyway unless you planning for manipulation as well (I would expect it to work best for a robot arm fixed to a table or a robot arm on a robot that is standing still.)**
 
 
 ##Problems & Hacks
@@ -13,6 +14,8 @@ Look at the [config folder](https://github.com/bcohen/sbpl_manipulation/tree/mas
 I ran out of time to implement some nice features...I got it working and moved on and I had to hack some things along the way. 
 
 Please note that my first application of this collision checker was for a static robot doing pick and place with a single arm. A bunch of corners were cut around that scenario. 
+
+**UPDATE: Some of the missing features below and some additional optimizations have been added to the [handoff branch](https://github.com/bcohen/sbpl_manipulation/tree/handoff). The handoff branch was written for RSS 2014 (manipulation planning with handoffs). Some stuff was written (somewhat) elegantly and some wasn't but overall if you were going to modify this collision checker, I would say that you work off of that version. Please see the handoff README for a list of changes.**
 
 ###Self Collision
 
