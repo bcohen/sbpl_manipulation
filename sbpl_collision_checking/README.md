@@ -1,20 +1,25 @@
 #SBPL Collision Checker
 
-##Basic Overview
+It's very simple. The "planning links" are represented as spheres and those spheres are checked against a distance field. All other links on the robot and all objects in the environment are added to the distance field. The distance field is recomputed each time something changes other than the joint positions of the planning links.
 
-###Collision Checking
+The process for a new robot requires that you manually design the collision model. You choose the position and size for the spheres and you choose which links get added to the distance field. Then a minor amount of magic happens in which the minimum number of kinematic chains are generated that will be needed to compute the position of each link.
 
-It's very simple. The "planning links" are represented as spheres and those spheres are checked against a distance field. All other links on the robot and all objects in the environment are added to the distance field.
+Look at the [config folder](https://github.com/bcohen/sbpl_manipulation/tree/master/sbpl_collision_checking/config) for robot descriptions of popular robots.
 
 
 
-##Problems/Missing Features/Ran out of time during development
+##Problems & Hacks
 
+I ran out of time to implement some nice features...I got it working and moved on and I had to hack some things along the way. 
+
+Please note that my first application of this collision checker was for a static robot doing pick and place with a single arm. A bunch of corners were cut around that scenario. 
 
 ###Self Collision
 
 1. All non-planning links are put in the distance field. This requires recomputing the distance field each time the robot base (or second arm) moves (even if the world remains static). My first application of this collision checker was for a static robot doing pick and place with a single arm. It was OK for this to be the case.
-2. All objects that are being manipulated are put in the distance field as well. This is dumb because in a pick and place scenario on a tabletop, there shouldn't be a need to recompute the distance field each time an object is moved. In the perfect world, the distance field should be updated (voxels should be added or removed and the changes should be propagated). I know that the distance field class theoretically supports this now, but I don't feel confident that it works 100%. It might have been fixed by now and I'm just going on old information here.
+2. Non-planning joint positions can be set with setJointPosition(string name, double val). The distance field has to be recomputed afterwards (You can send in a PlanningScene and it does it for you).
+3. All objects that are being manipulated are put in the distance field as well. This is dumb because in a pick and place scenario on a tabletop, there shouldn't be a need to recompute the distance field each time an object is moved. In the perfect world, the distance field should be updated (voxels should be added or removed and the changes should be propagated). I know that the distance field class theoretically supports this now, but I don't feel confident that it works 100%. It might have been fixed by now and I'm just going on old information here.
+4. There isn't any self collision between a planning link and another planning link (gripper or attached object to upper_arm).
 
 ###Attached Objects
 
