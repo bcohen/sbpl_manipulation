@@ -1,5 +1,11 @@
 #SBPL Collision Checker
 
+
+[Video of the SBPL Collision Checker using live sensor data (10/26/2011)](https://plus.google.com/photos/100969532481227170819/albums/5667286486680670833?banner=pwa&authkey=CN3QnIjv0N2lwQE)
+
+[Screenshots of the SBPL Arm Planner using this collision checker with a couple of robots (Summer 2013)](https://plus.google.com/photos/100969532481227170819/albums/5893778514702717665?banner=pwa&authkey=CIDt1pfx_73DOg)
+
+
 It's very simple. The "planning links" are represented as spheres and those spheres are checked against a distance field. All other links on the robot and all objects in the environment are added to the distance field. The distance field is recomputed each time something changes other than the joint positions of the planning links.
 
 The process for a new robot requires that you manually design the collision model. You choose the position and size for the spheres and you choose which links get added to the distance field. Then a minor amount of magic happens in which the minimum number of kinematic chains are generated that will be needed to compute the position of each link.
