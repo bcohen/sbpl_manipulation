@@ -6,7 +6,7 @@ This version was created for my RSS 2014 project on [Planning Single-arm Manipul
 ###To improve self-collision against sometimes moving non-planning links
 * The master branch can only represent non-planning links in the distance field. Recomputing the distance_field for one of the arms would be time consuming every time one of the other arms moves. Now, non-planning links can be represented as spheres OR voxels. Self-collision is performed between sphere groups by computing the euclidean distance between the spheres. Config file for 2-arm PR2 is below. In this example, the body is represented as voxels and both arms are represented as spheres. 
 
-`
+```
 collision_groups:
 
   - name: body
@@ -29,19 +29,19 @@ collision_groups:
     tip_name: arm1_wrist_roll_link
     collision_links:
     ....
-`    
+```
 
 ###To speed up collision checking in general
 Now we support two groups of spheres for each link in a collision group. First the low-resolution collision model is checked for collisions and then the high-resolution model is checked only if the low-res model is in collision. Designing the low-res model is a balance between minimizing the number of spheres vs not making them too big or else they will always be in collision.
 
 Now the config file for a link has "spheres" and "low_res_spheres":
 
-`
+```
     - name: upper_arm
       root: r_upper_arm_roll_link
       spheres: ua0 ua1 ua2 ua3
       low_res_spheres: lr_ua0 lr_ua1 lr_ua2
-`      
+```      
   
 
 
