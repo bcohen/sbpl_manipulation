@@ -4,7 +4,11 @@ This version was created for my RSS 2014 project on [Planning Single-arm Manipul
 
 ##Why did we have to make a branch for the handoff planner?
 ###To improve self-collision against sometimes moving non-planning links
-* The master branch can only represent non-planning links in the distance field. Recomputing the distance_field for one of the arms would be time consuming every time one of the other arms moves. Now, non-planning links can be represented as spheres OR voxels. Self-collision is performed between sphere groups by computing the euclidean distance between the spheres. Config file for 2-arm PR2 is below. In this example, the body is represented as voxels and both arms are represented as spheres. 
+* The master branch can only represent non-planning links in the distance field. Recomputing the distance_field for one of the arms would be time consuming every time one of the other arms moves. Now, non-planning links can be represented as spheres OR voxels. Self-collision is performed between sphere groups by computing the euclidean distance between the spheres. 
+
+  NOTE: With this feature, we can use this collision checker to represent an entire robot as spheres. This would obviously be helpful for mobile robots. We can actually clean up the hacked together [pr2_collision_checker](https://github.com/bcohen/pr2_collision_checker) now. 
+
+  Config file for 2-arm PR2 is below. In this example, the body is represented as voxels and both arms are represented as spheres. 
 
 ```
 collision_groups:
