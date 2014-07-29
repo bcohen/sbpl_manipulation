@@ -32,6 +32,7 @@ collision_groups:
 ```
 
 * As it turns out, computing kinematics (using the KDL) for the kinematic chains of the planning and non-planning links can be very expensive. Actually, computing the kinematics is so much more expensive than doing lookups in the distance field that there's no comparison! When motion planning for a single arm, we usually make the assumption that the rest of the robot remains static during the planned trajectory. So it would make sense to only compute the kinematic chains once for the non-planning links. Thus, we cache them. This is done in a somewhat hacky way for now. 
+  
   Below are two versions of the two main collision checking functions. One of them takes in a vector of frames that the planner can store, once assigned by the function during the first call. It's up to the planner to clear the frames vector when any non-planning links move.
 
 ```
