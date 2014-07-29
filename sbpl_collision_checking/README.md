@@ -61,5 +61,8 @@ Now the config file for a link has "spheres" and "low_res_spheres":
       low_res_spheres: lr_ua0 lr_ua1 lr_ua2
 ```      
   
+NOTE: The low_res model of the attached_object is hacked together for now! It's completely hardcoded for a specific object. This was a last minute hack. I need to remove it and instead add a call to the "Spherizer" with a larger radius for the filler spheres...I'm afraid that it will do a poor job and be way too conservative to be useful in reality.
+
+
 
 
