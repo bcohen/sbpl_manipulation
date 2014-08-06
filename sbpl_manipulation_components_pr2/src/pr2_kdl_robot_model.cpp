@@ -140,7 +140,8 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
   ik_solver_ = new KDL::ChainIkSolverPos_NR_JL(kchain_, q_min, q_max, *fk_solver_, *ik_vel_solver_, 200, 0.001);
 
   // PR2 Specific IK Solver
-  pr2_ik_solver_ = new pr2_arm_kinematics::PR2ArmIKSolver(*urdf_, chain_root_name_, chain_tip_name_, 0.02, 2);
+  // expects _gripper_palm_link - can't handle anything else for chain tip name
+  pr2_ik_solver_ = new pr2_arm_kinematics::PR2ArmIKSolver(*urdf_, chain_root_name_, end_effector_link_name_ /*chain_tip_name_*/, 0.02, 2);
   if(!pr2_ik_solver_->active_)
   {
     ROS_ERROR("The pr2 IK solver is NOT active. Exiting.");
