@@ -48,6 +48,14 @@ PR2KDLRobotModel::PR2KDLRobotModel(std::string ns) : pr2_ik_solver_(NULL), rpy_s
   ph.param<std::string>("robot_model/forearm_roll_link", forearm_roll_link_name_, "r_forearm_roll_link");
   ph.param<std::string>("robot_model/wrist_pitch_joint_name", wrist_pitch_joint_name_, "r_wrist_flex_joint");
   ph.param<std::string>("robot_model/end_effector_link_name", end_effector_link_name_, "r_gripper_palm_link");
+
+  /* Note: Above are params that are really only meant to choose between the
+   * right and left arms of the PR2. I'm pretty sure this class will not
+   * work unless most of them are set to the default values (except for r/l)
+   * except chain_tip_link can be set to anything from the gripper down
+   * (i.e. fingers). Also, the chain_root_link can be set to the base
+   * instead.
+  */
 }
 
 PR2KDLRobotModel::~PR2KDLRobotModel()
