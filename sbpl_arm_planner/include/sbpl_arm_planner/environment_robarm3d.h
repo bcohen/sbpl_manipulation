@@ -51,6 +51,8 @@
 
 namespace sbpl_arm_planner {
 
+typedef std::pair<int, int> Edge;
+
 namespace GoalType {
   enum GoalType
   {
@@ -157,6 +159,13 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     virtual void StateID2Angles(int stateID, std::vector<double> &angles);
     virtual int getXYZRPYHeuristic(int FromStateID, int ToStateID){return 0;};
 
+    int GetTrueCost(int parentID, int childID);
+    void GetLazySuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<bool>* trueCost);
+    void GetLazySuccsWithUniqueIds(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<bool>* trueCost);
+    void GetLazySuccsWithOrWithoutUniqueIds(int SourceStateID, 
+        vector<int>* SuccIDV, vector<int>* CostV, vector<bool>* trueCost,
+        bool useUniqueId);
+
     bool initEnvironment();
     bool InitializeMDPCfg(MDPConfig *MDPCfg);
     bool InitializeEnv(const char* sEnvFile){return false;};
@@ -179,6 +188,8 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     visualization_msgs::MarkerArray getVisualization(std::string type);
 
   protected:
+
+    std::map<Edge, int> edge_cache_;
 
     OccupancyGrid *grid_;
     RobotModel *rmodel_;
