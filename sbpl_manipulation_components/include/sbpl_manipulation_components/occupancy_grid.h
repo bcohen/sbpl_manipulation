@@ -35,6 +35,7 @@
 #include <sys/stat.h>
 #include <vector>
 #include <fstream>
+#include <ros/console.h>
 #include <tf/LinearMath/Vector3.h>
 #include <Eigen/Geometry>
 #include <moveit/distance_field/voxel_grid.h>
@@ -109,7 +110,7 @@ class OccupancyGrid
     double getResolution();
 
     /** @brief update the distance field from the collision_map */
-    void updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map);
+    void updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map, bool recompute_df=true);
        
     /** 
      * @brief manually add a cuboid to the collision map
@@ -145,6 +146,9 @@ class OccupancyGrid
     bool delete_grid_;
     std::string reference_frame_;
     distance_field::PropagationDistanceField* grid_;
+
+    // copied from PropogationDistanceField class in Fuerte
+    void addCollisionMapToField(const arm_navigation_msgs::CollisionMap &collision_map);
 };
 
 inline distance_field::PropagationDistanceField* OccupancyGrid::getDistanceFieldPtr()

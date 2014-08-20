@@ -86,7 +86,7 @@ double OccupancyGrid::getResolution()
   return grid_->getResolution();
 }
 
-void OccupancyGrid::updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map)
+void OccupancyGrid::updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map, bool recompute_df)
 {
   if(collision_map.boxes.empty())
   {
@@ -94,8 +94,11 @@ void OccupancyGrid::updateFromCollisionMap(const arm_navigation_msgs::CollisionM
     return;
   }
   reference_frame_ = collision_map.header.frame_id;
-  //grid_->addCollisionMapToField(collision_map);
+
+  if(recompute_df)
+    addCollisionMapToField(collision_map);
 }
+
 
 void OccupancyGrid::addCube(double origin_x, double origin_y, double origin_z, double size_x, double size_y, double size_z)
 {
@@ -247,6 +250,18 @@ visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type
   else
     ROS_ERROR("No visualization found of type '%s'.", type.c_str());
   return ma;
+}
+
+void OccupancyGrid::addCollisionMapToField(const arm_navigation_msgs::CollisionMap &collision_map)
+{
+  size_t num_boxes = collision_map.boxes.size();
+  EigenSTL::vector_Vector3d points;
+  points.reserve(num_boxes);
+  for (size_t i=0; i<num_boxes; ++i)
+  {
+    points.push_back(Eigen::Vector3d(collision_map.boxes[i].center.x, collision_map.boxes[i].center.y, collision_map.boxes[i].center.z));
+  }
+  grid_->addPointsToField(points);
 }
 
 /*
