@@ -717,8 +717,8 @@ bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles
   //get joint positions of starting configuration
   if(!rmodel_->computePlanningLinkFK(angles, pose))
     ROS_WARN("Unable to compute forward kinematics for initial robot state. Attempting to plan anyway.");
-  ROS_INFO("[start]             angles: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", angles[0], angles[1], angles[2], angles[3], angles[4], angles[5], angles[6]); 
-  ROS_INFO("[start] planning_link pose:   xyz: %0.3f %0.3f %0.3f  rpy: %0.3f %0.3f %0.3f", pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
+  ROS_DEBUG("[start]             angles: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f", angles[0], angles[1], angles[2], angles[3], angles[4], angles[5], angles[6]); 
+  ROS_DEBUG("[start] planning_link pose:   xyz: %0.3f %0.3f %0.3f  rpy: %0.3f %0.3f %0.3f", pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
 
   //check joint limits of starting configuration but plan anyway
   if(!rmodel_->checkJointLimits(angles))
@@ -879,7 +879,7 @@ void EnvironmentROBARM3D::getExpandedStates(std::vector<std::vector<double> >* s
 
 void EnvironmentROBARM3D::computeCostPerCell()
 {
-  ROS_ERROR("Fill in function to computeCostPerCell()");
+  //ROS_ERROR("Fill in function to computeCostPerCell()");
   prm_->cost_per_cell_ = 100;
 
   /*

@@ -172,6 +172,12 @@ bool SBPLArmPlannerInterface::solve(const arm_navigation_msgs::PlanningSceneCons
 
 bool SBPLArmPlannerInterface::setStart(const sensor_msgs::JointState &state)
 {
+  if(!sbpl_arm_env_)
+  {
+    ROS_ERROR("Environment hasn't been initialized. Not setting start position.");
+    return false;
+  }
+
   std::vector<double> initial_positions;
   if(!leatherman::getJointPositions(state, prm_->planning_joints_, initial_positions))
   {
@@ -245,7 +251,7 @@ bool SBPLArmPlannerInterface::setGoalPosition(const arm_navigation_msgs::Constra
   sbpl_tolerance[0][4] = goals.orientation_constraints[0].absolute_pitch_tolerance;
   sbpl_tolerance[0][5] = goals.orientation_constraints[0].absolute_yaw_tolerance;
 
-  ROS_INFO("goal xyz(%s): %.3f %.3f %.3f (tol: %.3fm) rpy: %.3f %.3f %.3f (tol: %.3frad)  (quat: %0.3f %0.3f %0.3f %0.3f)", prm_->planning_frame_.c_str(),sbpl_goal[0][0],sbpl_goal[0][1],sbpl_goal[0][2],sbpl_tolerance[0][0],sbpl_goal[0][3],sbpl_goal[0][4],sbpl_goal[0][5], sbpl_tolerance[0][1], goals.orientation_constraints[0].orientation.x, goals.orientation_constraints[0].orientation.y, goals.orientation_constraints[0].orientation.z, goals.orientation_constraints[0].orientation.w);
+  ROS_DEBUG("goal xyz(%s): %.3f %.3f %.3f (tol: %.3fm) rpy: %.3f %.3f %.3f (tol: %.3frad)  (quat: %0.3f %0.3f %0.3f %0.3f)", prm_->planning_frame_.c_str(),sbpl_goal[0][0],sbpl_goal[0][1],sbpl_goal[0][2],sbpl_tolerance[0][0],sbpl_goal[0][3],sbpl_goal[0][4],sbpl_goal[0][5], sbpl_tolerance[0][1], goals.orientation_constraints[0].orientation.x, goals.orientation_constraints[0].orientation.y, goals.orientation_constraints[0].orientation.z, goals.orientation_constraints[0].orientation.w);
 
   //set sbpl environment goal
   if(!sbpl_arm_env_->setGoalPosition(sbpl_goal, sbpl_tolerance))
@@ -292,15 +298,12 @@ bool SBPLArmPlannerInterface::plan(trajectory_msgs::JointTrajectory &traj)
   //reinitialize the search space
   planner_->force_planning_from_scratch();
 
-  //plan
-  
+  //plan 
   ReplanParams replan_params(prm_->allowed_time_);
   replan_params.initial_eps = 100.0;
   replan_params.final_eps = 100.0;
   replan_params.dec_eps = 10.0;
   replan_params.return_first_solution = false;
-
-  //b_ret = planner_->replan(prm_->allowed_time_, &solution_state_ids, &solution_cost_);
   b_ret = planner_->replan(&solution_state_ids, replan_params, &solution_cost_);
 
   //check if an empty plan was received.
@@ -313,7 +316,7 @@ bool SBPLArmPlannerInterface::plan(trajectory_msgs::JointTrajectory &traj)
   // if a path is returned, then pack it into msg form
   if(b_ret && (solution_state_ids.size() > 0))
   {
-    ROS_INFO("Initial Epsilon: %0.3f   Final Epsilon: %0.3f  Solution Cost: %d", planner_->get_initial_eps(),planner_->get_final_epsilon(), solution_cost_);
+    ROS_DEBUG("Initial Epsilon: %0.3f   Final Epsilon: %0.3f  Solution Cost: %d", planner_->get_initial_eps(),planner_->get_final_epsilon(), solution_cost_);
     
     if(!sbpl_arm_env_->convertStateIDPathToJointTrajectory(solution_state_ids, traj))
       return false;
@@ -394,7 +397,7 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
   else
   {
     status = -3;
-    ROS_ERROR("Failed to plan within alotted time frame (%0.2f seconds).", prm_->allowed_time_);
+    ROS_DEBUG("Failed to plan within alotted time frame (%0.2f seconds).", prm_->allowed_time_);
   }
 
   if(status == 0)

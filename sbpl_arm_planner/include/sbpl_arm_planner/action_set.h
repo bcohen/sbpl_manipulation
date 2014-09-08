@@ -38,7 +38,7 @@ class ActionSet
 
     void print();
 
-  private:
+  protected:
 
     bool use_multires_mprims_;
 

@@ -65,7 +65,7 @@ class SBPLArmPlannerInterface
 
     bool planKinematicPath(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
 
-    bool solve(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
+    virtual bool solve(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
     
     virtual bool solve(const arm_navigation_msgs::PlanningSceneConstPtr& planning_scene, const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
 
