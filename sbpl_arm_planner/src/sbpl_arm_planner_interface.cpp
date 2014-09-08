@@ -35,8 +35,7 @@ clock_t starttime;
 
 using namespace sbpl_arm_planner;
 
-SBPLArmPlannerInterface::SBPLArmPlannerInterface(RobotModel *rm, CollisionChecker *cc, ActionSet* as, distance_field::PropagationDistanceField* df) : 
-  nh_("~"), planner_(NULL), sbpl_arm_env_(NULL), prm_(NULL)
+SBPLArmPlannerInterface::SBPLArmPlannerInterface(RobotModel *rm, CollisionChecker *cc, ActionSet* as, distance_field::PropagationDistanceField* df) : nh_("~"), planner_(NULL), sbpl_arm_env_(NULL), prm_(NULL)
 {
   rm_ = rm;
   cc_ = cc;
@@ -172,6 +171,12 @@ bool SBPLArmPlannerInterface::solve(const arm_navigation_msgs::PlanningSceneCons
 
 bool SBPLArmPlannerInterface::setStart(const sensor_msgs::JointState &state)
 {
+  if(!sbpl_arm_env_)
+  {
+    ROS_ERROR("Environment hasn't been initialized. Not setting start position.");
+    return false;
+  }
+
   std::vector<double> initial_positions;
   if(!leatherman::getJointPositions(state, prm_->planning_joints_, initial_positions))
   {
@@ -292,15 +297,12 @@ bool SBPLArmPlannerInterface::plan(trajectory_msgs::JointTrajectory &traj)
   //reinitialize the search space
   planner_->force_planning_from_scratch();
 
-  //plan
-  
+  //plan 
   ReplanParams replan_params(prm_->allowed_time_);
   replan_params.initial_eps = 100.0;
   replan_params.final_eps = 100.0;
   replan_params.dec_eps = 10.0;
   replan_params.return_first_solution = false;
-
-  //b_ret = planner_->replan(prm_->allowed_time_, &solution_state_ids, &solution_cost_);
   b_ret = planner_->replan(&solution_state_ids, replan_params, &solution_cost_);
 
   //check if an empty plan was received.

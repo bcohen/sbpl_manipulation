@@ -67,9 +67,9 @@ class SBPLArmPlannerInterface
 
     bool planKinematicPath(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
 
-    bool solve(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
+    virtual bool solve(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
     
-    bool solve(const arm_navigation_msgs::PlanningSceneConstPtr& planning_scene, const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
+    virtual bool solve(const arm_navigation_msgs::PlanningSceneConstPtr& planning_scene, const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
 
     bool canServiceRequest(const arm_navigation_msgs::GetMotionPlan::Request &req);
 
@@ -81,7 +81,7 @@ class SBPLArmPlannerInterface
 
     double getEndEffectorPathDistance() {return path_distance_;};
 
-  private:
+  protected:
 
     ros::NodeHandle nh_;
 
@@ -108,7 +108,7 @@ class SBPLArmPlannerInterface
     arm_navigation_msgs::PlanningScene pscene_;
 
     /** \brief Initialize the SBPL planner and the sbpl_arm_planner environment */
-    bool initializePlannerAndEnvironment(std::string ns="~");
+    virtual bool initializePlannerAndEnvironment(std::string ns="~");
 
     /** \brief Set start configuration */
     bool setStart(const sensor_msgs::JointState &state);
@@ -120,7 +120,7 @@ class SBPLArmPlannerInterface
     bool planToPosition(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
 
     /** \brief Retrieve plan from sbpl */
-    bool plan(trajectory_msgs::JointTrajectory &traj);
+    virtual bool plan(trajectory_msgs::JointTrajectory &traj);
 };
 
 }

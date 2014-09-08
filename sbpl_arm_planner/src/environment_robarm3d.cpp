@@ -146,6 +146,180 @@ void EnvironmentROBARM3D::PrintEnv_Config(FILE* fOut)
   throw new SBPL_Exception();
 }
 
+int EnvironmentROBARM3D::GetTrueCost(int parentID, int childID){
+  vector<double> parent_angles;
+  StateID2Angles(parentID, parent_angles);
+
+  //get all actions
+  std::vector<Action> actions;
+  if(!as_->getActionSet(parent_angles, actions)) {
+    ROS_WARN("Failed to get successors.");
+    assert(false);
+  }
+
+  //retrieve the cached index in to the actions (generated in GetSuccs)
+  Edge edge = make_pair(parentID, childID);
+  if (edge_cache_.find(edge) == edge_cache_.end()){
+    ROS_ERROR("An edge between a parent and child node is missing even though it's been previously generated!");
+    assert(false);
+  }
+  int mprim_id = edge_cache_[edge];
+  // if this throws, then we didn't find the original motion from parent to child id
+  assert(mprim_id != -1);
+
+  //get the action
+  Action actual_mprim = actions[mprim_id];
+  vector<int> successor_coord(7,0);
+  if (!actual_mprim.size()){
+    ROS_INFO("actual_mprim is %d", mprim_id);
+    assert(false);
+    return -1;
+  }
+  if (actual_mprim.back().size() != 7){
+    ROS_INFO("actual_mprim is %d", mprim_id);
+    assert(false);
+    return -1;
+  }
+  //get the successor coord
+  anglesToCoord(actual_mprim.back(), successor_coord);
+
+  //get hash entry for successor
+  bool succ_is_goal_state = false;
+  EnvROBARM3DHashEntry_t* real_succ_entry = getHashEntry(successor_coord, succ_is_goal_state);;
+
+  double dist=0;
+  int path_length=0, nchecks=0;
+  // at this point, we assume we've found the correct action
+  for(size_t j = 0; j < actual_mprim.size(); ++j){
+    if(!rmodel_->checkJointLimits(actual_mprim[j])){
+      //printVector(actual_mprim[j]);
+      return -1;
+    }
+
+    //check for collisions
+    if(!cc_->isStateValid(actual_mprim[j], prm_->verbose_collisions_, true, dist)) {
+      return -1;
+    }
+  }
+
+  if(!cc_->isStateToStateValid(parent_angles, actual_mprim[0], path_length, nchecks, dist)) {
+    return -1;
+  }
+
+  for(size_t j = 1; j < actual_mprim.size(); ++j) {
+    //ROS_INFO("[ succ: %d] Checking interpolated path from waypoint %d to waypoint %d.", int(i), int(j-1), int(j));
+    if(!cc_->isStateToStateValid(actual_mprim[j-1], actual_mprim[j], path_length, nchecks, dist)) {
+      return -1;
+    }
+  }
+
+  EnvROBARM3DHashEntry_t* parent_entry = pdata_.StateID2CoordTable[parentID];
+  assert(parent_entry != NULL);
+  assert(real_succ_entry != NULL);
+  int mprim_cost = cost(parent_entry, real_succ_entry, succ_is_goal_state);
+  assert(mprim_cost > 0);
+  //pdata_.expanded_states.push_back(parentID);
+  return mprim_cost;
+}
+
+
+void EnvironmentROBARM3D::GetLazySuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<bool>* trueCost){
+  GetLazySuccsWithOrWithoutUniqueIds(SourceStateID, SuccIDV, CostV, trueCost, false);
+}
+
+void EnvironmentROBARM3D::GetLazySuccsWithUniqueIds(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<bool>* trueCost){
+  GetLazySuccsWithOrWithoutUniqueIds(SourceStateID, SuccIDV, CostV, trueCost, true);
+}
+
+void EnvironmentROBARM3D::GetLazySuccsWithOrWithoutUniqueIds(int SourceStateID, 
+                            vector<int>* SuccIDV, vector<int>* CostV, vector<bool>* trueCost,
+                            bool useUniqueId){
+  double dist=0;
+  int endeff[3]={0};
+  std::vector<int> scoord(prm_->num_joints_,0);
+  std::vector<double> pose(6,0), angles(prm_->num_joints_,0), source_angles(prm_->num_joints_,0);
+
+  //clear the successor array
+  SuccIDV->clear();
+  CostV->clear();
+  trueCost->clear();
+
+  //goal state should be absorbing
+  if(SourceStateID == pdata_.goal_entry->stateID)
+    return;
+
+  //get X, Y, Z for the state
+  EnvROBARM3DHashEntry_t* parent_entry = pdata_.StateID2CoordTable[SourceStateID];
+
+  if(int(parent_entry->coord.size()) < prm_->num_joints_)
+    ROS_ERROR("Parent hash entry has broken coords. (# coords: %d)", int(parent_entry->coord.size()));
+  //default coords of successor
+  for(int i = 0; i < prm_->num_joints_; i++)
+    scoord[i] = parent_entry->coord.at(i);
+
+  //used for interpolated collision check
+  coordToAngles(scoord, source_angles);
+
+  ROS_DEBUG_NAMED(prm_->expands_log_, "\nstate %d: %.2f %.2f %.2f %.2f %.2f %.2f %.2f  endeff: %3d %3d %3d",SourceStateID, source_angles[0],source_angles[1],source_angles[2],source_angles[3],source_angles[4],source_angles[5],source_angles[6], parent_entry->xyz[0],parent_entry->xyz[1],parent_entry->xyz[2]);
+ 
+  std::vector<Action> actions;
+  if(!as_->getActionSet(source_angles, actions)){
+    ROS_WARN("Failed to get successors.");
+    return;
+  }
+
+  ROS_DEBUG_NAMED(prm_->expands_log_, "[parent: %d] angles: %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f %0.3f  xyz: %3d %3d %3d  #_actions: %d  heur: %d dist: %0.3f", SourceStateID, source_angles[0],source_angles[1],source_angles[2],source_angles[3],source_angles[4],source_angles[5],source_angles[6], parent_entry->xyz[0],parent_entry->xyz[1],parent_entry->xyz[2], int(actions.size()), getXYZHeuristic(SourceStateID, 1), double(bfs_->getDistance(parent_entry->xyz[0],parent_entry->xyz[1], parent_entry->xyz[2])) * grid_->getResolution());
+
+  // check actions for validity
+  for (int i = 0; i < int(actions.size()); ++i){
+    // normalize the angles of the final pose and get the coord
+    for (size_t angle=0; angle < actions[i].back().size(); angle++)
+      actions[i].back()[angle] = angles::normalize_angle_positive(actions[i].back()[angle]);
+    anglesToCoord(actions[i].back(), scoord);
+
+    // get the position of the end effector
+    if(!rmodel_->computePlanningLinkFK(actions[i].back(), pose))
+      continue;
+    grid_->worldToGrid(pose[0],pose[1],pose[2],endeff[0],endeff[1],endeff[2]);
+
+    ROS_DEBUG_NAMED(prm_->expands_log_, "[ succ: %d]   pose: %0.3f %0.3f %0.3f   %0.3f %0.3f %0.3f", int(i), pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
+    ROS_DEBUG_NAMED(prm_->expands_log_, "[ succ: %d]    xyz: %d %d %d  goal: %d %d %d  (diff: %d %d %d)", int(i), endeff[0], endeff[1], endeff[2], pdata_.goal_entry->xyz[0], pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2], abs(pdata_.goal_entry->xyz[0] - endeff[0]), abs(pdata_.goal_entry->xyz[1] - endeff[1]), abs(pdata_.goal_entry->xyz[2] - endeff[2]));
+
+    //check if hash entry already exists, if not then create one
+    EnvROBARM3DHashEntry_t* succ_entry;
+    bool succ_is_goal_state = false;
+
+    //if we are not using unique IDs then we need to replace the id with the special goal id 
+    //if this state meets the goal criteria
+    if(!useUniqueId && isGoalState(pose, pdata_.goal)){
+      succ_is_goal_state = true;
+
+      for (int k = 0; k < prm_->num_joints_; k++)
+        pdata_.goal_entry->coord[k] = scoord[k];
+
+      pdata_.goal_entry->xyz[0] = endeff[0];
+      pdata_.goal_entry->xyz[1] = endeff[1];
+      pdata_.goal_entry->xyz[2] = endeff[2];
+      pdata_.goal_entry->state = actions[i].back();
+      pdata_.goal_entry->dist = dist;
+    }
+
+    if((succ_entry = getHashEntry(scoord, succ_is_goal_state)) == NULL){
+      succ_entry = createHashEntry(scoord, endeff);
+      succ_entry->state = actions[i].back();
+      succ_entry->dist = dist;
+    }
+
+    //put successor on successor list with the proper cost
+    SuccIDV->push_back(succ_entry->stateID);
+
+    CostV->push_back(cost(parent_entry, succ_entry, succ_is_goal_state));
+    trueCost->push_back(false);
+    edge_cache_.insert(map<Edge, int>::value_type(make_pair(SourceStateID, succ_entry->stateID), i));
+  }
+
+}
+
 void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
 {
   double dist=0;
@@ -726,7 +900,7 @@ void EnvironmentROBARM3D::getExpandedStates(std::vector<std::vector<double> >* s
 
 void EnvironmentROBARM3D::computeCostPerCell()
 {
-  ROS_ERROR("Fill in function to computeCostPerCell()");
+  //ROS_ERROR("Fill in function to computeCostPerCell()");
   prm_->cost_per_cell_ = 100;
 
   /*
@@ -782,7 +956,6 @@ int EnvironmentROBARM3D::getBFSCostToGoal(int x, int y, int z) const
 int EnvironmentROBARM3D::getXYZHeuristic(int FromStateID, int ToStateID)
 {
   EnvROBARM3DHashEntry_t* FromHashEntry = pdata_.StateID2CoordTable[FromStateID];
-
   //get distance heuristic
   if(prm_->use_bfs_heuristic_)
     FromHashEntry->heur = getBFSCostToGoal(FromHashEntry->xyz[0], FromHashEntry->xyz[1], FromHashEntry->xyz[2]);
@@ -887,7 +1060,7 @@ visualization_msgs::MarkerArray EnvironmentROBARM3D::getVisualization(std::strin
         }
   }
   else
-    ROS_ERROR("No such marker type, '%s'.", type.c_str());
+    ROS_DEBUG("No such marker type, '%s'.", type.c_str());
 
   return ma;
 }
