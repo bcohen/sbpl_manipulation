@@ -40,7 +40,7 @@ void sbpl_arm_planner::shortcutPath(sbpl_arm_planner::CollisionChecker *cc, std:
     current++;
   }
   if(pout.size() == 2)
-    ROS_ERROR("Does it make sense that the shortcutted path length is 2? Is it freespace?");
+    ROS_DEBUG("Does it make sense that the shortcutted path length is 2? Is it freespace?");
 
   ROS_INFO("Original path length: %d   Shortcutted path length: %d", int(pin.size()), int(pout.size()));
 }

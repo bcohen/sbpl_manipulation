@@ -49,6 +49,8 @@ PR2KDLRobotModel::PR2KDLRobotModel(std::string ns) : pr2_ik_solver_(NULL), rpy_s
   ph.param<std::string>("robot_model/wrist_pitch_joint_name", wrist_pitch_joint_name_, "r_wrist_flex_joint");
   ph.param<std::string>("robot_model/end_effector_link_name", end_effector_link_name_, "r_gripper_palm_link");
 
+  robot_body_pose_for_pviz.resize(6,0);
+
   /* Note: Above are params that are really only meant to choose between the
    * right and left arms of the PR2. I'm pretty sure this class will not
    * work unless most of them are set to the default values (except for r/l)
@@ -182,6 +184,9 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
 
 bool PR2KDLRobotModel::computeIKWithPvizTransform(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option)
 {
+  if(pose.size() < 6)
+    ROS_ERROR("Invalid pose.");
+
   std::vector<double> pose_translated = pose;
   pose_translated[0] -= robot_body_pose_for_pviz[0];
   pose_translated[1] -= robot_body_pose_for_pviz[1];

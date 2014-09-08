@@ -978,11 +978,10 @@ void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &st
   for(size_t i = 0; i < state.joint_state.name.size(); ++i)
     model_.setJointPosition(state.joint_state.name[i], state.joint_state.position[i]);
 
-  /*
+  // TODO: turn into its own function
   grid_->reset();
   putCollisionObjectsInGrid();
   updateVoxelGroups();
-  */
 }
 
 bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)

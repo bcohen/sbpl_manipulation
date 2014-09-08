@@ -1,8 +1,8 @@
 planning:
   epsilon: 100
-  verbose: false
+  verbose: true
   verbose_collisions: false
-  shortcut_path: false
+  shortcut_path: true
   interpolate_path: false
   use_bfs_heuristic: true
   group_name: left_arm
@@ -20,11 +20,11 @@ debug:
   print_out_path: false
   logging:
     expands: info
-    expands2: debug
-    ik: debug
-    robot_model: debug
-    collisions: debug
-    solution: debug
+    expands2: info
+    ik: info
+    robot_model: info
+    collisions: info
+    solution: info
 
 visualizations:
   heuristic: false
