@@ -38,12 +38,18 @@ using namespace std;
 namespace sbpl_arm_planner
 {
 
-SharedOccupancyGrid::SharedOccupancyGrid(double dim_x, double dim_y, double dim_z, double resolution, double origin_x, double origin_y, double origin_z) : OccupancyGrid(dim_x, dim_y, dim_z, resolution, origin_x, origin_y, origin_z)
+SharedOccupancyGrid::SharedOccupancyGrid(double dim_x, double dim_y, double dim_z, double resolution, double origin_x, double origin_y, double origin_z) : OccupancyGrid(dim_x, dim_y, dim_z, resolution, origin_x, origin_y, origin_z), shared_grid_(0)
 {
   grid_ = new distance_field::PropagationDistanceField(dim_x, dim_y, dim_z, resolution, origin_x, origin_y,  origin_z, 0.40);
   grid_->reset();
   delete_grid_ = true;
   use_shared_grid_ = false;
+}
+
+SharedOccupancyGrid::~SharedOccupancyGrid()
+{
+  delete segment_;
+  segment_ = 0;
 }
 
 void SharedOccupancyGrid::getGridSize(int &dim_x, int &dim_y, int &dim_z)
@@ -99,10 +105,79 @@ double SharedOccupancyGrid::getResolution()
 }
 
 /* For storing Distance Field data in Shared Memory */
-bool SharedOccupancyGrid::initSharedDistanceField()
+bool SharedOccupancyGrid::initSharedDistanceField(bool is_core, const std::string &key)
 {
+  int dimx, dimy, dimz;
+  getGridSize(dimx, dimy, dimz);
+
   // copy distance field
-  copyDistanceField(shared_grid_);
+  ros::Time t_start = ros::Time::now();
+
+  if(is_core)
+  {
+    try
+    {
+      segment_ = new boost::interprocess::managed_shared_memory(boost::interprocess::open_or_create,
+								"SharedDistanceField",
+								838860800);
+
+      if(segment_->find<ShmemVectorVectorVector>(key.c_str()).first)
+      {
+	ROS_WARN("[SharedOccGrid] Distance field data with key \"%s\" already exists!", key.c_str());
+	return true;
+      }
+
+      const ShmemDoubleAllocator double_alloc_inst(segment_->get_segment_manager());
+      const ShmemVectorAllocator vec_alloc_inst(segment_->get_segment_manager());
+      const ShmemVectorVectorAllocator vec_vec_alloc_inst(segment_->get_segment_manager());
+
+      // @todo name the SharedOccupancyGrid instances in shmem differently
+      shared_grid_ = segment_->construct<ShmemVectorVectorVector>(key.c_str())(dimx, ShmemVectorVector(dimy, ShmemDoubleVector(dimz, 0.0, double_alloc_inst), vec_alloc_inst), vec_vec_alloc_inst);
+
+      for(int x = 0; x < dimx; ++x)
+      {
+  	for(int y = 0; y < dimy; ++y)
+  	{
+  	  for(int z = 0; z < dimz; ++z)
+  	    (*shared_grid_)[x][y][z] = getDistance(x, y, z); 
+  	}
+      }
+
+      double t_end = (ros::Time::now()-t_start).toSec();
+      ROS_WARN("[SharedOccGrid] Copying the distance field took %0.3f seconds.", t_end);
+    }
+    catch(const boost::interprocess::interprocess_exception &e)
+    {
+      ROS_ERROR("Shmem Error: %s", e.what());
+      return false;
+    }    
+  }
+  else
+  {
+    try
+    {
+      segment_ = new boost::interprocess::managed_shared_memory(boost::interprocess::open_only,
+								"SharedDistanceField");
+      
+      shared_grid_ = segment_->find<ShmemVectorVectorVector>(key.c_str()).first;
+
+      if(shared_grid_ == 0)
+      {
+	ROS_ERROR("[SharedOccGrid] Grid data was not found in shared memory!");
+	return false;
+      }
+      else
+      {
+	ROS_INFO("[SharedOccGrid] Loaded grid data from shared memory, size = %d, %d, %d.", 
+		 shared_grid_->size(), shared_grid_[0].size(), shared_grid_[0][0].size());
+      }
+    }
+    catch(const boost::interprocess::interprocess_exception &e)
+    {
+      ROS_ERROR("Shmem Error: %s", e.what());
+      return false;
+    }
+  }
 
   // store details of distance field
   resolution_[0] = grid_->getResolution(distance_field::PropagationDistanceField::DIM_X);
@@ -111,7 +186,7 @@ bool SharedOccupancyGrid::initSharedDistanceField()
   getWorldSize(size_[0], size_[1], size_[2]);
   getOrigin(origin_[0], origin_[1], origin_[2]);
   getGridSize(num_cells_[0], num_cells_[1], num_cells_[2]);
-  
+
   // delete distance_field object
   if(delete_grid_)
   {
@@ -125,28 +200,7 @@ bool SharedOccupancyGrid::initSharedDistanceField()
 
 SharedDistanceFieldPtr SharedOccupancyGrid::getSharedDistanceFieldPtr()
 {
-  return &shared_grid_;
-}
-
-void SharedOccupancyGrid::copyDistanceField(SharedDistanceField &df)
-{
-  ros::Time t_start = ros::Time::now();
-
-  int dimx,dimy,dimz;
-  getGridSize(dimx, dimy, dimz);
-  df.resize(dimx, std::vector<std::vector<double> > (dimy, std::vector<double> (dimz)));
-
-  for(int x = 0; x < dimx; ++x)
-  {
-    for(int y = 0; y < dimy; ++y)
-    {
-      for(int z = 0; z < dimz; ++z)
-        df[x][y][z] = getDistance(x, y, z); 
-    }
-  }
-
-  double t_end = (ros::Time::now()-t_start).toSec();
-  ROS_WARN("[grid] Copying the distance field took %0.3f seconds.", t_end);
+  return shared_grid_;
 }
 
 }
