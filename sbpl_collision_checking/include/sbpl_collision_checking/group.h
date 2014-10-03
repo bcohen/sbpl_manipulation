@@ -27,9 +27,9 @@ typedef struct Sphere
   int kdl_chain;
   int kdl_segment;
 
-  void print()
+  void print(std::string text="")
   {
-    ROS_INFO("[%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d chain: %d segment: %d", name.c_str(), v.x(), v.y(), v.z(), radius, priority, kdl_chain, kdl_segment);
+    ROS_INFO("[%s][%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d chain: %d segment: %d", text.c_str(), name.c_str(), v.x(), v.y(), v.z(), radius, priority, kdl_chain, kdl_segment);
   }
 } Sphere;
 
@@ -49,6 +49,24 @@ struct Link
   std::string root_name_;
   std::vector<Sphere> spheres_;
   std::vector<Sphere> low_res_spheres_;
+
+  void print(std::string text)
+  { 
+    ROS_INFO("[%s] name: %s  root_name: %s  type: %d  i_chain: %d", text.c_str(), name_.c_str(), root_name_.c_str(), type, i_chain_);
+
+    if(!spheres_.empty())
+    {
+      ROS_INFO("[%s] Spheres:", text.c_str());
+      for(size_t i = 0; i < spheres_.size(); ++i)
+        spheres_[i].print(text);
+    }
+    if(!low_res_spheres_.empty())
+    {
+      ROS_INFO("[%s] Low Res Spheres:", text.c_str());
+      for(size_t i = 0; i < low_res_spheres_.size(); ++i)
+        low_res_spheres_[i].print(text);
+    }
+  }
 };
 
 class Group

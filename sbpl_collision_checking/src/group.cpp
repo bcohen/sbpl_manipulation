@@ -235,6 +235,7 @@ bool Group::getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres)
     Link link;
     for(int j = 0; j < all_links.size(); j++) 
     {
+      link.type = type_;
       link.spheres_.clear();
       link.low_res_spheres_.clear();
       if(all_links[j].hasMember("name"))
@@ -337,7 +338,16 @@ bool Group::initSpheres()
   {
     int seg = 0;
     if(!leatherman::getSegmentIndex(chains_[links_[i].i_chain_], links_[i].root_name_, seg))
-      return false;
+    {
+      if(root_name_.compare(links_[i].root_name_) == 0)
+      {
+        ROS_DEBUG("We have a one link chain. Setting seg = 0.");
+        seg = -1;
+      }
+      else
+	    ROS_ERROR("Failed to get the link segment index for %s", links_[i].root_name_.c_str());
+        return false;
+    }
 
     for(size_t j = 0; j < links_[i].spheres_.size(); ++j)
     {
@@ -481,7 +491,7 @@ bool Group::computeFK(const KDL::JntArray &angles, int chain, int segment, KDL::
 {
   if(segment == 0)
   {
-    ROS_ERROR("segment is 0!");
+    ROS_DEBUG("segment is 0!");
     frame = KDL::Frame::Identity();
   }
   else
@@ -501,7 +511,7 @@ bool Group::computeFK(const std::vector<double> &angles, int chain, int segment,
 {
   if(segment == 0)
   {
-    ROS_ERROR("segment is 0!");
+    ROS_DEBUG("segment is 0!");
     frame = KDL::Frame::Identity();
   }
   else

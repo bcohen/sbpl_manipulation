@@ -468,7 +468,7 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     }
 
     // check against default group spheres (TODO: change to all sphere groups)
-    if(!checkSphereGroupAgainstSphereGroup(model_.getDefaultGroup(), sg[i], dg_spheres, g_spheres, low_res, low_res, verbose, visualize, dist_temp, 0, 100, 101, 200))
+    if(!checkSphereGroupAgainstSphereGroup(model_.getDefaultGroup(), sg[i], dg_spheres, g_spheres, low_res, low_res, verbose, visualize, dist_temp, 0, 100, 0, 100))
     {
       if(dist_temp < dist)
         dist = dist_temp;
@@ -579,7 +579,7 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group
 
     for(size_t j = 0; j < spheres2.size(); ++j)
     {
-      if((gsph2[i]->priority > group2_max_priority) || (gsph2[i]->priority < group2_min_priority))
+      if((gsph2[j]->priority > group2_max_priority) || (gsph2[j]->priority < group2_min_priority))
         continue;
 
       d = leatherman::distance(spheres1[i], spheres2[j]);

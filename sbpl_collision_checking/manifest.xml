@@ -26,8 +26,9 @@
   <depend package="sbpl_manipulation_components" />
   <depend package="leatherman" />
   <depend package="visualization_msgs" />
-
-  <depend package="pviz" /> <!-- temporary -->
+ 
+  <!-- temporary...added for RSS stuff -->
+  <depend package="pviz" />
   <depend package="ompl" />
 
   <rosdep name="eigen" />

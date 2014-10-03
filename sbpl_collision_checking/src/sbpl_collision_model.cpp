@@ -224,6 +224,7 @@ bool SBPLCollisionModel::getJointLimits(std::string group_name, std::string join
   if(!group_config_map_[group_name]->init_)
     return false;
 
+  ROS_DEBUG("root name: %s  tip name: %s  joint name: %s", group_config_map_[group_name]->getReferenceFrame().c_str(), group_config_map_[group_name]->tip_name_.c_str(), joint_name.c_str());
   return leatherman::getJointLimits(urdf_.get(), group_config_map_[group_name]->getReferenceFrame(), group_config_map_[group_name]->tip_name_, joint_name, min_limit, max_limit, continuous, false);
 }
 
