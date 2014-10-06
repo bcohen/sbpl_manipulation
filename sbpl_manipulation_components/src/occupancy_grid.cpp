@@ -88,13 +88,20 @@ double OccupancyGrid::getResolution()
 
 void OccupancyGrid::updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map)
 {
+  // I think this resets the distance field (any added collision objects are lost)
   if(collision_map.boxes.empty())
   {
     ROS_DEBUG("[grid] collision map received is empty.");
     return;
   }
   reference_frame_ = collision_map.header.frame_id;
-  //grid_->addCollisionMapToField(collision_map);
+  addCollisionMapToField(collision_map);
+}
+
+void OccupancyGrid::updateFromOctree(const octomap::OcTree* oct)
+{
+  // I think this resets the distance field (any added collision objects are lost)
+  grid_->addOcTreeToField(oct);
 }
 
 void OccupancyGrid::addCube(double origin_x, double origin_y, double origin_z, double size_x, double size_y, double size_z)
@@ -290,6 +297,18 @@ bool OccupancyGrid::writeOccupancyGridToBagFile(std::string bag_filename, std::s
     }
   }
   return writeCollisionMapToBagFile(map, bag_filename, topic_name);
+}
+
+void OccupancyGrid::addCollisionMapToField(const arm_navigation_msgs::CollisionMap &collision_map)
+{
+  size_t num_boxes = collision_map.boxes.size();
+  EigenSTL::vector_Vector3d points;
+  points.reserve(num_boxes);
+  for (size_t i=0; i<num_boxes; ++i)
+  {
+    points.push_back(Eigen::Vector3d(collision_map.boxes[i].center.x, collision_map.boxes[i].center.y, collision_map.boxes[i].center.z));
+  }
+  grid_->addPointsToField(points);
 }
 
 /*

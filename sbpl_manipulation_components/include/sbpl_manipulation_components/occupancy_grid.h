@@ -111,7 +111,9 @@ class OccupancyGrid
 
     /** @brief update the distance field from the collision_map */
     void updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map);
-       
+
+    void updateFromOctree(const octomap::OcTree* oct);
+
     /** 
      * @brief manually add a cuboid to the collision map
      * @param X_origin_of_cuboid 
@@ -150,6 +152,9 @@ class OccupancyGrid
     bool delete_grid_;
     std::string reference_frame_;
     distance_field::PropagationDistanceField* grid_;
+
+    // copied from PropogationDistanceField class in Fuerte
+    void addCollisionMapToField(const arm_navigation_msgs::CollisionMap &collision_map);
 };
 
 inline distance_field::PropagationDistanceField* OccupancyGrid::getDistanceFieldPtr()
