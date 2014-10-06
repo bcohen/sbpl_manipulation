@@ -345,8 +345,10 @@ bool Group::initSpheres()
         seg = -1;
       }
       else
+      {
 	    ROS_ERROR("Failed to get the link segment index for %s", links_[i].root_name_.c_str());
         return false;
+      }
     }
 
     for(size_t j = 0; j < links_[i].spheres_.size(); ++j)
