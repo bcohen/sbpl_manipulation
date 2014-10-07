@@ -88,7 +88,6 @@ double OccupancyGrid::getResolution()
 
 void OccupancyGrid::updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map)
 {
-  // I think this resets the distance field (any added collision objects are lost)
   if(collision_map.boxes.empty())
   {
     ROS_DEBUG("[grid] collision map received is empty.");
@@ -100,7 +99,6 @@ void OccupancyGrid::updateFromCollisionMap(const arm_navigation_msgs::CollisionM
 
 void OccupancyGrid::updateFromOctree(const octomap::OcTree* oct)
 {
-  // I think this resets the distance field (any added collision objects are lost)
   grid_->addOcTreeToField(oct);
 }
 
