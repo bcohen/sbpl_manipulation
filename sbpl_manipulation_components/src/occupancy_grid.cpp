@@ -106,8 +106,7 @@ void OccupancyGrid::updateFromOctree(const octomap::OcTree* oct)
 
 void OccupancyGrid::addCube(double origin_x, double origin_y, double origin_z, double size_x, double size_y, double size_z)
 {
-  int num_points=0;
-  std::vector<tf::Vector3> pts;
+  EigenSTL::vector_Vector3d pts;
 
   for (double x=origin_x-size_x/2.0; x<=origin_x+size_x/2.0; x+=grid_->getResolution())
   {
@@ -115,13 +114,11 @@ void OccupancyGrid::addCube(double origin_x, double origin_y, double origin_z, d
     {
       for (double z=origin_z-size_z/2.0; z<=origin_z+size_z/2.0; z+=grid_->getResolution())
       {
-        pts.push_back(tf::Vector3(x,y,z));
-        ++num_points;
+        pts.push_back(Eigen::Vector3d(x, y, z));
       }
     }
   }
-
-  //grid_->addPointsToField(pts);
+  grid_->addPointsToField(pts);
 }
 
 void OccupancyGrid::getOccupiedVoxels(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<Eigen::Vector3d> &voxels)
@@ -222,8 +219,6 @@ visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type
   else if(type.compare("distance_field") == 0)
   {
     visualization_msgs::Marker m;
-    // grid_->getIsoSurfaceMarkers(0.01, 0.03, getReferenceFrame(), ros::Time::now(),  Eigen::Affine3d::Identity(), m);
-    //grid_->getIsoSurfaceMarkers(0.01, 0.08, getReferenceFrame(), ros::Time::now(), tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0)), m);
     grid_->getIsoSurfaceMarkers(0.01, 0.02, getReferenceFrame(), ros::Time::now(), m);
     m.color.a +=0.2;
     ma.markers.push_back(m);
