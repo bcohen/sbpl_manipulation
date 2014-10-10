@@ -978,6 +978,12 @@ void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &st
   for(size_t i = 0; i < state.joint_state.name.size(); ++i)
     model_.setJointPosition(state.joint_state.name[i], state.joint_state.position[i]);
 
+  if(!model_.setModelToWorldTransform(state.multi_dof_joint_state, grid_->getReferenceFrame()))
+  {
+    ROS_ERROR("Failed to set the model-to-world transform. The collision model's frame is different from the occupancy grid's frame.");
+    return;
+  }
+
   /*
   grid_->reset();
   putCollisionObjectsInGrid();
@@ -1017,7 +1023,7 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
 
   // collision map
   if(scene.collision_map.header.frame_id.compare(grid_->getReferenceFrame()) != 0)
-    ROS_WARN_ONCE("collision_map_occ is in %s not in %s", scene.collision_map.header.frame_id.c_str(), grid_->getReferenceFrame().c_str());
+    ROS_ERROR_ONCE("collision_map_occ is in %s not in %s. This will probably not work.", scene.collision_map.header.frame_id.c_str(), grid_->getReferenceFrame().c_str());
 
   if(!scene.collision_map.boxes.empty())
     grid_->updateFromCollisionMap(scene.collision_map);
