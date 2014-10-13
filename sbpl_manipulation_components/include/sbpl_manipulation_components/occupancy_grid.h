@@ -109,9 +109,10 @@ class OccupancyGrid
     /** @brief get the resolution of the world (meters)*/
     double getResolution();
 
-    /** @brief update the distance field from the collision_map */
+    /** @brief update the distance field from a CollisionMap */
     void updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map);
 
+    /** @brief update the distance field from an Octree */
     void updateFromOctree(const octomap::OcTree* oct);
 
     /** 
@@ -125,6 +126,7 @@ class OccupancyGrid
     */
     void addCube(double origin_x, double origin_y, double origin_z, double size_x, double size_y, double size_z);
 
+    /** @brief add an explicit list of points to the distance field */
     void addPointsToField(const std::vector<Eigen::Vector3d> &points);
 
     void getOccupiedVoxels(std::vector<geometry_msgs::Point> &voxels);
