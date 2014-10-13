@@ -308,6 +308,11 @@ bool Group::getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres)
       links_.push_back(link);
     }
   }
+  else
+  {
+    ROS_ERROR("No collision_links founds. A group must have a list of 'collision_links'. Exiting.");
+    return false;
+  }
   return true;
 }
 
