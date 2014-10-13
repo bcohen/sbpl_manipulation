@@ -217,8 +217,8 @@ visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type
   else if(type.compare("distance_field") == 0)
   {
     visualization_msgs::Marker m;
-    grid_->getIsoSurfaceMarkers(0.01, 0.02, getReferenceFrame(), ros::Time::now(), m);
-    m.color.a +=0.2;
+    grid_->getIsoSurfaceMarkers(0.01, grid_->getResolution(), getReferenceFrame(), ros::Time::now(), m);
+    m.color.a += 0.2;
     ma.markers.push_back(m);
   }
   else if(type.compare("occupied_voxels") == 0)
