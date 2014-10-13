@@ -970,7 +970,7 @@ bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0,
   return checkPathForCollision(angles0, angles1, frames, false, path_length, num_checks, dist, path_out);
 }
 
-void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &state)
+void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &state, bool recompute_df)
 {
   if(state.joint_state.name.size() != state.joint_state.position.size())
     return;
@@ -984,11 +984,12 @@ void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &st
     return;
   }
 
-  /*
-  grid_->reset();
-  putCollisionObjectsInGrid();
-  updateVoxelGroups();
-  */
+  if(recompute_df)
+  {
+    grid_->reset();
+    putCollisionObjectsInGrid();
+    updateVoxelGroups();
+  }
 }
 
 bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)

@@ -73,7 +73,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
    
     bool setPlanningScene(const arm_navigation_msgs::PlanningScene &scene);
 
-    void setRobotState(const arm_navigation_msgs::RobotState &state);
+    void setRobotState(const arm_navigation_msgs::RobotState &state, bool recompute_df=false);
 
     void setSphereGroupsForCollisionCheck(const std::vector<std::string> &group_names);
 
@@ -138,6 +138,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     bool updateVoxelGroup(std::string name);
 
     bool isObjectAttached() {return object_attached_;}; 
+
   private:
 
     sbpl_arm_planner::SBPLCollisionModel model_;
@@ -154,8 +155,6 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     std::vector<double> min_limits_;
     std::vector<double> max_limits_;
     std::vector<bool> continuous_;
-    ompl::base::StateSpacePtr omplStateSpace_;
-    ompl::base::SpaceInformationPtr si_;
 
     /* ------------- Collision Objects -------------- */
     std::vector<std::string> known_objects_;
@@ -164,7 +163,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     /** --------------- Attached Objects --------------*/
     bool object_attached_;
-    int attached_object_segment_num_;    
+    int attached_object_segment_num_; 
     int attached_object_chain_num_;
     std::string attached_object_frame_;
     std::vector<Sphere> object_spheres_;
@@ -179,6 +178,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     /** --------------- Interpolation --------------*/
     bool use_ompl_interpolation_;
     int num_interpolation_steps_;
+    ompl::base::StateSpacePtr omplStateSpace_;
+    ompl::base::SpaceInformationPtr si_;
 
     /* for debugging */
     std::vector<sbpl_arm_planner::Sphere> collision_spheres_;
