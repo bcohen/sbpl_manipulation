@@ -127,8 +127,6 @@ class OccupancyGrid
 
     void addPointsToField(const std::vector<Eigen::Vector3d> &points);
 
-    void updatePointsInField(const std::vector<Eigen::Vector3d> &points, bool iterative=false);
-
     void getOccupiedVoxels(std::vector<geometry_msgs::Point> &voxels);
 
     void getOccupiedVoxels(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<Eigen::Vector3d> &voxels);
@@ -221,32 +219,11 @@ inline void OccupancyGrid::setReferenceFrame(const std::string &frame)
 
 inline void OccupancyGrid::addPointsToField(const std::vector<Eigen::Vector3d> &points)
 {
-  /*
-  std::vector<tf::Vector3> pts(points.size());
-  for(size_t i = 0; i < points.size(); ++i)
-    pts[i] = tf::Vector3(points[i].x(), points[i].y(), points[i].z());
-  
-  grid_->addPointsToField(pts);
-  */
   EigenSTL::vector_Vector3d pts(points.size());
   for(size_t i = 0; i < points.size(); ++i)
     pts[i] = Eigen::Vector3d(points[i].x(), points[i].y(), points[i].z());
 
   grid_->addPointsToField(pts);
-}
-
-inline void OccupancyGrid::updatePointsInField(const std::vector<Eigen::Vector3d> &points, bool iterative)
-{
-  if(points.empty())
-    return;
-  /*
-  std::vector<tf::Vector3> pts(points.size());
-  for(size_t i = 0; i < points.size(); ++i)
-    pts[i] = tf::Vector3(points[i].x(), points[i].y(), points[i].z());
-  
-  grid_->updatePointsInField(pts, iterative);
-  */
-  //grid_->updatePointsInField(points, iterative);
 }
 
 }
