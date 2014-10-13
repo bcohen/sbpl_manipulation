@@ -172,11 +172,11 @@ void OccupancyGrid::getOccupiedVoxels(std::vector<geometry_msgs::Point> &voxels)
   getOrigin(origin[0], origin[1], origin[2]);
   getWorldSize(dim[0], dim[1], dim[2]);
   
-  for(double x=origin[0]; x<=origin[0]+dim[0]; x+=grid_->getResolution())
+  for(double x=origin[0]; x<origin[0]+dim[0]-grid_->getResolution(); x+=grid_->getResolution())
   {
-    for(double y=origin[1]; y<=origin[1]+dim[1]; y+=grid_->getResolution())
+    for(double y=origin[1]; y<origin[1]+dim[1]-grid_->getResolution(); y+=grid_->getResolution())
     {
-      for(double z=origin[2]; z<=origin[2]+dim[2]; z+=grid_->getResolution())
+      for(double z=origin[2]; z<origin[2]+dim[2]-grid_->getResolution(); z+=grid_->getResolution())
       {
         if(getDistanceFromPoint(x,y,z) == 0)
         {

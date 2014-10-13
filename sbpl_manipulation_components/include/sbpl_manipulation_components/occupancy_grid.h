@@ -169,8 +169,10 @@ inline void OccupancyGrid::gridToWorld(int x, int y, int z, double &wx, double &
 
 inline void OccupancyGrid::worldToGrid(double wx, double wy, double wz, int &x, int &y, int &z)
 {
-  grid_->worldToGrid(wx, wy, wz, x, y, z);
+  if(!grid_->worldToGrid(wx, wy, wz, x, y, z))
+    ROS_ERROR("[grid] Out of bounds. worldToGrid converted %0.5f %0.5f %0.5f to %d %d %d", wx, wy, wz, x, y, z);
 
+  // remove this warning...
   if((x > 10000) || (y > 10000) || (z > 10000) ||
      (x < 0) || (y < 0) || (z < 0))
   {
