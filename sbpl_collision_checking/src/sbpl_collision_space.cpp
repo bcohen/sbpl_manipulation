@@ -970,7 +970,14 @@ bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0,
   return checkPathForCollision(angles0, angles1, frames, false, path_length, num_checks, dist, path_out);
 }
 
-void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &state, bool recompute_df)
+void SBPLCollisionSpace::recomputeDistanceField()
+{
+  grid_->reset();
+  putCollisionObjectsInGrid();
+  updateVoxelGroups();
+}
+
+void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &state)
 {
   if(state.joint_state.name.size() != state.joint_state.position.size())
     return;
@@ -983,29 +990,12 @@ void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &st
     ROS_ERROR("Failed to set the model-to-world transform. The collision model's frame is different from the occupancy grid's frame.");
     return;
   }
-
-  if(recompute_df)
-  {
-    grid_->reset();
-    putCollisionObjectsInGrid();
-    updateVoxelGroups();
-  }
 }
 
 bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningScene &scene)
 {
   // robot state
-  if(scene.robot_state.joint_state.name.size() != scene.robot_state.joint_state.position.size())
-    return false;
-
-  for(size_t i = 0; i < scene.robot_state.joint_state.name.size(); ++i)
-    model_.setJointPosition(scene.robot_state.joint_state.name[i], scene.robot_state.joint_state.position[i]);
-
-  if(!model_.setModelToWorldTransform(scene.robot_state.multi_dof_joint_state, scene.collision_map.header.frame_id))
-  {
-    ROS_ERROR("Failed to set the model-to-world transform. The collision model's frame is different from the collision map's frame.");
-    return false;
-  }
+  setRobotState(scene.robot_state);
 
   // reset the distance field (TODO...shouldn't have to reset everytime)
   grid_->reset();

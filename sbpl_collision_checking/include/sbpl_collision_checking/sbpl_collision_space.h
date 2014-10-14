@@ -73,11 +73,13 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
    
     bool setPlanningScene(const arm_navigation_msgs::PlanningScene &scene);
 
-    void setRobotState(const arm_navigation_msgs::RobotState &state, bool recompute_df=false);
+    void setRobotState(const arm_navigation_msgs::RobotState &state);
 
     void setSphereGroupsForCollisionCheck(const std::vector<std::string> &group_names);
 
     void setInterpolationParams(bool use_ompl, int num_steps=10);
+
+    void recomputeDistanceField();
 
     /** --------------- Collision Checking ----------- */
     bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist); // multi-res
