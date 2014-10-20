@@ -253,7 +253,6 @@ void SBPLCollisionSpace::processCollisionObjectMsg(const arm_navigation_msgs::Co
   }
   else if(object.operation.operation == arm_navigation_msgs::CollisionObjectOperation::ADD)
   {
-    object_map_[object.id] = object;
     addCollisionObject(object);
   }
   else if(object.operation.operation == arm_navigation_msgs::CollisionObjectOperation::REMOVE)
@@ -266,6 +265,7 @@ void SBPLCollisionSpace::processCollisionObjectMsg(const arm_navigation_msgs::Co
 
 void SBPLCollisionSpace::addCollisionObject(const arm_navigation_msgs::CollisionObject &object)
 {
+  object_map_[object.id] = object;
 
   for(size_t i = 0; i < object.shapes.size(); ++i)
   {
@@ -301,7 +301,6 @@ void SBPLCollisionSpace::addCollisionObject(const arm_navigation_msgs::Collision
         object_voxel_map_[object.id][j] += m.translation();
       }
     }
-
     else if(object.shapes[i].type == arm_navigation_msgs::Shape::MESH)
     {
       std::vector<std::vector<double> > voxels;

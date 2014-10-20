@@ -80,7 +80,6 @@ bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint
     }
     continuous_[i] = cont;
   }
-
   ROS_INFO("[min_limits] %s", leatherman::getString(min_limits_).c_str());
   ROS_INFO("[max_limits] %s", leatherman::getString(max_limits_).c_str());
   ROS_INFO("[continuous] %s", leatherman::getString(continuous_, "yes", "no").c_str());
@@ -88,8 +87,7 @@ bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint
   // set the order of the planning joints
   model_.setOrderOfJointPositions(joint_names, group_name_);
 
-
-  //Set up OMPL for interpolation
+  // set up OMPL for interpolation (PR2 specific)
   ompl::base::RealVectorStateSpace* r5 = new ompl::base::RealVectorStateSpace(5);
   r5->setDimensionName(0,"shoulder_pan");
   r5->setDimensionName(1,"shoulder_lift");
@@ -117,7 +115,6 @@ bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint
   
   si_.reset(new ompl::base::SpaceInformation(omplStateSpace_));
   si_->setStateValidityCheckingResolution(0.00001);  
-  //si_->setup();
 
   return true;
 }
@@ -987,7 +984,7 @@ void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &st
 
   if(!model_.setModelToWorldTransform(state.multi_dof_joint_state, grid_->getReferenceFrame()))
   {
-    ROS_ERROR("Failed to set the model-to-world transform. The collision model's frame is different from the occupancy grid's frame.");
+    ROS_ERROR("[cspace] Failed to set the model-to-world transform. The collision model's frame is different from the occupancy grid's frame.");
     return;
   }
 }
@@ -1014,7 +1011,8 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
 
   // collision map
   if(scene.collision_map.header.frame_id.compare(grid_->getReferenceFrame()) != 0)
-    ROS_ERROR_ONCE("collision_map_occ is in %s not in %s. This will probably not work.", scene.collision_map.header.frame_id.c_str(), grid_->getReferenceFrame().c_str());
+    ROS_ERROR_ONCE("[cspace] collision_map_occ is in %s not in %s. This will probably not work.",
+        scene.collision_map.header.frame_id.c_str(), grid_->getReferenceFrame().c_str());
 
   if(!scene.collision_map.boxes.empty())
     grid_->updateFromCollisionMap(scene.collision_map);
