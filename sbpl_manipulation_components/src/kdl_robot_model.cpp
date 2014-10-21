@@ -233,6 +233,12 @@ bool KDLRobotModel::checkJointLimits(const std::vector<double> &angles)
 
 bool KDLRobotModel::computeFK(const std::vector<double> &angles, std::string name, KDL::Frame &f)
 {
+  if(angles.size() > kchain_.getNrOfJoints())
+  {
+    ROS_ERROR("Unable to compute FK with %d joint positions. Expecting %d positions.", int(angles.size()), int(kchain_.getNrOfJoints()));
+    return false;
+  }
+
   //TODO: This should NOT loop to angles.size() but rather until the number
   //of joints that are expected or else EIGEN blows up
   for(size_t i = 0; i < angles.size(); ++i)
