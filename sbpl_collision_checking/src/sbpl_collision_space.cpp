@@ -1022,5 +1022,20 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
   return true;
 }
 
+void SBPLCollisionSpace::getCollisions(std::vector<geometry_msgs::Point> &centers, std::vector<double> &radii)
+{
+  double r;
+  geometry_msgs::Point c;
+  for(size_t i = 0; i < collision_spheres_.size(); ++i)
+  {
+    c.x = collision_spheres_[i].v.x();
+    c.y = collision_spheres_[i].v.y();
+    c.z = collision_spheres_[i].v.z();
+    r = collision_spheres_[i].radius + padding_;
+
+    centers.push_back(c);
+    radii.push_back(r);
+  }
 }
 
+}
