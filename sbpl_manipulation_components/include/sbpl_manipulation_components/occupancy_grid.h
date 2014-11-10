@@ -121,17 +121,6 @@ class OccupancyGrid
     /** @brief update the distance field from an Octree */
     void updateFromOctree(const octomap::OcTree* oct);
 
-    /** 
-     * @brief manually add a cuboid to the collision map
-     * @param X_origin_of_cuboid 
-     * @param Y_origin_of_cuboid 
-     * @param Z_origin_of_cuboid
-     * @param size along the X dimension (meters)
-     * @param size along the Y dimension (meters)
-     * @param size along the Z dimension (meters)
-    */
-    void addCube(double origin_x, double origin_y, double origin_z, double size_x, double size_y, double size_z);
-
     /** @brief add an explicit list of points to the distance field */
     void addPointsToField(const std::vector<Eigen::Vector3d> &points);
 

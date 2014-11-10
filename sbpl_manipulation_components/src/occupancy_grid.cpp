@@ -103,23 +103,6 @@ void OccupancyGrid::updateFromOctree(const octomap::OcTree* oct)
   grid_->addOcTreeToField(oct);
 }
 
-void OccupancyGrid::addCube(double origin_x, double origin_y, double origin_z, double size_x, double size_y, double size_z)
-{
-  EigenSTL::vector_Vector3d pts;
-
-  for (double x=origin_x-size_x/2.0; x<=origin_x+size_x/2.0; x+=grid_->getResolution())
-  {
-    for (double y=origin_y-size_y/2.0; y<=origin_y+size_y/2.0; y+=grid_->getResolution())
-    {
-      for (double z=origin_z-size_z/2.0; z<=origin_z+size_z/2.0; z+=grid_->getResolution())
-      {
-        pts.push_back(Eigen::Vector3d(x, y, z));
-      }
-    }
-  }
-  grid_->addPointsToField(pts);
-}
-
 void OccupancyGrid::getOccupiedVoxels(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<Eigen::Vector3d> &voxels)
 {
   Eigen::Vector3d vin, vout, v(pose.position.x, pose.position.y, pose.position.z);
