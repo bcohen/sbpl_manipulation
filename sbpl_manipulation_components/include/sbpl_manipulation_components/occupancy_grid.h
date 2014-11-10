@@ -40,8 +40,11 @@
 #include <moveit/distance_field/voxel_grid.h>
 #include <moveit/distance_field/propagation_distance_field.h>
 #include <arm_navigation_msgs/CollisionMap.h>
+#include <arm_navigation_msgs/Shape.h>
+#include <shape_msgs/SolidPrimitive.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <rosbag/bag.h>
+#include <geometric_shapes/shape_operations.h>
 
 /* \brief At this point, this is a very lightweight layer on top of the
  * PropagationDistanceField class. I'll eventually get rid of it once the
@@ -70,6 +73,9 @@ class OccupancyGrid
 
     /** @brief destructor */
     ~OccupancyGrid();
+
+    /** @brief reset the distance field to the max distance */
+    void reset();
 
     /** @brief convert grid cell coords into world coords*/
     inline void gridToWorld(int x, int y, int z, double &wx, double &wy, double &wz);
@@ -129,17 +135,33 @@ class OccupancyGrid
     /** @brief add an explicit list of points to the distance field */
     void addPointsToField(const std::vector<Eigen::Vector3d> &points);
 
+    /** @brief remove an explicit list of points to the distance field */
+    void removePointsFromField(const std::vector<Eigen::Vector3d> &points);
+
+    /** @brief add shape to the distance field (shape_msgs) */
+    void addShapeToField(const shape_msgs::SolidPrimitive &shape_msg, const geometry_msgs::Pose &pose);
+
+    /** @brief add shape to the distance field (arm_navigation_msgs) */
+    void addShapeToField(const arm_navigation_msgs::Shape &shape_msg, const geometry_msgs::Pose &pose);
+
+    /** @brief remove shape from the distance field (shape_msgs) */
+    void removeShapeFromField(const shape_msgs::SolidPrimitive &shape_msg, const geometry_msgs::Pose &pose);
+
+    /** @brief remove shape from the distance field (arm_navigation_msgs) */
+    void removeShapeFromField(const arm_navigation_msgs::Shape &shape_msg, const geometry_msgs::Pose &pose);
+
+    /** @brief get a list of all occupied voxels in the grid */
     void getOccupiedVoxels(std::vector<geometry_msgs::Point> &voxels);
 
+    /** @brief get a list of all occupied voxels in an axis aligned cube in the grid */
     void getOccupiedVoxels(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<Eigen::Vector3d> &voxels);
 
+    /** @brief get a list of all occupied voxels within a sphere in the grid */
     void getOccupiedVoxels(double x_center, double y_center, double z_center, double radius, std::string text, std::vector<geometry_msgs::Point> &voxels);
 
     std::string getReferenceFrame();
 
     void setReferenceFrame(const std::string &frame);
-
-    void reset();
 
     visualization_msgs::MarkerArray getVisualization(std::string type);
 
@@ -228,6 +250,15 @@ inline void OccupancyGrid::addPointsToField(const std::vector<Eigen::Vector3d> &
     pts[i] = Eigen::Vector3d(points[i].x(), points[i].y(), points[i].z());
 
   grid_->addPointsToField(pts);
+}
+
+inline void OccupancyGrid::removePointsFromField(const std::vector<Eigen::Vector3d> &points)
+{
+  EigenSTL::vector_Vector3d pts(points.size());
+  for(size_t i = 0; i < points.size(); ++i)
+    pts[i] = Eigen::Vector3d(points[i].x(), points[i].y(), points[i].z());
+
+  grid_->removePointsFromField(pts);
 }
 
 }

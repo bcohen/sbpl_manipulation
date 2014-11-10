@@ -32,6 +32,7 @@
 #include <sbpl_manipulation_components/occupancy_grid.h>
 #include <ros/console.h>
 #include <leatherman/viz.h>
+#include <leatherman/objects.h>
 
 using namespace std;
 
@@ -212,7 +213,7 @@ visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type
     pts[9].x = originx;      pts[9].y = originy;      pts[9].z = originz+dimz;
 
     ma.markers.resize(1);
-    ma.markers[0] = viz::getLineMarker(pts, 0.05, 10, getReferenceFrame(), "collision_space_bounds", 0);
+    ma.markers[0] = viz::getLineMarker(pts, 0.05, 10, getReferenceFrame(), "occupancy_grid_bounds", 0);
   }
   else if(type.compare("distance_field") == 0)
   {
@@ -251,7 +252,7 @@ visualization_msgs::MarkerArray OccupancyGrid::getVisualization(std::string type
 
 bool OccupancyGrid::writeCollisionMapToBagFile(const arm_navigation_msgs::CollisionMap &map, std::string bag_filename, std::string topic_name)
 {
-  //TODO: Add in error checking
+  //TODO: Add in error checking (catch the BagExceptions)
   rosbag::Bag bag;
   bag.open(bag_filename, rosbag::bagmode::Write);
   bag.write(topic_name, ros::Time::now(), map);
@@ -304,104 +305,32 @@ void OccupancyGrid::addCollisionMapToField(const arm_navigation_msgs::CollisionM
   grid_->addPointsToField(points);
 }
 
-/*
-void OccupancyGrid::printGridFromBinaryFile(std::string filename)
+void OccupancyGrid::addShapeToField(const arm_navigation_msgs::Shape &shape_msg, const geometry_msgs::Pose &pose)
 {
-  ifstream fin;
-  int dimx,dimy,dimz;
-  unsigned char temp = 0;
-  struct stat file_stats;
-
-  const char *name  = filename.c_str();
-  fin.open(name, ios_base::in | ios_base::binary);
-
-  if (fin.is_open())
-  {
-    fin.read( (char*) &dimx, sizeof(int));
-    fin.read( (char*) &dimy, sizeof(int));
-    fin.read( (char*) &dimz, sizeof(int));
-
-    for(int x = 0; x < dimx; x++)
-    {
-      for(int y = 0; y < dimy; y++)
-      {
-        for(int z = 0; z < dimz; z++)
-        {
-          fin.read( (char*) &temp, sizeof(unsigned char));
-        }
-      }
-    }
-  }
-  else
-  {
-    ROS_ERROR("Failed to open file for reading.");
-    return;
-  }
-
-  if(stat(name, &file_stats) == 0)
-    ROS_DEBUG("The size of the file read is %d kb.", int(file_stats.st_size)/1024);
-  else
-    ROS_DEBUG("An error occurred when retrieving size of file read.");
-
-  fin.close();
+  shape_msgs::SolidPrimitive solid;
+  leatherman::convertShapeToSolidPrimitive(shape_msg, solid);
+  shapes::Shape* shape = shapes::constructShapeFromMsg(solid);
+  grid_->addShapeToField(shape, pose);
 }
 
-bool OccupancyGrid::saveGridToBinaryFile(std::string filename)
+void OccupancyGrid::addShapeToField(const shape_msgs::SolidPrimitive &shape_msg, const geometry_msgs::Pose &pose)
 {
-  ofstream fout;
-  int dimx,dimy,dimz;
-  unsigned char val = 0;
-  struct stat file_stats;
-
-  getGridSize(dimx, dimy, dimz);
-
-  const char *name  = filename.c_str();
-  fout.open(name, ios_base::out | ios_base::binary | ios_base::trunc);
-
-  if (fout.is_open())
-  {
-    fout.write( (char *) &dimx, sizeof(int));
-    fout.write( (char *) &dimy, sizeof(int));
-    fout.write( (char *) &dimz, sizeof(int));
-
-    for(int x = 0; x < dimx; x++)
-    {
-      for(int y = 0; y < dimy; y++)
-      {
-        for(int z = 0; z < dimz; z++)
-        {
-          val = getCell(x,y,z);
-          fout.write( (char *) &val, sizeof(unsigned char));
-        }
-      }
-    }
-  }
-  else
-  {
-    ROS_ERROR("[saveGridToBinaryFile] Failed to open file for writing.\n");
-    return false;
-  }
-
-  fout.close();
-
-  //verify writing to file was successful
-  if(stat(name, &file_stats) == 0)
-  {
-    ROS_INFO("[saveGridToBinaryFile] The size of the file created is %d kb.\n", int(file_stats.st_size)/1024);
-    if(file_stats.st_size == 0)
-    {
-      ROS_ERROR("[saveGridToBinaryFile] File created is empty. Exiting.\n");
-      return false;
-    }
-  }
-  else
-  {
-    ROS_ERROR("[saveGridToBinaryFile] An error occurred when retrieving size of file created. Exiting.\n");
-    return false;
-  }
-
-  return true;
+  shapes::Shape* shape = shapes::constructShapeFromMsg(shape_msg);
+  grid_->addShapeToField(shape, pose);
 }
-*/
+
+void OccupancyGrid::removeShapeFromField(const shape_msgs::SolidPrimitive &shape_msg, const geometry_msgs::Pose &pose)
+{
+  shapes::Shape* shape = shapes::constructShapeFromMsg(shape_msg);
+  grid_->removeShapeFromField(shape, pose);
+}
+
+void OccupancyGrid::removeShapeFromField(const arm_navigation_msgs::Shape &shape_msg, const geometry_msgs::Pose &pose)
+{
+  shape_msgs::SolidPrimitive solid;
+  leatherman::convertShapeToSolidPrimitive(shape_msg, solid);
+  shapes::Shape* shape = shapes::constructShapeFromMsg(solid);
+  grid_->removeShapeFromField(shape, pose);
+}
 
 }
