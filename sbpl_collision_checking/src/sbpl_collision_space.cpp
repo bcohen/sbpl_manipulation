@@ -144,7 +144,7 @@ bool SBPLCollisionSpace::init(std::string group_name, std::string ns)
     return false;
   }
 
-  //model_.printGroups();
+  model_.printGroups();
   //model_.printDebugInfo(group_name);
 
   if(!updateVoxelGroups())
@@ -583,12 +583,19 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group
   int cntr = 0;
   for(size_t i = 0; i < spheres1.size(); ++i)
   {
+    /*
     if((gsph1[i]->priority > group1_max_priority) || (gsph1[i]->priority < group1_min_priority))
       continue;
+    */
 
     for(size_t j = 0; j < spheres2.size(); ++j)
     {
+      /*
       if((gsph2[j]->priority > group2_max_priority) || (gsph2[j]->priority < group2_min_priority))
+        continue;
+      */
+
+      if(!model_.doLinkToLinkCheck(gsph1[i]->link_id, gsph2[j]->link_id))
         continue;
 
       d = leatherman::distance(spheres1[i], spheres2[j]);

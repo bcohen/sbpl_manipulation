@@ -26,10 +26,11 @@ typedef struct Sphere
   int priority;
   int kdl_chain;
   int kdl_segment;
+  int link_id;
 
   void print(std::string text="")
   {
-    ROS_INFO("[%s][%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d chain: %d segment: %d", text.c_str(), name.c_str(), v.x(), v.y(), v.z(), radius, priority, kdl_chain, kdl_segment);
+    ROS_INFO("[%s][%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d chain: %d segment: %d link_id: %d", text.c_str(), name.c_str(), v.x(), v.y(), v.z(), radius, priority, kdl_chain, kdl_segment, link_id);
   }
 } Sphere;
 
@@ -43,6 +44,7 @@ struct Voxels
 struct Link
 {
   int type;   // spheres or voxels
+  int id_;
   int i_chain_;
   Voxels voxels_;
   std::string name_;
@@ -52,7 +54,7 @@ struct Link
 
   void print(std::string text)
   { 
-    ROS_INFO("[%s] name: %s  root_name: %s  type: %d  i_chain: %d", text.c_str(), name_.c_str(), root_name_.c_str(), type, i_chain_);
+    ROS_INFO("[%s] name: %s  root_name: %s  type: %d  i_chain: %d  link_id: %d", text.c_str(), name_.c_str(), root_name_.c_str(), type, i_chain_, id_);
 
     if(!spheres_.empty())
     {
@@ -66,6 +68,15 @@ struct Link
       for(size_t i = 0; i < low_res_spheres_.size(); ++i)
         low_res_spheres_[i].print(text);
     }
+  }
+
+  void setLinkID(int id)
+  {
+    id_ = id;
+    for(size_t i = 0; i < spheres_.size(); ++i)
+      spheres_[i].link_id = id_;
+    for(size_t i = 0; i < low_res_spheres_.size(); ++i)
+      low_res_spheres_[i].link_id = id_;
   }
 };
 

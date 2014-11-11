@@ -26,7 +26,11 @@ bool SBPLCollisionModel::init(std::string ns)
 
   if(ns.empty())
     ns = "~";
-  return readGroups(ns);
+  
+  if(!readGroups(ns))
+    return false;
+
+  return readCollisionMatrix(ns);
 }
 
 bool SBPLCollisionModel::getRobotModel()
@@ -114,6 +118,23 @@ bool SBPLCollisionModel::readGroups(std::string ns)
       return false;
     }
   }
+
+  int id = 0;
+  for(std::map<std::string, Group*>::const_iterator iter = group_config_map_.begin(); iter != group_config_map_.end(); ++iter)
+  {
+    for(int l = 0; l < int(iter->second->links_.size()); ++l)
+    {
+      iter->second->links_[l].setLinkID(id);
+      if((link_map_.find(iter->second->links_[l].name_) != link_map_.end()) && !link_map_.empty())
+      {
+        ROS_ERROR("Found duplicate link name in the collision model. All link names have to be unique. Exiting. (%s)", iter->second->links_[l].name_.c_str());
+        return false;
+      }
+      link_map_[iter->second->links_[l].name_] = &(iter->second->links_[l]);
+      id++;
+    }
+  }
+
   ROS_INFO("Successfully parsed collision model");
   return true;
 }
@@ -317,6 +338,95 @@ bool SBPLCollisionModel::setModelToWorldTransform(const arm_navigation_msgs::Mul
     }
   }
   return true;
+}
+
+bool SBPLCollisionModel::readCollisionMatrix(std::string ns)
+{
+  XmlRpc::XmlRpcValue all_ops;
+  ros::NodeHandle nh(ns);
+
+  // initialize collision matrix to true
+  collision_matrix_.resize(link_map_.size(), std::vector<bool> (link_map_.size(), true));
+
+  for(size_t i = 0; i < collision_matrix_.size(); ++i)
+    ROS_INFO("[%2d] check: %s", int(i), leatherman::getString(collision_matrix_[i], "yes", "no ").c_str());
+
+  // set each link to not check itself
+  for(size_t j = 0; j < collision_matrix_.size(); ++j)
+    collision_matrix_[j][j] = false;
+
+  // pull collision operation off param server
+  std::string matrix_name = "default_collision_operations";
+  if(!nh.hasParam(matrix_name)) 
+  {
+    ROS_WARN("No collision matrix found on param server for '%s'. ", matrix_name.c_str());
+    return false;
+  }
+  nh.getParam(matrix_name, all_ops);
+
+  if(all_ops.getType() != XmlRpc::XmlRpcValue::TypeArray) 
+    ROS_WARN("The collision operations found on the param server is not a list.");
+
+  if(all_ops.size() == 0) 
+  {
+    ROS_WARN("No collision operations found in the list.");
+    return false;
+  }
+
+  ROS_INFO("hey");
+  for(int i = 0; i < all_ops.size(); i++) 
+  {
+    if(!all_ops[i].hasMember("object1"))
+    {
+      ROS_WARN("All groups must have a name.");
+      return false;
+    }
+    if(!all_ops[i].hasMember("object2"))
+    {
+      ROS_WARN("All groups must have a name.");
+      return false;
+    }
+    if(!all_ops[i].hasMember("operation"))
+    {
+      ROS_WARN("All collision operation pairs must have an operation. Duh.");
+      return false;
+    }
+
+    std::string object1 = all_ops[i]["object1"];
+    std::string object2 = all_ops[i]["object2"];
+    std::string op_value = all_ops[i]["operation"];
+
+    if(link_map_.find(object1) == link_map_.end() || link_map_.find(object2) == link_map_.end())
+    {
+      ROS_ERROR("Either object1(%s) or object2(%s) is not found in the entire list of links. Exiting.", object1.c_str(), object2.c_str());
+      return false;
+    }
+
+    ROS_INFO("object1: %s %d, object2: %s %d", object1.c_str(), link_map_[object1]->id_, object2.c_str(), link_map_[object2]->id_);
+
+    if(op_value.compare("disable") == 0)
+    {
+      collision_matrix_[link_map_[object1]->id_][link_map_[object2]->id_] = false;
+      collision_matrix_[link_map_[object2]->id_][link_map_[object1]->id_] = false;
+    }
+  }
+
+  for(size_t i = 0; i < collision_matrix_.size(); ++i)
+    ROS_INFO("[%2d] check: %s", int(i), leatherman::getString(collision_matrix_[i], "yes", "no ").c_str());
+
+  ROS_INFO("Successfully parsed collision matrix");
+  return true;
+}
+
+bool SBPLCollisionModel::doLinkToLinkCheck(int link1, int link2)
+{
+  if(link1 > int(collision_matrix_.size()) || link2 > int(collision_matrix_.size()))
+  {
+    ROS_ERROR("Received invalid link_id's. There might be a problem.");
+    return false;
+  }
+
+  return collision_matrix_[link1][link2];
 }
 
 }

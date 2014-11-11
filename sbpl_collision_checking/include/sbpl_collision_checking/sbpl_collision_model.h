@@ -95,11 +95,15 @@ class SBPLCollisionModel
 
     void setSphereGroupsForCheckCollision(const std::vector<std::string> &group_names);
 
+    bool doLinkToLinkCheck(int link1, int link2);
+  
   private:
 
     ros::NodeHandle nh_, ph_;
 
     std::map<std::string, Group*> group_config_map_;
+
+    std::map<std::string, Link*> link_map_;
     
     boost::shared_ptr<urdf::Model> urdf_;
     
@@ -107,9 +111,13 @@ class SBPLCollisionModel
 
     std::vector<Group*> sphere_groups_;
 
+    std::vector<std::vector<bool> > collision_matrix_;
+
     bool getRobotModel();
 
     bool readGroups(std::string ns="");
+    
+    bool readCollisionMatrix(std::string ns="");
    
     bool computeFK(const std::vector<double> &angles, Group* group, int chain, int segment, KDL::Frame &frame);
 };
