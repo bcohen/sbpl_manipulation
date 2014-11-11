@@ -81,6 +81,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     void recomputeDistanceField();
 
+    void enableNonDefaultGroupsToWorldCheck(bool enable);
+
     /** --------------- Collision Checking ----------- */
     bool checkCollision(const std::vector<double> &angles, bool verbose, bool visualize, double &dist); // multi-res
     bool checkCollision(const std::vector<double> &angles, bool low_res, bool verbose, bool visualize, double &dist);
@@ -95,7 +97,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     inline bool isValidCell(const int x, const int y, const int z, const int radius);
     double isValidLineSegment(const std::vector<int> a, const std::vector<int> b, const int radius);
     bool getClearance(const std::vector<double> &angles, int num_spheres, double &avg_dist, double &min_dist);
-    void getCollisions(std::vector<geometry_msgs::Point> &centers, std::vector<double> &radii);
+    void getSpheresInCollision(std::vector<geometry_msgs::Point> &centers, std::vector<double> &radii);
     bool isStateValid(const std::vector<double> &angles, bool verbose, bool visualize, double &dist);
     bool isStateValid(const std::vector<double> &angles, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, bool verbose, bool visualize, double &dist);
     bool isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, int &path_length, int &num_checks, double &dist, std::vector<std::vector<double> > *path_out=NULL);
@@ -149,6 +151,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     /* ----------- Parameters ------------ */
     bool use_multi_level_collision_check_;
+    bool check_nondefault_groups_against_world_;
     double padding_;
     double object_enclosing_sphere_radius_;
     std::string group_name_;

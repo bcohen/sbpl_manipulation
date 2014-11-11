@@ -44,6 +44,7 @@ SBPLCollisionSpace::SBPLCollisionSpace(sbpl_arm_planner::OccupancyGrid* grid)
   object_enclosing_sphere_radius_ = 0.03;
   object_enclosing_low_res_sphere_radius_ = 0.065;
   use_multi_level_collision_check_ = true;
+  check_nondefault_groups_against_world_ = true;
   use_ompl_interpolation_ = false;
   num_interpolation_steps_ = 10;
 }
@@ -200,8 +201,6 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
     }
   }
 
-  ROS_DEBUG("[cspace] Checking collisions in checkCollision().");
-
   // check attached object against world
   if(object_attached_)
   {
@@ -278,19 +277,29 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
     }
 
     // check group against world
-    if(!checkSpheresAgainstWorld(frames[i], sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
+    if(check_nondefault_groups_against_world_)
     {
+      if(!checkSpheresAgainstWorld(frames[i], sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
+      {
+        if(dist_temp < dist)
+          dist = dist_temp;
+
+        if(!visualize)
+          return false;
+        else
+          in_collision = true;
+      }
       if(dist_temp < dist)
         dist = dist_temp;
-
-      if(!visualize)
-        return false;
-      else
-        in_collision = true;
     }
-    if(dist_temp < dist)
-      dist = dist_temp;
-
+    else
+    {
+      sg[i]->getSpheres(spheres, low_res);
+      g_spheres.resize(spheres.size());
+      for(size_t j = 0; j < spheres.size(); ++j)
+        g_spheres[j] = frames[i][spheres[j]->kdl_chain][spheres[j]->kdl_segment] * spheres[j]->v;
+    }
+    
     // check group against attached object
     if(object_attached_)
     {
@@ -427,25 +436,28 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     }
 
     // check against world
-    if(!checkSpheresAgainstWorld(frames, sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
+    if(check_nondefault_groups_against_world_)
     {
+      if(!checkSpheresAgainstWorld(frames, sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
+      {
+        if(dist_temp < dist)
+          dist = dist_temp;
+
+        if(!visualize)
+          return false;
+        else
+          in_collision = true;
+      }
       if(dist_temp < dist)
         dist = dist_temp;
-
-      if(!visualize)
-        return false;
-      else
-        in_collision = true;
     }
-    if(dist_temp < dist)
-      dist = dist_temp;
-
-    /* 
-    sg[i]->getSpheres(spheres, low_res);
-    g_spheres.resize(spheres.size());
-    for(size_t j = 0; j < spheres.size(); ++j)
-      g_spheres[i] = frames[spheres[i]->kdl_chain][spheres[i]->kdl_segment] * spheres[i]->v;
-    */
+    else
+    { 
+      sg[i]->getSpheres(spheres, low_res);
+      g_spheres.resize(spheres.size());
+      for(size_t j = 0; j < spheres.size(); ++j)
+        g_spheres[j] = frames[spheres[j]->kdl_chain][spheres[j]->kdl_segment] * spheres[j]->v;
+    }
 
     // check group against attached object
     if(object_attached_)
@@ -1022,7 +1034,7 @@ bool SBPLCollisionSpace::setPlanningScene(const arm_navigation_msgs::PlanningSce
   return true;
 }
 
-void SBPLCollisionSpace::getCollisions(std::vector<geometry_msgs::Point> &centers, std::vector<double> &radii)
+void SBPLCollisionSpace::getSpheresInCollision(std::vector<geometry_msgs::Point> &centers, std::vector<double> &radii)
 {
   /* must call checkCollision() first with visualize = true */
   geometry_msgs::Point c;
@@ -1034,6 +1046,11 @@ void SBPLCollisionSpace::getCollisions(std::vector<geometry_msgs::Point> &center
     centers.push_back(c);
     radii.push_back(collision_spheres_[i].radius + padding_);
   }
+}
+
+void SBPLCollisionSpace::enableNonDefaultGroupsToWorldCheck(bool enable)
+{
+  check_nondefault_groups_against_world_ = enable;
 }
 
 }
