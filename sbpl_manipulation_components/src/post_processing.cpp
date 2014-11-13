@@ -59,7 +59,10 @@ void sbpl_arm_planner::shortcutTrajectory(sbpl_arm_planner::CollisionChecker *cc
   if(pin.size() > 2)
     sbpl_arm_planner::shortcutPath(cc, pin, pout);
   else
+  {
     ROS_WARN("Path is too short for shortcutting.");
+    pout = pin;
+  }
 
   traj_out.resize(pout.size());
   for(size_t j = 0; j < pout.size(); ++j)
