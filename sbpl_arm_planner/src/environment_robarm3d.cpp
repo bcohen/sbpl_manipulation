@@ -728,7 +728,7 @@ bool EnvironmentROBARM3D::setStartConfiguration(const std::vector<double> angles
 
   //check if the start configuration is in collision but plan anyway
   pdata_.frames.clear(); 
-  if(!cc_->isStateValid(angles, pdata_.frames, true, false, dist))
+  if(!cc_->isStateValid(angles, pdata_.frames, true, true, dist))
   {
     ROS_WARN("[env] The starting configuration is in collision. Attempting to plan anyway. (distance to nearest obstacle %0.2fm)", double(dist)*grid_->getResolution());
   }
