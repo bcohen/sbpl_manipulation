@@ -169,6 +169,8 @@ int EnvironmentROBARM3D::GetTrueCost(int parentID, int childID){
 
   //get the action
   Action actual_mprim = actions[mprim_id];
+  for (size_t angle=0; angle < actual_mprim.back().size(); angle++)
+    actual_mprim.back()[angle] = angles::normalize_angle_positive(actual_mprim.back()[angle]);
   vector<int> successor_coord(7,0);
   if (!actual_mprim.size()){
     ROS_INFO("actual_mprim is %d", mprim_id);
@@ -788,6 +790,7 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
   ROS_DEBUG_NAMED(prm_->expands_log_, "time: %f", clock() / (double)CLOCKS_PER_SEC);
   ROS_DEBUG_NAMED(prm_->expands_log_, "A new goal has been set.");
   ROS_DEBUG_NAMED(prm_->expands_log_, "grid: %d %d %d (cells)  xyz: %.2f %.2f %.2f (meters)  (tol: %.3f) rpy: %1.2f %1.2f %1.2f (radians) (tol: %.3f)", pdata_.goal_entry->xyz[0],pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2], pdata_.goal.pose[0], pdata_.goal.pose[1], pdata_.goal.pose[2], pdata_.goal.xyz_tolerance[0], pdata_.goal.pose[3], pdata_.goal.pose[4], pdata_.goal.pose[5], pdata_.goal.rpy_tolerance[0]);
+  ROS_INFO("grid: %d %d %d (cells)  xyz: %.2f %.2f %.2f (meters)  (tol: %.3f) rpy: %1.2f %1.2f %1.2f (radians) (tol: %.3f)", pdata_.goal_entry->xyz[0],pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2], pdata_.goal.pose[0], pdata_.goal.pose[1], pdata_.goal.pose[2], pdata_.goal.xyz_tolerance[0], pdata_.goal.pose[3], pdata_.goal.pose[4], pdata_.goal.pose[5], pdata_.goal.rpy_tolerance[0]);
 
   // preempt the bfs, just in case its running
   bfs_->stop();
@@ -838,6 +841,8 @@ bool EnvironmentROBARM3D::setGoalPosition(const std::vector <std::vector<double>
   }
   bfs_->run(pdata_.goal_entry->xyz[0], pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2]);
   //bfs_->configure(pdata_.goal_entry->xyz[0], pdata_.goal_entry->xyz[1], pdata_.goal_entry->xyz[2]);
+
+  edge_cache_.clear();
 
   pdata_.near_goal = false; 
   pdata_.expanded_states.clear();
@@ -1080,4 +1085,25 @@ double EnvironmentROBARM3D::getEndEffectorDistance(std::vector<int> &state_ids)
   return d;
 }
 
+/*
+void EnvironmentROBARM3D::clearMemory()
+{
+  // delete the hash table and stateid-coord table
+  for(size_t i = 0; i < pdata_.StateID2CoordTable.size(); i++)
+  {
+    delete pdata_.StateID2CoordTable.at(i);
+    pdata_.StateID2CoordTable.at(i) = NULL;
+  }
+  pdata_.StateID2CoordTable.clear();
+
+  if(pdata_.Coord2StateIDHashTable != NULL)
+  {
+    delete [] pdata_.Coord2StateIDHashTable;
+    pdata_.Coord2StateIDHashTable = NULL;
+  }
+
+  // reinitialize the hash table
+  pdata_.init();
+}
+*/
 }

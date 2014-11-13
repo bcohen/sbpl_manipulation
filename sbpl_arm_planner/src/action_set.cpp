@@ -226,6 +226,12 @@ bool ActionSet::getAction(const RobotState &parent, double dist_to_goal, MotionP
 {
   std::vector<double> goal = env_->getGoal();
 
+  if(goal.empty())
+  {
+    ROS_ERROR("No goal found. Not returning actions.");
+    return false;
+  }
+
   if(mp.type == sbpl_arm_planner::MotionPrimitiveType::LONG_DISTANCE)
   {
     if(dist_to_goal <= short_dist_mprims_thresh_m_ && use_multires_mprims_)
