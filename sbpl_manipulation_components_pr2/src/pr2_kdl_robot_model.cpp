@@ -185,7 +185,10 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
 bool PR2KDLRobotModel::computeIKWithPvizTransform(const std::vector<double> &pose, const std::vector<double> &start, std::vector<double> &solution, int option)
 {
   if(pose.size() < 6)
-    ROS_ERROR("Invalid pose.");
+  {
+    ROS_ERROR("Invalid pose. (%s)", leatherman::getString(pose, 2).c_str());
+    return false;
+  }
 
   std::vector<double> pose_translated = pose;
   pose_translated[0] -= robot_body_pose_for_pviz[0];
