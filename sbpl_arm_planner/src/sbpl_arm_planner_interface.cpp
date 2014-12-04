@@ -534,3 +534,12 @@ visualization_msgs::MarkerArray SBPLArmPlannerInterface::getVisualization(std::s
   return ma;
 }
 
+void SBPLArmPlannerInterface::setParam(std::string name, double value)
+{
+  if(name.compare("waypoint_time") == 0)
+  {
+    if(value > 0)
+      prm_->waypoint_time_ = value;
+  }
+}
+

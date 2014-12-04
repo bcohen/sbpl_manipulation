@@ -63,6 +63,8 @@ class SBPLArmPlannerInterface
 
     bool init(std::string ns="~");
 
+    void setParam(std::string name, double value);
+
     bool planKinematicPath(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
 
     virtual bool solve(const arm_navigation_msgs::GetMotionPlan::Request &req, arm_navigation_msgs::GetMotionPlan::Response &res);
