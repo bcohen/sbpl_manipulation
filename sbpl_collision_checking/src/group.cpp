@@ -235,6 +235,7 @@ bool Group::getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres)
     Link link;
     for(int j = 0; j < all_links.size(); j++) 
     {
+      link.type = type_;
       link.spheres_.clear();
       link.low_res_spheres_.clear();
       if(all_links[j].hasMember("name"))
@@ -312,7 +313,6 @@ bool Group::getParams(XmlRpc::XmlRpcValue grp, XmlRpc::XmlRpcValue spheres)
     ROS_ERROR("No collision_links founds. A group must have a list of 'collision_links'. Exiting.");
     return false;
   }
-
   return true;
 }
 
@@ -343,7 +343,18 @@ bool Group::initSpheres()
   {
     int seg = 0;
     if(!leatherman::getSegmentIndex(chains_[links_[i].i_chain_], links_[i].root_name_, seg))
-      return false;
+    {
+      if(root_name_.compare(links_[i].root_name_) == 0)
+      {
+        ROS_DEBUG("We have a one link chain. Setting seg = 0.");
+        seg = -1;
+      }
+      else
+      {
+	    ROS_ERROR("Failed to get the link segment index for %s", links_[i].root_name_.c_str());
+        return false;
+      }
+    }
 
     for(size_t j = 0; j < links_[i].spheres_.size(); ++j)
     {
@@ -487,7 +498,7 @@ bool Group::computeFK(const KDL::JntArray &angles, int chain, int segment, KDL::
 {
   if(segment == 0)
   {
-    ROS_ERROR("segment is 0!");
+    ROS_DEBUG("segment is 0!");
     frame = KDL::Frame::Identity();
   }
   else
@@ -507,7 +518,7 @@ bool Group::computeFK(const std::vector<double> &angles, int chain, int segment,
 {
   if(segment == 0)
   {
-    ROS_ERROR("segment is 0!");
+    ROS_DEBUG("segment is 0!");
     frame = KDL::Frame::Identity();
   }
   else
@@ -622,7 +633,7 @@ std::string Group::getName()
 
 void Group::getSpheres(std::vector<Sphere*> &spheres, bool low_res)
 {
-  if(low_res)
+  if(low_res && !low_res_spheres_.empty())
     spheres = low_res_spheres_;
   else
     spheres = spheres_;
@@ -630,7 +641,7 @@ void Group::getSpheres(std::vector<Sphere*> &spheres, bool low_res)
 
 std::vector<Sphere*> Group::getSpheres(bool low_res)
 {
-  if(low_res)
+  if(low_res && !low_res_spheres_.empty())
     return low_res_spheres_;
   else
     return spheres_;
@@ -881,6 +892,7 @@ bool Group::setSpheres(std::vector<Sphere*> &spheres, bool low_res)
 
   return true; // change to void?, forgot what I intended for here
 }
+
 
 
 }

@@ -26,10 +26,11 @@ typedef struct Sphere
   int priority;
   int kdl_chain;
   int kdl_segment;
+  int link_id;
 
-  void print()
+  void print(std::string text="")
   {
-    ROS_INFO("[%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d chain: %d segment: %d", name.c_str(), v.x(), v.y(), v.z(), radius, priority, kdl_chain, kdl_segment);
+    ROS_INFO("[%s][%s] x: %0.3f y: %0.3f z: %0.3f radius: %0.3f priority: %d chain: %d segment: %d link_id: %d", text.c_str(), name.c_str(), v.x(), v.y(), v.z(), radius, priority, kdl_chain, kdl_segment, link_id);
   }
 } Sphere;
 
@@ -43,19 +44,49 @@ struct Voxels
 struct Link
 {
   int type;   // spheres or voxels
+  int id_;
   int i_chain_;
   Voxels voxels_;
   std::string name_;
   std::string root_name_;
   std::vector<Sphere> spheres_;
   std::vector<Sphere> low_res_spheres_;
+
+  void print(std::string text)
+  { 
+    ROS_INFO("[%s] name: %s  root_name: %s  type: %d  i_chain: %d  link_id: %d", text.c_str(), name_.c_str(), root_name_.c_str(), type, i_chain_, id_);
+
+    if(!spheres_.empty())
+    {
+      ROS_INFO("[%s] Spheres:", text.c_str());
+      for(size_t i = 0; i < spheres_.size(); ++i)
+        spheres_[i].print(text);
+    }
+    if(!low_res_spheres_.empty())
+    {
+      ROS_INFO("[%s] Low Res Spheres:", text.c_str());
+      for(size_t i = 0; i < low_res_spheres_.size(); ++i)
+        low_res_spheres_[i].print(text);
+    }
+  }
+
+  void setLinkID(int id)
+  {
+    id_ = id;
+    for(size_t i = 0; i < spheres_.size(); ++i)
+      spheres_[i].link_id = id_;
+    for(size_t i = 0; i < low_res_spheres_.size(); ++i)
+      low_res_spheres_[i].link_id = id_;
+  }
 };
 
 class Group
 {
   public:
 
-    Group(std::string name);
+    enum GroupType {SPHERES, VOXELS};
+
+    Group(std::string name="");
     
     ~Group();
 
@@ -94,12 +125,11 @@ class Group
     KDL::Frame getGroupToWorldTransform();
 
     bool init_;
-    enum {SPHERES, VOXELS} type_;
+    GroupType type_;
     std::string tip_name_;
     std::vector<Link> links_;
 
     // for attached object
-    Group() : init_(false){};
     void setName(std::string name);
     bool setSpheres(std::vector<Sphere*> &spheres, bool low_res);
 

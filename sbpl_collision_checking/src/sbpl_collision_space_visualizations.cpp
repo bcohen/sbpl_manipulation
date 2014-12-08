@@ -183,7 +183,21 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
 
     ma = viz::getSpheresMarkerArray(sph, rad, 200, grid_->getReferenceFrame(), "low_res_attached_object", 0); 
   }
-
+  else if(type.compare("locked_attached_object") == 0)
+  {
+    std::vector<double> rad(object_spheres_.size(), 0.0);
+    std::vector<std::vector<double> > spheres(object_spheres_.size(), std::vector<double>(3,0));
+    for(size_t i = 0; i < object_spheres_.size(); ++i)
+    {
+      spheres[i][0] = object_spheres_[i].v.x();
+      spheres[i][1] = object_spheres_[i].v.y();
+      spheres[i][2] = object_spheres_[i].v.z();
+      rad[i] = object_spheres_[i].radius;
+    }
+    ma = viz::getSpheresMarkerArray(spheres, rad, 200, attached_object_frame_, "locked_attached_object", 0);
+    for(size_t i = 0; i < ma.markers.size(); ++i)
+      ma.markers[i].frame_locked = true;
+  }
   else
     ma = grid_->getVisualization(type);
 

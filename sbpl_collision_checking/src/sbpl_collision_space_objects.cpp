@@ -135,16 +135,8 @@ void SBPLCollisionSpace::attachCube(std::string name, std::string link, geometry
   }
 
   // low res spheres 
-  
-  // TODO: Hardcoded for cube
-  //sbpl::SphereEncloser::encloseBox(x_dim, y_dim, z_dim, object_enclosing_low_res_sphere_radius_, low_res_spheres);
-
   std::vector<std::vector<double> > low_res_spheres(5,std::vector<double>(3,0));
-  low_res_spheres[0][1] = -0.16;
-  low_res_spheres[1][1] = -0.07;
-  low_res_spheres[2][1] = -0.00;
-  low_res_spheres[3][1] =  0.07;
-  low_res_spheres[4][1] =  0.16;
+  sbpl::SphereEncloser::encloseBox(x_dim, y_dim, z_dim, object_enclosing_low_res_sphere_radius_, low_res_spheres);
   low_res_object_spheres_.resize(low_res_spheres.size());
   low_res_object_spheres_p_.resize(low_res_spheres.size());
   for(size_t i = 0; i < low_res_spheres.size(); ++i)
@@ -174,13 +166,28 @@ void SBPLCollisionSpace::attachMesh(std::string name, std::string link, geometry
   object_attached_ = true;  
   std::vector<std::vector<double> > spheres;
   attached_object_frame_  = link;
-  model_.getFrameInfo(attached_object_frame_, group_name_, attached_object_chain_num_, attached_object_segment_num_);
+  if(!model_.getFrameInfo(attached_object_frame_, group_name_, attached_object_chain_num_, attached_object_segment_num_))
+    ROS_ERROR("[cspace] Cannot find the attached object frame '%s' in the robot model.", link.c_str());
 
-  sbpl::SphereEncloser::encloseMesh(vertices, triangles, object_enclosing_sphere_radius_, spheres);
-  
-  if(spheres.size() <= 3)
-    ROS_WARN("[cspace] Attached mesh is represented by %d collision spheres. Consider lowering the radius of the spheres used to populate the attached mesh more accuratly. (radius = %0.3fm)", int(spheres.size()), object_enclosing_sphere_radius_);
-
+  if(attached_object_received_spheres_.empty() || (attached_object_received_spheres_.size() % 5 != 0))
+  {
+    sbpl::SphereEncloser::encloseMesh(vertices, triangles, object_enclosing_sphere_radius_, spheres);
+    if(spheres.size() <= 3)
+      ROS_WARN("[cspace] Attached mesh is represented by %d collision spheres. Consider lowering the radius of the spheres used to populate the attached mesh more accuratly. (radius = %0.3fm)", int(spheres.size()), object_enclosing_sphere_radius_);
+  }
+  else
+  {
+    spheres.resize((attached_object_received_spheres_.size() / 5), std::vector<double> (5,0));
+    for(size_t j = 0; j < spheres.size(); ++j)
+    {
+      spheres[j][0] = attached_object_received_spheres_[(j*5)];
+      spheres[j][1] = attached_object_received_spheres_[(j*5)+1];
+      spheres[j][2] = attached_object_received_spheres_[(j*5)+2];
+      spheres[j][3] = attached_object_received_spheres_[(j*5)+3];
+      spheres[j][4] = attached_object_received_spheres_[(j*5)+4];
+    }
+  }
+ 
   object_spheres_.resize(spheres.size());
   for(size_t i = 0; i < spheres.size(); ++i)
   {
@@ -395,17 +402,18 @@ void SBPLCollisionSpace::attachObject(const arm_navigation_msgs::AttachedCollisi
   std::string link_name = obj.link_name;
   arm_navigation_msgs::CollisionObject object(obj.object);
 
+  // only the first one is really used :-/
   for(size_t i = 0; i < object.shapes.size(); i++)
   {
-    /*
-    geometry_msgs::PoseStamped pose_in, pose_out;
-    pose_in.header = object.header;
-    pose_in.header.stamp = ros::Time();
-    pose_in.pose = object.poses[i];
-    sbpl_arm_planner::transformPose(pscene_, pose_in.pose, pose_out.pose, object.header.frame_id, attached_object_frame_);
-    object.poses[i] = pose_out.pose;
-    ROS_WARN("[cspace] [attach_object] Converted shape from %s (%0.2f %0.2f %0.2f) to %s (%0.3f %0.3f %0.3f)", pose_in.header.frame_id.c_str(), pose_in.pose.position.x, pose_in.pose.position.y, pose_in.pose.position.z, attached_object_frame_.c_str(), pose_out.pose.position.x, pose_out.pose.position.y, pose_out.pose.position.z);
-    */
+    // HACK: For receiving a set of collision spheres for the object, hidden in the dimensions vector
+    if(object.shapes[i].dimensions.size() > 3)
+    {
+      attached_object_received_spheres_.clear();
+      attached_object_received_spheres_.insert(attached_object_received_spheres_.end(), object.shapes[i].dimensions.begin()+3,  object.shapes[i].dimensions.end());
+    }
+    else
+      attached_object_received_spheres_.clear();
+
     if(object.shapes[i].type == arm_navigation_msgs::Shape::SPHERE)
     {
       ROS_DEBUG("[cspace] Attaching a '%s' sphere with radius: %0.3fm", object.id.c_str(), object.shapes[i].dimensions[0]);

@@ -171,6 +171,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     std::vector<Sphere*> object_spheres_p_;  // hack
     std::map<std::string, std::vector<std::vector<double> > > object_spheres_map_;
     Group att_object_;
+    std::vector<double> attached_object_received_spheres_; // hack to allow for manually created sphere model
 
     double object_enclosing_low_res_sphere_radius_;
     std::vector<Sphere> low_res_object_spheres_;

@@ -571,7 +571,6 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group
     return false;
   }
 
-  int cntr = 0;
   for(size_t i = 0; i < spheres1.size(); ++i)
   {
     if((gsph1[i]->priority > group1_max_priority) || (gsph1[i]->priority < group1_min_priority))
@@ -579,11 +578,11 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group
 
     for(size_t j = 0; j < spheres2.size(); ++j)
     {
-      if((gsph2[i]->priority > group2_max_priority) || (gsph2[i]->priority < group2_min_priority))
+      if((gsph2[j]->priority > group2_max_priority) || (gsph2[j]->priority < group2_min_priority))
         continue;
 
       d = leatherman::distance(spheres1[i], spheres2[j]);
-      
+
       if(d <= max(gsph1[i]->radius + padding_, gsph2[j]->radius + padding_))
       {
         if(d < dist)
@@ -608,12 +607,9 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group
 
       if(d < dist)
         dist = d;
-
-      cntr++;
     }
   }
 
-  ROS_DEBUG("Group to group check uses %d distance computations. (num_spheres1: %d  num_spheres2: %d)", cntr, int(spheres1.size()), int(spheres2.size()));
   if(visualize && in_collision)
     return false;
 
