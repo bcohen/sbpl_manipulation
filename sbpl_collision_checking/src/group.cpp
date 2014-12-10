@@ -668,25 +668,23 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
 
   //TODO: Add way to choose collision geometry or visual geometry
     
-  geometry_msgs::Pose p;
-  
-   
+  geometry_msgs::Pose p; 
+  /*
+  // visual geometry
   boost::shared_ptr<const urdf::Geometry> geom = link->visual->geometry;
   p.position.x = link->visual->origin.position.x;
   p.position.y = link->visual->origin.position.y;
   p.position.z = link->visual->origin.position.z;
   link->visual->origin.rotation.getQuaternion(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
-  
+  */ 
  
-  /*  
+  // collision geometry  
   boost::shared_ptr<const urdf::Geometry> geom = link->collision->geometry;
   p.position.x = link->collision->origin.position.x;
   p.position.y = link->collision->origin.position.y;
   p.position.z = link->collision->origin.position.z;
   link->collision->origin.rotation.getQuaternion(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
-  */
   
-  //leatherman::printPoseMsg(p, name + "_POSE");
   voxels.clear();
   if(geom->type == urdf::Geometry::MESH)
   {
@@ -719,13 +717,9 @@ bool Group::getLinkVoxels(std::string name, std::vector<KDL::Vector> &voxels)
     }
     sbpl::Voxelizer::voxelizeMesh(verticesCopy, triangles, RESOLUTION, v, true);
     */
-
-    
+  
     ROS_ERROR("To speed up computation, we are not flood filling the voxelized body meshes.");
-    sbpl::Voxelizer::voxelizeMesh(vertices, triangles, p, RESOLUTION, v, false);
-    
-
-    ROS_DEBUG("mesh: %s  voxels: %u", name.c_str(), int(v.size()));
+    sbpl::Voxelizer::voxelizeMesh(vertices, triangles, p, RESOLUTION, v, false);    
     voxels.resize(v.size());
     for(size_t i = 0; i < v.size(); ++i)
     {
