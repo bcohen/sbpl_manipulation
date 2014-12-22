@@ -203,6 +203,7 @@ void SBPLCollisionModel::printDebugInfo(std::string group_name)
 {
   Group* group = group_config_map_[group_name];
   group->printDebugInfo();
+  group->print();
 }
 
 void SBPLCollisionModel::getDefaultGroupSpheres(std::vector<Sphere *> &spheres, bool low_res)

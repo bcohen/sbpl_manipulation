@@ -187,7 +187,10 @@ void SBPLCollisionSpace::attachMesh(std::string name, std::string link, geometry
       spheres[j][4] = attached_object_received_spheres_[(j*5)+4];
     }
   }
- 
+
+  KDL::Frame center;
+  tf::PoseMsgToKDL(pose, center); 
+  object_spheres_p_.resize(spheres.size());
   object_spheres_.resize(spheres.size());
   for(size_t i = 0; i < spheres.size(); ++i)
   {
@@ -195,10 +198,29 @@ void SBPLCollisionSpace::attachMesh(std::string name, std::string link, geometry
     object_spheres_[i].v.x(spheres[i][0]);
     object_spheres_[i].v.y(spheres[i][1]);
     object_spheres_[i].v.z(spheres[i][2]);
+    object_spheres_[i].v = center * object_spheres_[i].v;
     object_spheres_[i].radius = spheres[i][3];
     object_spheres_[i].kdl_chain = attached_object_chain_num_;
-    object_spheres_[i].kdl_segment = attached_object_segment_num_;
+    object_spheres_[i].kdl_segment = attached_object_segment_num_+1; //NOTE: Added 1!!! It's needed to get the correct segment
+    //object_spheres_[i].print(boost::lexical_cast<std::string>(i));
+  
+    object_spheres_p_[i] = &(object_spheres_[i]);
   }
+  att_object_.setSpheres(object_spheres_p_, false);
+
+  // low res
+  low_res_object_spheres_p_.resize(1);
+  low_res_object_spheres_.resize(1);
+  low_res_object_spheres_[0].name = name + "_" + boost::lexical_cast<std::string>(0);
+  low_res_object_spheres_[0].v.x(0.0);
+  low_res_object_spheres_[0].v.y(0.0);
+  low_res_object_spheres_[0].v.z(0.0);
+  low_res_object_spheres_[0].v = center * low_res_object_spheres_[0].v;
+  low_res_object_spheres_[0].radius = 0.15;
+  low_res_object_spheres_[0].kdl_chain = attached_object_chain_num_;
+  low_res_object_spheres_[0].kdl_segment = attached_object_segment_num_+1; //NOTE: Added 1!!! It's needed to get the correct segment
+  low_res_object_spheres_p_[0] = &(low_res_object_spheres_[0]);
+  att_object_.setSpheres(low_res_object_spheres_p_, true);
 
   ROS_INFO("[cspace] Attaching '%s' represented by %d spheres with %d vertices and %d triangles.", name.c_str(), int(spheres.size()), int(vertices.size()), int(triangles.size()));
 }
@@ -219,6 +241,12 @@ bool SBPLCollisionSpace::getAttachedObject(const std::vector<double> &angles, bo
     ROS_ERROR("[cspace] Failed to compute foward kinematics.");
     return false;
   }
+
+  /*
+  for(size_t i = 0; i < frames.size(); ++i)
+    for(size_t j = 0; j < frames[i].size(); ++j)
+      leatherman::printKDLFrame(frames[i][j], boost::lexical_cast<std::string>(i) + "_" + boost::lexical_cast<std::string>(j));
+  */
 
   if(low_res)
   {
@@ -372,7 +400,7 @@ void SBPLCollisionSpace::removeAllCollisionObjects()
 
 void SBPLCollisionSpace::putCollisionObjectsInGrid()
 {
-  ROS_DEBUG("[cspace] Putting %d known objects in grid.", int(known_objects_.size()));
+  ROS_INFO("[cspace] Putting %d known objects in grid.", int(known_objects_.size()));
   for(size_t i = 0; i < known_objects_.size(); ++i)
   {
     grid_->addPointsToField(object_voxel_map_[known_objects_[i]]);

@@ -43,7 +43,7 @@ SBPLCollisionSpace::SBPLCollisionSpace(sbpl_arm_planner::OccupancyGrid* grid)
   padding_ = 0.005;
   object_enclosing_sphere_radius_ = 0.03;
   object_enclosing_low_res_sphere_radius_ = 0.065;
-  use_multi_level_collision_check_ = true;
+  use_multi_level_collision_check_ = false;
   use_ompl_interpolation_ = false;
   num_interpolation_steps_ = 10;
 }
@@ -116,8 +116,8 @@ bool SBPLCollisionSpace::setPlanningJoints(const std::vector<std::string> &joint
   omplStateSpace_ = r5_p + forearm + wrist;
   
   si_.reset(new ompl::base::SpaceInformation(omplStateSpace_));
-  si_->setStateValidityCheckingResolution(0.00001);  
-  //si_->setup();
+  si_->setStateValidityCheckingResolution(0.00275);  
+  si_->setup();
 
   return true;
 }
@@ -185,6 +185,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
   if(visualize)
     collision_spheres_.clear();
 
+  if(low_res)
+    ROS_ERROR("[cspace] Checking low_res model! (object_attached: %d  object_spheres: %d)", object_attached_, int(att_object_.getSpheres(low_res).size()));
+
   // first group, is default group
   std::vector<Group*> sg;
   model_.getSphereGroups(sg);
@@ -233,11 +236,11 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
   if(dist_temp < dist)
     dist = dist_temp;
 
-  /* 
+   
   // check default sphere group against attached object
   if(object_attached_)
   {
-    if(!checkSphereGroupAgainstSphereGroup(sg[0], &att_object_, dg_spheres, obj_spheres, low_res, low_res, verbose, visualize, dist_temp, 2))
+    if(!checkSphereGroupAgainstSphereGroup(sg[0], &att_object_, dg_spheres, obj_spheres, low_res, low_res, verbose, visualize, dist_temp, 3, 100, 0, 1))
     {
       if(dist_temp < dist)
         dist = dist_temp;
@@ -250,10 +253,10 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
     if(dist_temp < dist)
       dist = dist_temp;
   }
-  */
+  
 
   // check default spheres against themselves
-  if(!checkSphereGroupAgainstSphereGroup(sg[0], sg[0], dg_spheres, dg_spheres, low_res, low_res, verbose, visualize, dist_temp, 0, 2, 4, 10))
+  if(!checkSphereGroupAgainstSphereGroup(sg[0], sg[0], dg_spheres, dg_spheres, low_res, low_res, verbose, visualize, dist_temp, 0, 1, 3, 10))
   {
     if(dist_temp < dist)
       dist = dist_temp;
@@ -343,6 +346,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   if(visualize)
     collision_spheres_.clear();
 
+  if(low_res)
+    ROS_ERROR("[cspace] Checking low_res model! (object_attached: %d  object_spheres: %d)", object_attached_, int(att_object_.getSpheres(low_res).size()));
+
   // first group is default group
   std::vector<Group*> sg;
   model_.getSphereGroups(sg);
@@ -353,7 +359,7 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     ROS_ERROR("[cspace] Failed to compute foward kinematics.");
     return false;
   }
-
+  
   // check attached object against world
   if(object_attached_)
   {
@@ -385,11 +391,10 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   if(dist_temp < dist)
     dist = dist_temp;
 
-  /*
   // check default sphere group against attached object
   if(object_attached_)
   {
-    if(!checkSphereGroupAgainstSphereGroup(sg[0], &att_object_, dg_spheres, obj_spheres, low_res, low_res, verbose, visualize, dist_temp, 2))
+    if(!checkSphereGroupAgainstSphereGroup(sg[0], &att_object_, dg_spheres, obj_spheres, low_res, low_res, verbose, visualize, dist_temp, 3, 100, 0, 1))
     {
       if(dist_temp < dist)
         dist = dist_temp;
@@ -402,10 +407,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     if(dist_temp < dist)
       dist = dist_temp;
   }
-  */
 
   // check default spheres against themselves
-  if(!checkSphereGroupAgainstSphereGroup(sg[0], sg[0], dg_spheres, dg_spheres, low_res, low_res, verbose, visualize, dist_temp, 0, 2, 4, 10))
+  if(!checkSphereGroupAgainstSphereGroup(sg[0], sg[0], dg_spheres, dg_spheres, low_res, low_res, verbose, visualize, dist_temp, 0, 1, 3, 100))
   {
     if(dist_temp < dist)
       dist = dist_temp;
@@ -511,6 +515,12 @@ bool SBPLCollisionSpace::checkSpheresAgainstWorld(const std::vector<std::vector<
   bool in_collision = false; 
   Sphere s;
   sph_poses.resize(spheres.size());
+
+  if(spheres.size() == 1)
+  {
+    ROS_ERROR("[cspace] Checking group against world with 1 spheres!");
+    verbose = true;
+  }
 
   //ROS_INFO("frames: %d", int(frames.size()));
   for(size_t i = 0; i < spheres.size(); ++i)
@@ -850,7 +860,8 @@ void SBPLCollisionSpace::setJointPosition(std::string name, double position)
 bool SBPLCollisionSpace::interpolatePath(const std::vector<double>& start,
                                          const std::vector<double>& end,
                                          const std::vector<double>& inc,
-                                         std::vector<std::vector<double> >& path)
+                                         std::vector<std::vector<double> >& path, 
+                                         double num_interpolation_steps_per_degree)
 {
   if(!use_ompl_interpolation_)
     return sbpl::Interpolator::interpolatePath(start, end, min_limits_, max_limits_, inc, path);
@@ -873,11 +884,15 @@ bool SBPLCollisionSpace::interpolatePath(const std::vector<double>& start,
   s1->as<ompl::base::SO2StateSpace::StateType>(1)->value = end[4];
   s1->as<ompl::base::SO2StateSpace::StateType>(2)->value = end[6];
 
-  ompl::geometric::PathGeometric geo_path(si_,s0.get(),s1.get());
-  //printf("geo before %d\n",geo_path.getStateCount());
-  geo_path.interpolate(num_interpolation_steps_);
-  //printf("geo after %d\n",geo_path.getStateCount());
+  si_->setStateValidityCheckingResolution(0.00275/num_interpolation_steps_per_degree);
+  si_->setup();
 
+  ompl::geometric::PathGeometric geo_path(si_,s0.get(),s1.get());
+  int before = geo_path.getStateCount();
+  geo_path.interpolate();
+  int after = geo_path.getStateCount();
+  ROS_DEBUG("[cspace][ompl] before: %d  after: %d  (valid_segment_count_factor: %0.3f  max_extent: %0.3f", before, after, si_->getStateSpace()->getValidSegmentCountFactor(), si_->getStateSpace()->getMaximumExtent());
+  
   for(unsigned int i=0; i<geo_path.getStateCount(); i++){
     ompl::base::State* state = geo_path.getState(i);
     const ompl::base::CompoundState* s = dynamic_cast<const ompl::base::CompoundState*> (state);

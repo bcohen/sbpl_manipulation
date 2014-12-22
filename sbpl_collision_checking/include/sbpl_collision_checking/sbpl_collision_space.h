@@ -100,7 +100,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     /** ---------------- Utils ---------------- */
     bool interpolatePath(const std::vector<double>& start, const std::vector<double>& end, std::vector<std::vector<double> >& path);
-    bool interpolatePath(const std::vector<double>& start, const std::vector<double>& end, const std::vector<double>& inc, std::vector<std::vector<double> >& path);
+    bool interpolatePath(const std::vector<double>& start, const std::vector<double>& end, const std::vector<double>& inc, std::vector<std::vector<double> >& path, double num_interpolation_steps_per_degree=1.0);
 
     /** ------------ Kinematics ----------------- */
     std::string getGroupName() { return group_name_; };
