@@ -66,6 +66,12 @@ bool CollisionChecker::interpolatePath(const std::vector<double> &start, const s
   return false;
 }
 
+bool CollisionChecker::interpolatePath(const std::vector<double> &start, const std::vector<double> &end, const std::vector<double> &inc, std::vector<std::vector<double> > &path, double num_interpolation_steps_per_degree)
+{
+  ROS_ERROR("Function is not filled in.");
+  return false;
+}
+
 visualization_msgs::MarkerArray CollisionChecker::getCollisionModelVisualization(const std::vector<double> &angles)
 {
   ROS_ERROR("Function is not filled in.");

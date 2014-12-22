@@ -48,6 +48,8 @@ class CollisionChecker
     
     /* Utils */
     virtual bool interpolatePath(const std::vector<double> &start, const std::vector<double> &end, const std::vector<double> &inc, std::vector<std::vector<double> >& path);
+    
+    virtual bool interpolatePath(const std::vector<double> &start, const std::vector<double> &end, const std::vector<double> &inc, std::vector<std::vector<double> >& path, double num_interpolation_steps_per_degree);
 
     /* Visualizations */
     virtual visualization_msgs::MarkerArray getCollisionModelVisualization(const std::vector<double> &angles);

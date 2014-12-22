@@ -13,6 +13,7 @@ namespace sbpl_arm_planner {
 
   bool interpolateTrajectory(sbpl_arm_planner::CollisionChecker *cc, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj_out);
 
+  bool interpolateTrajectory(sbpl_arm_planner::CollisionChecker *cc, std::vector<double> inc, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj_out, double num_interpolation_steps_per_degree);
 };
 
 #endif

@@ -83,6 +83,20 @@ bool sbpl_arm_planner::interpolateTrajectory(sbpl_arm_planner::CollisionChecker 
   int num_joints = traj[0].positions.size();
   std::vector<std::vector<double> > path, ipath;
   std::vector<double> start(num_joints,0), end(num_joints,0), inc(num_joints,0.069);
+  inc[4] = 0.2617; // hack for BHProject
+  inc[6] = 0.2617;
+
+  return interpolateTrajectory(cc, inc, traj, traj_out, 0.1);
+}
+
+bool sbpl_arm_planner::interpolateTrajectory(sbpl_arm_planner::CollisionChecker *cc, std::vector<double> inc, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj, std::vector<trajectory_msgs::JointTrajectoryPoint> &traj_out, double num_interpolation_steps_per_degree)
+{
+  if(traj.empty())
+    return false;
+ 
+  int num_joints = traj[0].positions.size();
+  std::vector<std::vector<double> > path, ipath;
+  std::vector<double> start(num_joints,0), end(num_joints,0);
 
   // tack on the first point of the trajectory
   for(size_t j = 0; j < traj[0].positions.size(); ++j)
@@ -98,7 +112,7 @@ bool sbpl_arm_planner::interpolateTrajectory(sbpl_arm_planner::CollisionChecker 
     }
     ipath.clear();
 
-    if(!cc->interpolatePath(start, end, inc, ipath))
+    if(!cc->interpolatePath(start, end, inc, ipath, num_interpolation_steps_per_degree))
     {
       ROS_ERROR("Failed to interpolate between waypoint %d & %d because it's infeasible given the limits.", int(i), int(i+1));
       return false;
@@ -125,7 +139,9 @@ bool sbpl_arm_planner::interpolateTrajectory(sbpl_arm_planner::CollisionChecker 
     traj_out[i].positions.resize(path[i].size());
     for(size_t j = 0; j < path[i].size(); ++j)
       traj_out[i].positions[j] = path[i][j];
-    traj_out[i].time_from_start.fromSec(double(i+1) * (traj.back().time_from_start.toSec()/double(path.size())));
+      
+      // TODO: This is stupid. Need to do this better
+      traj_out[i].time_from_start.fromSec(double(i+1) * (traj.back().time_from_start.toSec()/double(path.size())));
   }
   ROS_INFO("Original path length: %d   Interpolated path length: %d", int(traj.size()), int(traj_out.size()));
   return true;
