@@ -375,11 +375,15 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
 
     res.planning_time = ros::Duration((clock() - starttime) / (double)CLOCKS_PER_SEC);
 
+    if(prm_->print_path_)
+      leatherman::printJointTrajectory(res.trajectory.joint_trajectory, "path");
+
     // shortcut path
     if(prm_->shortcut_path_)
     {
       trajectory_msgs::JointTrajectory straj;
-      if(!interpolateTrajectory(cc_, res.trajectory.joint_trajectory.points, straj.points))
+      std::vector<double> inc(7,0.0157); // not used while using the ompl interpolator 
+      if(!interpolateTrajectory(cc_, inc, res.trajectory.joint_trajectory.points, straj.points, 1.0))
         ROS_WARN("Failed to interpolate planned trajectory with %d waypoints before shortcutting.", int(res.trajectory.joint_trajectory.points.size()));
       
       shortcutTrajectory(cc_, straj.points,res.trajectory.joint_trajectory.points);
@@ -389,7 +393,7 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
     if(prm_->interpolate_path_)
     {
       trajectory_msgs::JointTrajectory itraj = res.trajectory.joint_trajectory;
-      interpolateTrajectory(cc_, itraj.points, res.trajectory.joint_trajectory.points);
+      interpolateTrajectory(cc_, itraj.points, res.trajectory.joint_trajectory.points); //0.2 by default
     }
 
     if(prm_->print_path_)
@@ -446,7 +450,7 @@ std::map<std::string, double>  SBPLArmPlannerInterface::getPlannerStats()
   return stats;
 }
 
-visualization_msgs::MarkerArray SBPLArmPlannerInterface::getCollisionModelTrajectoryMarker()
+visualization_msgs::MarkerArray SBPLArmPlannerInterface::getCollisionModelTrajectoryMarker(int throttle)
 {
   visualization_msgs::MarkerArray ma, ma1;
   std::vector<std::vector<double> > traj;
@@ -461,6 +465,9 @@ visualization_msgs::MarkerArray SBPLArmPlannerInterface::getCollisionModelTrajec
   double cinc = 1.0/double(res_.trajectory.joint_trajectory.points.size());
   for(size_t i = 0; i < res_.trajectory.joint_trajectory.points.size(); ++i)
   {
+    if((i != 0) && (i != res_.trajectory.joint_trajectory.points.size() - 1) && (i % throttle != 0))
+      continue;
+
     traj[i].resize(res_.trajectory.joint_trajectory.points[i].positions.size());
     for(size_t j = 0; j < res_.trajectory.joint_trajectory.points[i].positions.size(); j++)
       traj[i][j] = res_.trajectory.joint_trajectory.points[i].positions[j];

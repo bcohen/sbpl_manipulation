@@ -3,9 +3,10 @@ planning:
   verbose: true
   verbose_collisions: false
   shortcut_path: true
-  interpolate_path: false
+  interpolate_path: true
   use_bfs_heuristic: true
   group_name: right_arm
+  seconds_per_waypoint: 2.0
   planning_joints:
     r_shoulder_pan_joint
     r_shoulder_lift_joint
@@ -30,9 +31,9 @@ visualizations:
   heuristic: false
   goal: true
   expanded_states: true
-  trajectory: false
-  collision_model_trajectory: false
-  trajectory_throttle: 30
+  trajectory: true
+  collision_model_trajectory: true
+  trajectory_throttle: 8
 
 #  occupancy_grid:
 #    origin_x: -0.75

@@ -77,7 +77,7 @@ class SBPLArmPlannerInterface
 
     visualization_msgs::MarkerArray getVisualization(std::string type);
 
-    visualization_msgs::MarkerArray getCollisionModelTrajectoryMarker();
+    visualization_msgs::MarkerArray getCollisionModelTrajectoryMarker(int throttle=1);
 
     double getEndEffectorPathDistance() {return path_distance_;};
 
