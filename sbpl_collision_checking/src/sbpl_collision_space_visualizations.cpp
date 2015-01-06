@@ -52,6 +52,21 @@ visualization_msgs::MarkerArray SBPLCollisionSpace::getVisualization(std::string
       }
     }
   }
+  if(type.compare("padded_collision_objects") == 0)
+  {
+    visualization_msgs::MarkerArray ma1;
+    for(size_t i = 0; i < known_objects_.size(); ++i)
+    {
+      if(object_map_.find(known_objects_[i]) != object_map_.end())
+      {
+        std::vector<double> hue(object_map_[known_objects_[i]].shapes.size(), 80);
+        ma1 = viz::getCollisionObjectMarkerArray(object_map_[known_objects_[i]], hue, true, object_map_[known_objects_[i]].id+"-padded", 0);
+        ma.markers.insert(ma.markers.end(), ma1.markers.begin(), ma1.markers.end());
+      }
+    }
+    for(size_t j = 0; j < ma.markers.size(); ++j)
+      ma.markers[j].color.a = 0.4;
+  }
   else if(type.compare("collisions") == 0)
   {
     std::vector<double> rad(collision_spheres_.size());

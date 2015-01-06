@@ -44,7 +44,7 @@ SBPLCollisionSpace::SBPLCollisionSpace(sbpl_arm_planner::OccupancyGrid* grid)
   object_enclosing_sphere_radius_ = 0.03;
   object_enclosing_low_res_sphere_radius_ = 0.065;
   use_multi_level_collision_check_ = false;
-  use_ompl_interpolation_ = false;
+  use_ompl_interpolation_ = true;
   num_interpolation_steps_ = 10;
 }
 

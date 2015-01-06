@@ -301,22 +301,25 @@ void SBPLCollisionSpace::processCollisionObjectMsg(const arm_navigation_msgs::Co
 
 void SBPLCollisionSpace::addCollisionObject(const arm_navigation_msgs::CollisionObject &object)
 {
+  double padding = 0.0;
+  if(object.padding > 0.0 && object.padding < 1.0)
+    padding = object.padding;
 
   for(size_t i = 0; i < object.shapes.size(); ++i)
   {
     if(object.shapes[i].type == arm_navigation_msgs::Shape::BOX)
     {
       std::vector<double> dims(3);
-      dims[0] = object.shapes[i].dimensions[0];
-      dims[1] = object.shapes[i].dimensions[1];
-      dims[2] = object.shapes[i].dimensions[2];
+      dims[0] = object.shapes[i].dimensions[0]+(padding*2.0);
+      dims[1] = object.shapes[i].dimensions[1]+(padding*2.0);
+      dims[2] = object.shapes[i].dimensions[2]+(padding*2.0);
       object_voxel_map_[object.id].clear();
       grid_->getOccupiedVoxels(object.poses[i], dims, object_voxel_map_[object.id]);
     }
     else if(object.shapes[i].type == arm_navigation_msgs::Shape::SPHERE)
     {
       std::vector<std::vector<double> > voxels;
-      sbpl::Voxelizer::voxelizeSphere(object.shapes[i].dimensions[0], object.poses[i], grid_->getResolution(), voxels, true);
+      sbpl::Voxelizer::voxelizeSphere(object.shapes[i].dimensions[0]+(padding*2.0), object.poses[i], grid_->getResolution(), voxels, true);
       object_voxel_map_[object.id].clear();
       object_voxel_map_[object.id].resize(voxels.size());
 
@@ -340,6 +343,7 @@ void SBPLCollisionSpace::addCollisionObject(const arm_navigation_msgs::Collision
     else if(object.shapes[i].type == arm_navigation_msgs::Shape::MESH)
     {
       std::vector<std::vector<double> > voxels;
+      ROS_ERROR("Voxelizing a mesh '%s'!", object.id.c_str());
       sbpl::Voxelizer::voxelizeMesh(object.shapes[i].vertices, object.shapes[i].triangles, grid_->getResolution(), voxels, true);
       object_voxel_map_[object.id].clear();
       object_voxel_map_[object.id].resize(voxels.size());
