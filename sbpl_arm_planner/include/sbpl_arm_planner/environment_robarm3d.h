@@ -273,9 +273,12 @@ inline void EnvironmentROBARM3D::anglesToCoord(const std::vector<double> &angle,
 
   for(int i = 0; i < int(angle.size()); i++)
   {
+    pos_angle = angles::normalize_angle_positive(angle[i]);
+    /*
     pos_angle = angle[i];
     if(pos_angle < 0.0)
       pos_angle += 2*M_PI;
+    */
 
     coord[i] = (int)((pos_angle + prm_->coord_delta_[i]*0.5)/prm_->coord_delta_[i]);
 

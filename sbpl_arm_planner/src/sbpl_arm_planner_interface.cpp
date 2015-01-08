@@ -184,6 +184,10 @@ bool SBPLArmPlannerInterface::setStart(const sensor_msgs::JointState &state)
     return false;
   }
 
+  // normalize the initial joint angles
+  for(size_t i = 0; i < initial_positions.size(); ++i)
+    initial_positions[i] = angles::normalize_angle_positive(initial_positions[i]);
+
   if(sbpl_arm_env_->setStartConfiguration(initial_positions) == 0)
   {
     ROS_ERROR("Environment failed to set start state. Not Planning.");
@@ -381,12 +385,14 @@ bool SBPLArmPlannerInterface::planToPosition(const arm_navigation_msgs::GetMotio
     // shortcut path
     if(prm_->shortcut_path_)
     {
+      clock_t start_shortcut = clock();
       trajectory_msgs::JointTrajectory straj;
       std::vector<double> inc(7,0.0157); // not used while using the ompl interpolator 
-      if(!interpolateTrajectory(cc_, inc, res.trajectory.joint_trajectory.points, straj.points, 1.0))
+      if(!interpolateTrajectory(cc_, inc, res.trajectory.joint_trajectory.points, straj.points, 0.3))
         ROS_WARN("Failed to interpolate planned trajectory with %d waypoints before shortcutting.", int(res.trajectory.joint_trajectory.points.size()));
       
       shortcutTrajectory(cc_, straj.points,res.trajectory.joint_trajectory.points);
+      ROS_INFO("%0.3f seconds to shortcut path.", (clock() - start_shortcut) / (double)CLOCKS_PER_SEC);
     }
 
     // interpolate path
