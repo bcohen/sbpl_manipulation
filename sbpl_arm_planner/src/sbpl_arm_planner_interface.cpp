@@ -554,5 +554,23 @@ void SBPLArmPlannerInterface::setParam(std::string name, double value)
     if(value > 0)
       prm_->waypoint_time_ = value;
   }
+  else if(name.compare("shortcut_path") == 0)
+    prm_->shortcut_path_ = value;
+  else
+    ROS_ERROR("Unknown param name.");
 }
 
+bool SBPLArmPlannerInterface::shortcutPath(trajectory_msgs::JointTrajectory &in, double num_points_per_degree, trajectory_msgs::JointTrajectory &out)
+{
+  clock_t start_shortcut = clock();
+  std::vector<double> inc(7,0.0157); // not used while using the ompl interpolator 
+  if(!interpolateTrajectory(cc_, inc, in.points, out.points, num_points_per_degree))
+  {
+    ROS_WARN("Failed to interpolate planned trajectory with %d waypoints before shortcutting.", int(in.points.size()));
+    return false;
+  }
+
+  shortcutTrajectory(cc_, in.points, out.points);
+  ROS_INFO("%0.3f seconds to shortcut path (in: %d  out: %d)", (clock() - start_shortcut) / (double)CLOCKS_PER_SEC, int(in.points.size()), int(out.points.size()));
+  return true;
+}
