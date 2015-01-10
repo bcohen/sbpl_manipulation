@@ -40,7 +40,7 @@ SBPLCollisionSpace::SBPLCollisionSpace(sbpl_arm_planner::OccupancyGrid* grid)
   grid_ = grid;
   group_name_ = "";
   object_attached_ = false;
-  padding_ = 0.005;
+  padding_ = 0.00;
   object_enclosing_sphere_radius_ = 0.03;
   object_enclosing_low_res_sphere_radius_ = 0.065;
   use_multi_level_collision_check_ = false;
@@ -472,7 +472,7 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
     }
 
     // check against default group spheres (TODO: change to all sphere groups)
-    if(!checkSphereGroupAgainstSphereGroup(model_.getDefaultGroup(), sg[i], dg_spheres, g_spheres, low_res, low_res, verbose, visualize, dist_temp, 0, 100, 101, 200))
+    if(!checkSphereGroupAgainstSphereGroup(model_.getDefaultGroup(), sg[i], dg_spheres, g_spheres, low_res, low_res, verbose, visualize, dist_temp, 0, 100, 0, 100))
     {
       if(dist_temp < dist)
         dist = dist_temp;
@@ -593,13 +593,13 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group
 
       d = leatherman::distance(spheres1[i], spheres2[j]);
 
-      if(d <= max(gsph1[i]->radius + padding_, gsph2[j]->radius + padding_))
+      if(d <= (gsph1[i]->radius + padding_ +  gsph2[j]->radius + padding_))
       {
         if(d < dist)
           dist = d;
 
         if(verbose)
-          ROS_INFO("[group1: %s  sphere: %s] [group2: %s  sphere: %s] *collision* found. (rad1: %0.3fm  rad2: %0.3fm  dist: %0.3fm)", group1->getName().c_str(), gsph1[i]->name.c_str(), group2->getName().c_str(), gsph2[j]->name.c_str(), gsph1[i]->radius + padding_, gsph2[j]->radius + padding_, d);
+          ROS_WARN("[group1: %s  sphere: %s] [group2: %s  sphere: %s] *collision* found. (rad1: %0.3fm  rad2: %0.3fm  dist: %0.3fm)", group1->getName().c_str(), gsph1[i]->name.c_str(), group2->getName().c_str(), gsph2[j]->name.c_str(), gsph1[i]->radius + padding_, gsph2[j]->radius + padding_, d);
 
         if(visualize)
         {
@@ -614,6 +614,8 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstSphereGroup(Group *group1, Group
         else
           return false;
       }
+      //else
+      //  ROS_INFO("[group1: %s  sphere: %s] [group2: %s  sphere: %s] SAFE. (rad1: %0.3fm  rad2: %0.3fm  dist: %0.3fm)", group1->getName().c_str(), gsph1[i]->name.c_str(), group2->getName().c_str(), gsph2[j]->name.c_str(), gsph1[i]->radius + padding_, gsph2[j]->radius + padding_, d);
 
       if(d < dist)
         dist = d;

@@ -302,7 +302,7 @@ void SBPLCollisionSpace::processCollisionObjectMsg(const arm_navigation_msgs::Co
 void SBPLCollisionSpace::addCollisionObject(const arm_navigation_msgs::CollisionObject &object)
 {
   double padding = 0.0;
-  if(object.padding > 0.0 && object.padding < 1.0)
+  if((object.padding > 0.0) && (object.padding < 10.0))
     padding = object.padding;
 
   for(size_t i = 0; i < object.shapes.size(); ++i)
