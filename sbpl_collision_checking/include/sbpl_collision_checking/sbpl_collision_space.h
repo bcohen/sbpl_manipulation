@@ -70,7 +70,9 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     bool init(std::string group_name, std::string ns="");
 
     void setPadding(double padding);
-   
+  
+    void setParam(std::string name, double value);
+
     bool setPlanningScene(const arm_navigation_msgs::PlanningScene &scene);
 
     void setRobotState(const arm_navigation_msgs::RobotState &state);
@@ -145,6 +147,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     /* ----------- Parameters ------------ */
     bool use_multi_level_collision_check_;
+    bool check_other_groups_against_world_;
     double padding_;
     double object_enclosing_sphere_radius_;
     std::string group_name_;

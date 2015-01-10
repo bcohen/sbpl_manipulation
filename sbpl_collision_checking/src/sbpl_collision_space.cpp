@@ -46,11 +46,20 @@ SBPLCollisionSpace::SBPLCollisionSpace(sbpl_arm_planner::OccupancyGrid* grid)
   use_multi_level_collision_check_ = false;
   use_ompl_interpolation_ = true;
   num_interpolation_steps_ = 10;
+  check_other_groups_against_world_ = true;
 }
 
 void SBPLCollisionSpace::setPadding(double padding)
 {
   padding_ = padding;
+}
+
+void SBPLCollisionSpace::setParam(std::string name, double value)
+{
+  if(name.compare("check_other_groups_against_world") == 0)
+    check_other_groups_against_world_ = value;
+  else
+    ROS_ERROR("[cspace] Unrecognized param name '%s' received.", name.c_str());
 }
 
 void SBPLCollisionSpace::setInterpolationParams(bool use_ompl, int num_steps){
@@ -282,20 +291,23 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
         return false;
       }
     }
-
-    // check group against world
-    if(!checkSpheresAgainstWorld(frames[i], sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
+    
+    if(check_other_groups_against_world_)
     {
+      // check group against world
+      if(!checkSpheresAgainstWorld(frames[i], sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
+      {
+        if(dist_temp < dist)
+          dist = dist_temp;
+
+        if(!visualize)
+          return false;
+        else
+          in_collision = true;
+      }
       if(dist_temp < dist)
         dist = dist_temp;
-
-      if(!visualize)
-        return false;
-      else
-        in_collision = true;
     }
-    if(dist_temp < dist)
-      dist = dist_temp;
 
     // check group against attached object
     if(object_attached_)
@@ -433,20 +445,22 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
       return false;
     }
 
-    // check against world
-    if(!checkSpheresAgainstWorld(frames, sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
+    if(check_other_groups_against_world_)
     {
+      // check against world
+      if(!checkSpheresAgainstWorld(frames, sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp))
+      {
+        if(dist_temp < dist)
+          dist = dist_temp;
+
+        if(!visualize)
+          return false;
+        else
+          in_collision = true;
+      }
       if(dist_temp < dist)
         dist = dist_temp;
-
-      if(!visualize)
-        return false;
-      else
-        in_collision = true;
     }
-    if(dist_temp < dist)
-      dist = dist_temp;
-
     /* 
     sg[i]->getSpheres(spheres, low_res);
     g_spheres.resize(spheres.size());
