@@ -81,6 +81,8 @@ class SBPLArmPlannerInterface
 
     double getEndEffectorPathDistance() {return path_distance_;};
 
+    bool shortcutPath(trajectory_msgs::JointTrajectory &in, double num_points_per_degree, trajectory_msgs::JointTrajectory &out);
+
   protected:
 
     ros::NodeHandle nh_;
