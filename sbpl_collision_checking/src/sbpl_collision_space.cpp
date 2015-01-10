@@ -308,6 +308,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
       if(dist_temp < dist)
         dist = dist_temp;
     }
+    else //its sad its needed but this is done to compute poses of spheres
+      checkSpheresAgainstWorld(frames[i], sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp);
+
 
     // check group against attached object
     if(object_attached_)
@@ -461,6 +464,9 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
       if(dist_temp < dist)
         dist = dist_temp;
     }
+    else //its sad its needed but this is done to compute poses of spheres
+      checkSpheresAgainstWorld(frames, sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp);
+
     /* 
     sg[i]->getSpheres(spheres, low_res);
     g_spheres.resize(spheres.size());
