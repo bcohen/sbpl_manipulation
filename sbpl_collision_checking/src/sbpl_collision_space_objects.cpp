@@ -222,7 +222,7 @@ void SBPLCollisionSpace::attachMesh(std::string name, std::string link, geometry
   low_res_object_spheres_p_[0] = &(low_res_object_spheres_[0]);
   att_object_.setSpheres(low_res_object_spheres_p_, true);
 
-  ROS_INFO("[cspace] Attaching '%s' represented by %d spheres with %d vertices and %d triangles.", name.c_str(), int(spheres.size()), int(vertices.size()), int(triangles.size()));
+  ROS_DEBUG("[cspace] Attaching '%s' represented by %d spheres with %d vertices and %d triangles.", name.c_str(), int(spheres.size()), int(vertices.size()), int(triangles.size()));
 }
 
 bool SBPLCollisionSpace::getAttachedObject(const std::vector<double> &angles, bool low_res, std::vector<std::vector<double> > &xyz)
