@@ -77,6 +77,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     void setRobotState(const arm_navigation_msgs::RobotState &state);
 
+    void setRobotState(const arm_navigation_msgs::RobotState &state, bool reset);
+
     void setSphereGroupsForCollisionCheck(const std::vector<std::string> &group_names);
 
     void setInterpolationParams(bool use_ompl, int num_steps=10);
@@ -90,6 +92,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     bool checkSphereGroupAgainstWorld(const std::vector<double> &angles, Group *group, bool low_res, bool verbose, bool visualize, double &dist);
     bool checkSpheresAgainstWorld(const std::vector<std::vector<KDL::Frame> > &frames, const std::vector<Sphere*> &spheres, bool verbose, bool visualize, std::vector<KDL::Vector> &sph_poses, double &dist);
+    bool fillInSpherePoses(const std::vector<std::vector<KDL::Frame> > &frames, const std::vector<Sphere*> &spheres, bool verbose, bool visualize, std::vector<KDL::Vector> &sph_poses, double &dist);
     bool checkSphereGroupAgainstSphereGroup(Group *group1, Group *group2, const std::vector<KDL::Vector> &spheres1, const std::vector<KDL::Vector> &spheres2, bool low_res1, bool low_res2, bool verbose, bool visualize, double &dist, int group1_min_priority, int group1_max_priority, int group2_min_priority, int group2_max_priority);
 
     inline bool isValidCell(const int x, const int y, const int z, const int radius);
@@ -147,6 +150,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     /* ----------- Parameters ------------ */
     bool use_multi_level_collision_check_;
+    bool check_default_group_against_world_;
     bool check_other_groups_against_world_;
     double padding_;
     double object_enclosing_sphere_radius_;

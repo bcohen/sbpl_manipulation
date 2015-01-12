@@ -47,6 +47,7 @@ SBPLCollisionSpace::SBPLCollisionSpace(sbpl_arm_planner::OccupancyGrid* grid)
   use_ompl_interpolation_ = true;
   num_interpolation_steps_ = 10;
   check_other_groups_against_world_ = true;
+  check_default_group_against_world_ = true;
 }
 
 void SBPLCollisionSpace::setPadding(double padding)
@@ -58,6 +59,8 @@ void SBPLCollisionSpace::setParam(std::string name, double value)
 {
   if(name.compare("check_other_groups_against_world") == 0)
     check_other_groups_against_world_ = value;
+  else if(name.compare("check_default_group_against_world") == 0)
+    check_default_group_against_world_ = value;
   else
     ROS_ERROR("[cspace] Unrecognized param name '%s' received.", name.c_str());
 }
@@ -230,22 +233,28 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
     if(dist_temp < dist)
       dist = dist_temp;
   }
- 
+
+
   // check default sphere group against world
-  if(!checkSpheresAgainstWorld(frames[0], sg[0]->getSpheres(low_res), verbose, visualize, dg_spheres, dist_temp))
+  if(check_default_group_against_world_)
   {
+    if(!checkSpheresAgainstWorld(frames[0], sg[0]->getSpheres(low_res), verbose, visualize, dg_spheres, dist_temp))
+    {
+      if(dist_temp < dist)
+        dist = dist_temp;
+
+      if(!visualize)
+        return false;
+      else
+        in_collision = true;
+    }
     if(dist_temp < dist)
       dist = dist_temp;
-
-    if(!visualize)
-      return false;
-    else
-      in_collision = true;
   }
-  if(dist_temp < dist)
-    dist = dist_temp;
+  else
+    fillInSpherePoses(frames[0], sg[0]->getSpheres(low_res), verbose, visualize, dg_spheres, dist_temp);
 
-   
+
   // check default sphere group against attached object
   if(object_attached_)
   {
@@ -308,9 +317,8 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
       if(dist_temp < dist)
         dist = dist_temp;
     }
-    else //its sad its needed but this is done to compute poses of spheres
-      checkSpheresAgainstWorld(frames[i], sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp);
-
+    else
+      fillInSpherePoses(frames[i], sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp);
 
     // check group against attached object
     if(object_attached_)
@@ -393,18 +401,23 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   }
 
   // check default sphere group against world
-  if(!checkSpheresAgainstWorld(dframes, model_.getDefaultGroup()->getSpheres(low_res), verbose, visualize, dg_spheres, dist_temp))
+  if(check_default_group_against_world_)
   {
+    if(!checkSpheresAgainstWorld(dframes, model_.getDefaultGroup()->getSpheres(low_res), verbose, visualize, dg_spheres, dist_temp))
+    {
+      if(dist_temp < dist)
+        dist = dist_temp;
+
+      if(!visualize)
+        return false;
+      else
+        in_collision = true;
+    }
     if(dist_temp < dist)
       dist = dist_temp;
-
-    if(!visualize)
-      return false;
-    else
-      in_collision = true;
   }
-  if(dist_temp < dist)
-    dist = dist_temp;
+  else
+    fillInSpherePoses(dframes, model_.getDefaultGroup()->getSpheres(low_res), verbose, visualize, dg_spheres, dist_temp);
 
   // check default sphere group against attached object
   if(object_attached_)
@@ -464,15 +477,8 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
       if(dist_temp < dist)
         dist = dist_temp;
     }
-    else //its sad its needed but this is done to compute poses of spheres
-      checkSpheresAgainstWorld(frames, sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp);
-
-    /* 
-    sg[i]->getSpheres(spheres, low_res);
-    g_spheres.resize(spheres.size());
-    for(size_t j = 0; j < spheres.size(); ++j)
-      g_spheres[i] = frames[spheres[i]->kdl_chain][spheres[i]->kdl_segment] * spheres[i]->v;
-    */
+    else
+      fillInSpherePoses(frames, sg[i]->getSpheres(low_res), verbose, visualize, g_spheres, dist_temp);
 
     // check group against attached object
     if(object_attached_)
@@ -525,6 +531,16 @@ bool SBPLCollisionSpace::checkSphereGroupAgainstWorld(const std::vector<double> 
     return false;
   }
   return checkSpheresAgainstWorld(frames, group->getSpheres(low_res), verbose, visualize, sph_poses, dist); 
+}
+
+bool SBPLCollisionSpace::fillInSpherePoses(const std::vector<std::vector<KDL::Frame> > &frames, const std::vector<Sphere*> &spheres, bool verbose, bool visualize, std::vector<KDL::Vector> &sph_poses, double &dist)
+{
+  sph_poses.resize(spheres.size());
+
+  for(size_t i = 0; i < spheres.size(); ++i)
+    sph_poses[i] = frames[spheres[i]->kdl_chain][spheres[i]->kdl_segment] * spheres[i]->v;
+
+  return true;
 }
 
 bool SBPLCollisionSpace::checkSpheresAgainstWorld(const std::vector<std::vector<KDL::Frame> > &frames, const std::vector<Sphere*> &spheres, bool verbose, bool visualize, std::vector<KDL::Vector> &sph_poses, double &dist)
@@ -1001,6 +1017,20 @@ bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0,
 bool SBPLCollisionSpace::isStateToStateValid(const std::vector<double> &angles0, const std::vector<double> &angles1, std::vector<std::vector<std::vector<KDL::Frame> > > &frames, int &path_length, int &num_checks, double &dist, std::vector<std::vector<double> > *path_out)
 {
   return checkPathForCollision(angles0, angles1, frames, false, path_length, num_checks, dist, path_out);
+}
+
+void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &state, bool reset)
+{
+  if(state.joint_state.name.size() != state.joint_state.position.size())
+    return;
+
+  for(size_t i = 0; i < state.joint_state.name.size(); ++i)
+    model_.setJointPosition(state.joint_state.name[i], state.joint_state.position[i]);
+
+  // TODO: turn into its own function
+  grid_->reset();
+  putCollisionObjectsInGrid();
+  updateVoxelGroups();
 }
 
 void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &state)
