@@ -45,7 +45,7 @@
 #include <kdl/frames.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
 #include <angles/angles.h>
-#include <sbpl_collision_checking/occupancy_grid.h>
+#include <sbpl_manipulation_components/occupancy_grid.h>
 #include <sbpl_collision_checking/sbpl_collision_space.h>
 #include <visualize_arm/visualize_arm.h>
 

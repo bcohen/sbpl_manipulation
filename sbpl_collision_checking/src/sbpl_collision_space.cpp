@@ -1028,9 +1028,12 @@ void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &st
     model_.setJointPosition(state.joint_state.name[i], state.joint_state.position[i]);
 
   // TODO: turn into its own function
-  grid_->reset();
-  putCollisionObjectsInGrid();
-  updateVoxelGroups();
+  if(reset)
+  {
+    grid_->reset();
+    putCollisionObjectsInGrid();
+    updateVoxelGroups();
+  }
 }
 
 void SBPLCollisionSpace::setRobotState(const arm_navigation_msgs::RobotState &state)
