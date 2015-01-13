@@ -223,15 +223,20 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, std::
   // check attached object against world
   if(object_attached_)
   {
-    if(!checkSpheresAgainstWorld(frames[0], att_object_.getSpheres(low_res), verbose, visualize, obj_spheres, dist_temp))
+    if(check_default_group_against_world_)
     {
-      if(!visualize)
-        return false;
-      else
-        in_collision = true;
+      if(!checkSpheresAgainstWorld(frames[0], att_object_.getSpheres(low_res), verbose, visualize, obj_spheres, dist_temp))
+      {
+        if(!visualize)
+          return false;
+        else
+          in_collision = true;
+      }
+      if(dist_temp < dist)
+        dist = dist_temp;
     }
-    if(dist_temp < dist)
-      dist = dist_temp;
+    else 
+      fillInSpherePoses(frames[0], att_object_.getSpheres(low_res), verbose, visualize, obj_spheres, dist_temp);
   }
 
 
@@ -384,20 +389,26 @@ bool SBPLCollisionSpace::checkCollision(const std::vector<double> &angles, bool 
   }
   
   // check attached object against world
+
   if(object_attached_)
   {
-    if(!checkSpheresAgainstWorld(dframes, att_object_.getSpheres(low_res), verbose, visualize, obj_spheres, dist_temp))
+    if(check_default_group_against_world_)
     {
+      if(!checkSpheresAgainstWorld(dframes, att_object_.getSpheres(low_res), verbose, visualize, obj_spheres, dist_temp))
+      {
+        if(dist_temp < dist)
+          dist = dist_temp;
+
+        if(!visualize)
+          return false;
+        else
+          in_collision = true;
+      }
       if(dist_temp < dist)
         dist = dist_temp;
-
-      if(!visualize)
-        return false;
-      else
-        in_collision = true;
     }
-    if(dist_temp < dist)
-      dist = dist_temp;
+    else
+      fillInSpherePoses(dframes, att_object_.getSpheres(low_res), verbose, visualize, obj_spheres, dist_temp);
   }
 
   // check default sphere group against world
