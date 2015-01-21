@@ -100,15 +100,15 @@ bool sbpl_arm_planner::interpolateTrajectory(sbpl_arm_planner::CollisionChecker 
 
   // tack on the first point of the trajectory
   for(size_t j = 0; j < traj[0].positions.size(); ++j)
-    start[j] = traj[0].positions[j];
+    start[j] = angles::normalize_angle(traj[0].positions[j]);
   path.push_back(start);
 
   for(size_t i = 0; i < traj.size()-1; ++i)
   {
     for(size_t j = 0; j < traj[i].positions.size(); ++j)
     {
-      start[j] = traj[i].positions[j];
-      end[j] = traj[i+1].positions[j];
+      start[j] = angles::normalize_angle(traj[i].positions[j]);
+      end[j] = angles::normalize_angle(traj[i+1].positions[j]);
     }
     ipath.clear();
 
