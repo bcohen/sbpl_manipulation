@@ -73,6 +73,8 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
   
     void setParam(std::string name, double value);
 
+    double getParam(std::string name);
+
     bool setPlanningScene(const arm_navigation_msgs::PlanningScene &scene);
 
     void setRobotState(const arm_navigation_msgs::RobotState &state);

@@ -65,6 +65,19 @@ void SBPLCollisionSpace::setParam(std::string name, double value)
     ROS_ERROR("[cspace] Unrecognized param name '%s' received.", name.c_str());
 }
 
+double SBPLCollisionSpace::getParam(std::string name)
+{
+  if(name.compare("check_other_groups_against_world") == 0)
+    return check_other_groups_against_world_;
+  else if(name.compare("check_default_group_against_world") == 0)
+    return check_default_group_against_world_;
+  else
+  {
+    ROS_ERROR("[cspace] Unrecognized param name '%s' received.", name.c_str());
+    return -1;
+  }
+}
+
 void SBPLCollisionSpace::setInterpolationParams(bool use_ompl, int num_steps){
   use_ompl_interpolation_ = use_ompl;
   num_interpolation_steps_ = num_steps;
