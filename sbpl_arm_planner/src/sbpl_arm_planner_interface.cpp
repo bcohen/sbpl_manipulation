@@ -571,6 +571,6 @@ bool SBPLArmPlannerInterface::shortcutPath(trajectory_msgs::JointTrajectory &in,
   }
 
   shortcutTrajectory(cc_, in.points, out.points);
-  ROS_INFO("%0.3f seconds to shortcut path (in: %d  out: %d)", (clock() - start_shortcut) / (double)CLOCKS_PER_SEC, int(in.points.size()), int(out.points.size()));
+  ROS_INFO("%0.3f seconds to shortcut '%s' path (in: %d  out: %d)", (clock() - start_shortcut) / (double)CLOCKS_PER_SEC, in.header.frame_id.c_str(), int(in.points.size()), int(out.points.size()));
   return true;
 }
