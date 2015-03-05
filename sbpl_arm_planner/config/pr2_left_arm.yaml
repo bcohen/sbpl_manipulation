@@ -2,7 +2,7 @@ planning:
   epsilon: 100
   verbose: true
   verbose_collisions: false
-  shortcut_path: true
+  shortcut_path: false
   interpolate_path: false
   use_bfs_heuristic: true
   group_name: left_arm
