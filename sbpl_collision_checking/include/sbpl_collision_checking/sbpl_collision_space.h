@@ -107,7 +107,7 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
 
     /** ---------------- Utils ---------------- */
     bool interpolatePath(const std::vector<double>& start, const std::vector<double>& end, std::vector<std::vector<double> >& path);
-    bool interpolatePath(const std::vector<double>& start, const std::vector<double>& end, const std::vector<double>& inc, std::vector<std::vector<double> >& path, double num_interpolation_steps_per_degree=1.0);
+    bool interpolatePath(const std::vector<double>& start, const std::vector<double>& end, const std::vector<double>& inc, std::vector<std::vector<double> >& path, double num_interpolation_steps_per_degree=3.0);
 
     /** ------------ Kinematics ----------------- */
     std::string getGroupName() { return group_name_; };
@@ -145,6 +145,9 @@ class SBPLCollisionSpace : public sbpl_arm_planner::CollisionChecker
     bool updateVoxelGroup(std::string name);
 
     bool isObjectAttached() {return object_attached_;}; 
+
+    std::map<std::string, arm_navigation_msgs::CollisionObject> getObjectMap(){return object_map_;};
+
   private:
 
     sbpl_arm_planner::SBPLCollisionModel model_;
