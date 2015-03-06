@@ -42,7 +42,7 @@ PR2KDLRobotModel::PR2KDLRobotModel(std::string ns) : pr2_ik_solver_(NULL), rpy_s
 {
   ros::NodeHandle ph(ns);
   ph.param("robot_model/free_angle", free_angle_, 2);
-  ph.param("robot_model/use_safety_joint_limits", use_safety_limits_, false);
+  ph.param("robot_model/use_safety_joint_limits", use_safety_limits_, true);
   ph.param<std::string>("robot_model/chain_root_link", chain_root_name_, "torso_lift_link");
   ph.param<std::string>("robot_model/chain_tip_link", chain_tip_name_, "r_gripper_palm_link");
   ph.param<std::string>("robot_model/forearm_roll_link", forearm_roll_link_name_, "r_forearm_roll_link");
@@ -127,7 +127,7 @@ bool PR2KDLRobotModel::init(std::string robot_description, std::vector<std::stri
 
   // joint limits
   planning_joints_ = planning_joints;
-  if(!getJointLimits(planning_joints_, min_limits_, max_limits_, continuous_, false))
+  if(!getJointLimits(planning_joints_, min_limits_, max_limits_, continuous_, true))
   {
     ROS_ERROR("Failed to get the joint limits.");
     return false;
