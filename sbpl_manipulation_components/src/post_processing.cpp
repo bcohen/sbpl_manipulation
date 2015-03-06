@@ -23,7 +23,7 @@ void sbpl_arm_planner::shortcutPath(sbpl_arm_planner::CollisionChecker *cc, std:
   {
     if(!cc->isStateToStateValid(pin[i], pin[current], path_length, num_checks, dist))
     {
-      i = current;
+      i = current - 1;
       ROS_DEBUG("[ keeping %d] %2.3f %2.3f %2.3f %2.3f %2.3f %2.3f %2.3f (num_checks: %d  interp_length: %d)",current,pin[i][0],pin[i][1],pin[i][2],pin[i][3],pin[i][4],pin[i][5],pin[i][6], num_checks, path_length);
       pout.push_back(pin[i]);
     }
@@ -110,6 +110,36 @@ bool sbpl_arm_planner::interpolateTrajectory(sbpl_arm_planner::CollisionChecker 
       start[j] = angles::normalize_angle(traj[i].positions[j]);
       end[j] = angles::normalize_angle(traj[i+1].positions[j]);
     }
+
+    if(cc->group_name_.compare("left_arm") == 0)
+    {
+      if(start[2] > 3.75 || start[2] < -0.65)
+      {
+        ROS_ERROR("[planner][%d][start] The upper arm roll is out of ompl limits.", int(i));
+        start[2] += 2.0*M_PI;
+      }
+
+      if(end[2] > 3.75 || end[2] < -0.65)
+      {
+        ROS_ERROR("[planner][%d][end] The upper arm roll is out of ompl limits.", int(i+1));
+        end[2] += 2.0*M_PI;
+      }
+    }
+    else if(cc->group_name_.compare("right_arm") == 0)
+    {
+      if(start[2] < -3.75 || start[2] > 0.65)
+      {
+        ROS_ERROR("[planner][%d][start] The right arm upper arm roll is out of ompl limits.", int(i));
+        start[2] -= 2.0*M_PI;
+      }
+
+      if(end[2] < -3.75 || end[2] > 0.65)
+      {
+        ROS_ERROR("[planner][%d][end] The right arm upper arm roll is out of ompl limits.", int(i+1));
+        end[2] -= 2.0*M_PI;
+      }
+    }
+
     ipath.clear();
 
     if(!cc->interpolatePath(start, end, inc, ipath, num_interpolation_steps_per_degree))
@@ -143,7 +173,7 @@ bool sbpl_arm_planner::interpolateTrajectory(sbpl_arm_planner::CollisionChecker 
       // TODO: This is stupid. Need to do this better
       traj_out[i].time_from_start.fromSec(double(i+1) * (traj.back().time_from_start.toSec()/double(path.size())));
   }
-  ROS_INFO("Original path length: %d   Interpolated path length: %d", int(traj.size()), int(traj_out.size()));
+  ROS_DEBUG("Original path length: %d   Interpolated path length: %d", int(traj.size()), int(traj_out.size()));
   return true;
 }
 
