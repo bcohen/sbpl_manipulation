@@ -59,9 +59,12 @@ class CollisionChecker
     /* HACK: For Handoff Planner */
     virtual bool isObjectAttached();
 
-  protected:
+    virtual std::map<std::string, arm_navigation_msgs::CollisionObject> getObjectMap(){std::map<std::string, arm_navigation_msgs::CollisionObject> m; return m;};
 
     std::string group_name_;
+  
+  protected:
+
     std::vector<std::string> planning_joints_;
     arm_navigation_msgs::PlanningScene planning_scene_;
     arm_navigation_msgs::RobotState robot_state_;
